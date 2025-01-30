@@ -1,6 +1,6 @@
 ---
 
-title: 비관적 락을 활용한 동시성 문제 해결 과정
+title: 비관적 락을 활용한 갱신손실 문제 해결
 date: 2024-09-21
 categories: [SUWIKI]
 tags: [SUWIKI]
