@@ -1,12 +1,14 @@
 ---
 
 title: Java 8 - Stream/Lambda
-layout: post
-description: Stream/Lambda 를 사용해보자
+date: 2022-08-09
 categories: [Java]
 tags: [Stream, Lambda]
-redirect_from:
-- /2022/08/09/
+layout: post
+toc: true
+math: true
+mermaid: true
+
 ---
 
 # Stream 이란 무엇인가?

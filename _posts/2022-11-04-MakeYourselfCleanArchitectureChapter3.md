@@ -1,7 +1,6 @@
 ---
 
 title: 만들면서 배우는 클린 아키텍처
-
 date: 2022-11-04
 categories: [Architecture]
 tags: [Book]
@@ -21,7 +20,6 @@ mermaid: true
 ### 육각형 아키텍쳐
 
 ![](https://thebook.io/007035/ch02/01/02/02/)
-[그림출처]()
 
 ### 육각형 아키텍쳐 용어
 

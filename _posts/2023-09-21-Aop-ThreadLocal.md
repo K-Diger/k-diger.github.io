@@ -1,7 +1,7 @@
 ---
 
 title: 사용자 인증/인가 관심사 분리 (Thread Local)
-date: 2024-09-21
+date: 2023-09-21
 categories: [SHORTS]
 tags: [SHORTS]
 layout: post

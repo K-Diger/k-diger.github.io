@@ -1,7 +1,7 @@
 ---
 
 title: Caffeine Cache란 무엇이고 왜 빠르게 동작하는가?
-date: 2024-09-21
+date: 2023-09-21
 categories: [SUWIKI]
 tags: [SUWIKI]
 layout: post

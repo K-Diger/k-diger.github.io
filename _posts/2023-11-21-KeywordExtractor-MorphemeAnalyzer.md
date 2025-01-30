@@ -1,7 +1,7 @@
 ---
 
 title: 형태소 분석기를 활용한 키워드 추출
-date: 2024-09-21
+date: 2024-11-21
 categories: [SHORTS]
 tags: [SHORTS]
 layout: post

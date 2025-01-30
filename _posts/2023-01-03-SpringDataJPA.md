@@ -2,7 +2,7 @@
 
 title: Spring Data JPA 구현체 따라가기
 author: Diger
-date: 2024-09-19
+date: 2023-01-03
 categories: [Java, Spring, Spring Data JPA]
 tags: [Java, Spring, Spring Data JPA]
 layout: post

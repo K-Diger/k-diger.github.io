@@ -1,7 +1,7 @@
 ---
 
 title: 사용자 인증 방식에 관하여 (Session vs Token)
-date: 2024-09-21
+date: 2023-09-21
 categories: [SUWIKI]
 tags: [SUWIKI]
 layout: post

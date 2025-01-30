@@ -1,9 +1,9 @@
 ---
 
 title: 그런 REST API로 괜찮은가
-date: 2024-09-19
-categories: [URI, URL]
-tags: [URI, URL]
+date: 2023-05-23
+categories: [RESTAPI]
+tags: [RESTAIP]
 layout: post
 toc: true
 math: true
