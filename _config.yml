@@ -1,5 +1,8 @@
 # The Site Configuration
 
+plugins:
+  - jekyll-last-modified-at
+
 # Import the theme
 theme: jekyll-theme-chirpy
 
