@@ -4,9 +4,8 @@ layout: default
 
 {% include lang.html %}
 
-{% assign all_posts = site.posts | sort: 'last_modified_at' | reverse %}
-{% assign all_pinned = all_posts | where: 'pin', 'true' %}
-{% assign all_normal = all_posts | where_exp: 'item', 'item.pin != true and item.hidden != true' %}
+{% assign all_pinned = site.posts | where: 'pin', 'true' %}
+{% assign all_normal = site.posts | where_exp: 'item', 'item.pin != true and item.hidden != true' %}
 
 {% assign posts = '' | split: '' %}
 
@@ -31,7 +30,7 @@ layout: default
 
 <!-- Get normal posts on current page -->
 
-{% assign normal_size = paginator.per_page | minus: pinned_size %}
+{% assign normal_size = paginator.posts | size | minus: pinned_size %}
 
 {% if normal_size > 0 %}
 {% if pinned_size > 0 %}
