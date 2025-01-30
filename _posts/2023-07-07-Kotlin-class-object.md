@@ -1,7 +1,6 @@
 ---
 
-title: 코틀린의 1차 진입 장벽 뚫어버리기 (class, object)
-
+title: 코틀린의 class, object 키워드 내부구조 뜯어보기
 date: 2023-07-07
 categories: [JPA, MySQL, Index]
 tags: [JPA, MySQL, Index]
@@ -14,7 +13,7 @@ mermaid: true
 
 # 헷갈리는 키워드
 
-[모든 내용은 공식문서를 참고하여 작성하였습니다.](https://kotlinlang.org/docs/classes)
+[모든 내용은 공식문서를 참고](https://kotlinlang.org/docs/classes)
 
 ## 클래스 관련 키워드
 

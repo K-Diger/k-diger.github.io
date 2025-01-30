@@ -1,7 +1,7 @@
 ---
 
 title: JVM - ClassLoader
-date: 2024-09-19
+date: 2022-10-10
 categories: [ClassLoader]
 tags: [ClassLoader]
 layout: post

@@ -1,7 +1,7 @@
 ---
 
 title: DB Connection 부족 문제와 OOM 문제 해결 과정에 관하여
-date: 2024-11-21
+date: 2023-11-21
 categories: [SHORTS]
 tags: [SHORTS]
 layout: post
@@ -431,11 +431,7 @@ class NewsBulkInsertRepository(
 
 ## 문제점 2. 크롤러 동작 간 OOM 발생
 
-위 크롤러는 1시간 주기로 동작하는데, 어느 날 데이터베이스에 정상적으로 데이터가 삽입되지 않은 것을 확인하여 서버에 접속해보니 아래와 같은 에러가 뜨고 있었다.
-
-![](https://github.com/K-Diger/K-Diger.github.io/assets/60564431/181f8d12-d4b9-4479-9c82-c4f64ee3231a)
-
-크롤링하면서 OOM이 터졌다는 것 같은데 문제 해결을 해보자.
+크롤러는 1시간 주기로 동작하는데, 어느 날 데이터베이스에 정상적으로 데이터가 삽입되지 않은 것을 확인하여 서버에 접속해보니 Heap 공간이 부족하다는 에러가 발생했다.
 
 ---
 
