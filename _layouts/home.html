@@ -4,6 +4,7 @@ layout: default
 
 {% include lang.html %}
 
+{% assign all_posts = site.posts | sort: 'last_modified_at' | reverse %}
 {% assign all_pinned = site.posts | where: 'pin', 'true' %}
 {% assign all_normal = site.posts | where_exp: 'item', 'item.pin != true and item.hidden != true' %}
 
