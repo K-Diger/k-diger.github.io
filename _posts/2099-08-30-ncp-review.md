@@ -1,7 +1,7 @@
 ---
 
 title: NCP 적용 후기
-date: 2024-08-30
+date: 2099-08-30
 categories: [NCP]
 tags: [NCP]
 layout: post
