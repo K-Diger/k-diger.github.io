@@ -48,3 +48,7 @@ mermaid: true
 | **Kind**     | Kubernetes in Docker | Docker 컨테이너를 노드로 사용하여 로컬에서 쿠버네티스 클러스터를 실행 |
 | **Istio**    | 그리스어로 "항해, 돛"        | 서비스 메시 솔루션                                |
 | **Knative**  | "kube-native"의 줄임말   | 쿠버네티스 위에서 서버리스 워크로드를 실행하기 위한 플랫폼          |
+
+---
+
+- [다음 글 - 쿠버네티스 컴포넌트 역할 알아보기](https://k-diger.github.io/posts/KubernetesSeries2Components)
