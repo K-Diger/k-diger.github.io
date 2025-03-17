@@ -3,7 +3,7 @@
   <rect width="1200" height="1120" fill="#f8f9fa"/>
 
   <!-- 제목 -->
-  <text x="600" y="40" font-family="Arial" font-size="28" font-weight="bold" text-anchor="middle">쿠버네티스 Best Practice 아키텍처</text>
+  <text x="600" y="40" font-family="Arial" font-size="28" font-weight="bold" text-anchor="middle">쿠버네티스 아키텍처</text>
 
   <!-- 레이어드 아키텍처 배경 -->
   <rect x="40" y="70" width="1120" height="1020" rx="10" ry="10" fill="#f5f5f5" stroke="#666666" stroke-width="1"/>
@@ -27,7 +27,7 @@
 
   <!-- 컨트롤 플레인 레이어 -->
   <rect x="50" y="200" width="1100" height="220" rx="10" ry="10" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-  <text x="600" y="225" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle">컨트롤 플레인 (고가용성)</text>
+  <text x="600" y="225" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle">컨트롤 플레인</text>
 
   <!-- 컨트롤 플레인 노드들 -->
   <rect x="80" y="240" width="320" height="160" rx="5" ry="5" fill="#ffffff" stroke="#6c8ebf" stroke-width="2"/>
@@ -203,7 +203,7 @@
   <text x="210" y="960" font-family="Arial" font-size="14" text-anchor="middle">Prometheus + Grafana</text>
 
   <rect x="340" y="940" width="240" height="30" rx="5" ry="5" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-  <text x="460" y="960" font-family="Arial" font-size="14" text-anchor="middle">EFK/ELK 스택 (로깅)</text>
+  <text x="460" y="960" font-family="Arial" font-size="14" text-anchor="middle">Loki/EFK/ELK 스택 (로깅)</text>
 
   <rect x="100" y="980" width="240" height="30" rx="5" ry="5" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
   <text x="220" y="1000" font-family="Arial" font-size="14" text-anchor="middle">Jaeger/Zipkin (분산 추적)</text>
