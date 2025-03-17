@@ -17,4 +17,4 @@ mermaid: true
 
 ## 아키텍처로 보는 컴포넌트들
 
-![](https://raw.githubusercontent.com/K-Diger/k-diger.github.io/83203f0a83aa3b13ba215ca4c678c84b19b90284/images/kdh-k8s/chapter2/1.svg)
+![쿠버네티스 아키텍처](/images/kdh-k8s/chapter2/1.svg)
