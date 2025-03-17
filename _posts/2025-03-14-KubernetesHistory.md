@@ -13,7 +13,7 @@ mermaid: true
 
 # 쿠버네티스 용어 유래 정리
 
-## 쿠버네티스: 항해 테마
+## 쿠버네티스 == 항해 테마
 
 쿠버네티스(Kubernetes)는 그리스어 "κυβερνήτης"(kybernetes)에서 유래했으며, 이는 "조타수" 또는 "항해사"를 의미한다.
 
@@ -48,27 +48,3 @@ mermaid: true
 | **Kind**     | Kubernetes in Docker | Docker 컨테이너를 노드로 사용하여 로컬에서 쿠버네티스 클러스터를 실행 |
 | **Istio**    | 그리스어로 "항해, 돛"        | 서비스 메시 솔루션                                |
 | **Knative**  | "kube-native"의 줄임말   | 쿠버네티스 위에서 서버리스 워크로드를 실행하기 위한 플랫폼          |
-
-## 명명 패턴
-
-쿠버네티스 관련 용어들은 주로 다음 패턴을 따릅니다:
-
-1. **항해/바다 테마**: Kubernetes(조타수), Pod(고래 무리), Helm(조타), Istio(돗) 등
-2. **kube 접두사**: kubectl, kubelet, kubeadm 등
-3. **기능 설명**: Ingress, Service, Namespace 등
-
-이러한 일관된 명명 규칙은 쿠버네티스 생태계의 개념을 이해하는 데 도움을 줍니다.
-
----
-
-![kubernetes-diagram.svg](attachment:910b4ff3-6918-43f8-b43d-238554a2b61b:kubernetes-diagram.svg)
-
-- 중앙에 쿠버네티스 로고(조타륜)를 배치
-- 쿠버네티스(κυβερνήτης)의 그리스어 유래와 "조타수" 의미를 표시
-- Pod를 배(선박)로 시각화하여 "고래 무리"라는 의미 표현
-- kubectl을 조타 도구로 표현
-- Helm을 작은 조타륜으로 표현
-- kube-apiserver를 등대로 표현
-- etcd를 보물상자(설정 저장소)로 표현
-- Ingress를 항구 입구로 표현
-- 바다 배경으로 전체 항해 테마를 강조
