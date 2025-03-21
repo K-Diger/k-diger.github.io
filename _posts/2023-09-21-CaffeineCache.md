@@ -213,108 +213,48 @@ public final class Caffeine<K, V> {
 
 # Caffeine Cache 구조
 
+#### 공식문서 버전
 ![](https://raw.githubusercontent.com/ben-manes/caffeine/master/wiki/design/design.png)
 
-```mermaid
-%%{init: { 'theme':'dark', 'themeVariables': { 'fontSize': '24px', 'fontFamily': 'Arial' } }}%%
-flowchart TD
-subgraph CaffeineCache
-NewData["신규 데이터"] --> Window
-
-subgraph CacheArea[" "]
-direction LR
-Window["Window Cache<br/>(1%)<br/>신규 데이터 버퍼"]
-Probation["Probation Cache<br/>(20%)<br/>검증 영역"]
-Protected["Protected Cache<br/>(80%)<br/>보호 영역"]
-end
-
-subgraph TrackingArea[" "]
-direction LR
-Counter["빈도수 카운터<br/>4비트 (0-15)"]
-CMS["CountMinSketch<br/>빈도수 추적기"]
-end
-
-subgraph PolicyArea[" "]
-direction LR
-Compare{"접근 빈도 비교"}
-Accept["승인"]
-Reject["거부"]
-end
-
-Window -- "LRU 방출" ---> Compare
-Protected -- "LRU 방출" ---> Compare
-
-Probation -- "접근" --> Counter
-Counter --> CMS
-CMS -- "임계값 초과" --> Protected
-
-Compare -- "Candidate > Victim" --> Accept
-Compare -- "Candidate ≤ Victim" --> Reject
-Accept --> Probation
-Reject --> Evict["방출"]
-end
-
-classDef cacheBox fill:#2a4858,stroke:#68c1e8,stroke-width:4px,color:#fff,font-size:24px
-classDef dataBox fill:#2d2b55,stroke:#a277ff,stroke-width:4px,color:#fff,font-size:24px
-classDef trackBox fill:#3b2e58,stroke:#ffb86c,stroke-width:4px,color:#fff,font-size:24px
-classDef policyBox fill:#4a3f73,stroke:#ff79c6,stroke-width:4px,color:#fff,font-size:24px
-classDef empty fill:none,stroke:none
-
-class Window,Probation,Protected cacheBox
-class NewData,Evict dataBox
-class Counter,CMS trackBox
-class Compare,Accept,Reject policyBox
-class CacheArea,TrackingArea,PolicyArea empty
-style CaffeineCache fill:#2a2a2a,stroke:#666,stroke-width:4px,color:#fff,font-size:20px
-```
-
-```mermaid
-%%{init: { 'theme':'dark', 'themeVariables': { 'fontSize': '17px', 'fontFamily': 'Arial' } }}%%
-graph TB
-    subgraph CacheComponents["카페인 캐시 구성요소"]
-        subgraph DataTerms["데이터 관련 용어"]
-            Candidate["Candidate<br/>━━━━━━━━━<br/>Window/Protected Cache에서<br/>방출된 데이터로 진입 대기 중인 항목"]
-            Victim["Victim<br/>━━━━━━━━━<br/>Probation Cache 내에서<br/>제거될 수 있는 기존 데이터"]
-        end
-
-        subgraph Policies["정책 관련 용어"]
-            TinyLFU["TinyLFU<br/>━━━━━━━━━<br/>빈도수 기반 진입 정책<br/>Candidate와 Victim 비교 후<br/>진입 여부 결정"]
-            LRU["LRU (Least Recently Used)<br/>━━━━━━━━━<br/>최근 사용 빈도가 가장 낮은<br/>데이터를 방출하는 정책"]
-        end
-
-        subgraph Tracking["추적 시스템"]
-            Counter["4-bit Counter<br/>━━━━━━━━━<br/>0-15 범위의 접근 빈도 기록<br/>주기적으로 절반으로 감소<br/>최근성 반영"]
-            CMS["CountMinSketch<br/>━━━━━━━━━<br/>효율적인 빈도수 추적 자료구조<br/>항목당 8바이트 메모리 사용<br/>4개의 해시함수 사용"]
-        end
-
-        subgraph CacheRegions["캐시 영역"]
-            Window["Window Cache (1%)<br/>━━━━━━━━━<br/>새로운 데이터의 첫 진입점<br/>버스트 트래픽 보호"]
-            Probation["Probation Cache (20%)<br/>━━━━━━━━━<br/>데이터 검증 단계<br/>빈도수에 따른 승격/방출 결정"]
-            Protected["Protected Cache (80%)<br/>━━━━━━━━━<br/>자주 사용되는 검증된 데이터<br/>LRU 기반 방출"]
-        end
-        
-        subgraph Buffers["버퍼 시스템"]
-            ReadBuf["Read Buffer<br/>━━━━━━━━━<br/>스트라이프된 링 버퍼<br/>읽기 작업 최적화"]
-            WriteBuf["Write Buffer<br/>━━━━━━━━━<br/>확장 가능한 원형 배열<br/>쓰기 작업 배치 처리"]
-        end
-    end
-
-    classDef termBox fill:#2a4858,stroke:#68c1e8,stroke-width:3px,color:#fff
-    classDef policyBox fill:#3b2e58,stroke:#ffb86c,stroke-width:3px,color:#fff
-    classDef trackBox fill:#4a3f73,stroke:#ff79c6,stroke-width:3px,color:#fff
-    classDef regionBox fill:#2d2b55,stroke:#a277ff,stroke-width:3px,color:#fff
-    classDef bufferBox fill:#1e3339,stroke:#61efce,stroke-width:3px,color:#fff
-
-    class Candidate,Victim termBox
-    class TinyLFU,LRU policyBox
-    class Counter,CMS trackBox
-    class Window,Probation,Protected regionBox
-    class ReadBuf,WriteBuf bufferBox
-```
+#### 김도현버전
+![img.png](/images/caffeine/legend.png)
 
 Caffeine Cache는 ConcurrentHashMap을 사용하여 캐시를 관리한다.
 
+## 캐시 엔트리
+
+캐시 엔트리는 캐시에 저장되는 개별 키-값 쌍으로, 캐시의 기본 저장 단위다.
+
+각 엔트리는 키(Key), 값(Value), 메타데이터(만료 시간, 접근 횟수 등)로 구성된다.
+
+Caffeine Cache에서는 ConcurrentHashMap을 기반으로 엔트리를 관리하여 동시성 문제를 해결한다.
+
+### Caffeine Cache의 메모리 효율성
+
+Caffeine의 TinyLFU 정책은 CountMinSketch 자료구조를 사용하여 빈도수를 추적한다. 공식 문서에 따르면 빈도수 카운터는 4-bit CountMinSketch를 사용하며, 캐시 엔트리당 8바이트만 필요하다.
+
+이처럼 메모리 효율적인 설계로 대규모 엔트리를 처리할 때도 오버헤드가 적다.
+
+고성능 서버 환경에서 이러한 메모리 효율성은 GC 부하 감소와 처리량 향상으로 이어진다.
+
+### 엔트리의 캐시 내 이동 프로세스
+
+- 생성: 새로운 데이터가 put 메서드 호출로 Window Cache에 진입
+- 평가: Window에서 LRU로 방출될 때 TinyLFU를 통해 Probation 진입 여부 결정
+- 승격: Probation에서 접근 빈도가 높아지면 Protected Cache로 이동
+- 방출: TTL 만료, 메모리 제한, 또는 더 높은 가치의 데이터 진입으로 인해 제거
+
+### Caffeine Cache 캐시 엔트리 요약
+
+1. **메모리 사용 최소화**: 엔트리 빈도수 추적에 단 8바이트만 사용하여 메모리 사용 최소화
+2. **GC 부하 감소**: 가비지 컬렉션 빈도와 STW 감소
+3. **적응형 정책**: 워크로드 특성에 따라 캐시 영역 비율을 자동으로 조정해서 성능 최적화
+4. **버퍼링 메커니즘**: 읽기/쓰기 버퍼를 활용해 락 경합 최소화 및 배치 처리로 성능 향상
+
+---
+
 ## 저장 계층 (Storage Layer)
+
 ConcurrentHashMap (CHM): 실제 캐시 데이터를 저장하는 동시성 해시맵
 
 ### Window Cache (1%)
