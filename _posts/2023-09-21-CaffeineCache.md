@@ -217,7 +217,8 @@ public final class Caffeine<K, V> {
 ![](https://raw.githubusercontent.com/ben-manes/caffeine/master/wiki/design/design.png)
 
 #### 김도현버전
-![img.png](/images/caffeine/legend.png)
+![img.png](../images/caffeine/components.png)
+![img.png](../images/caffeine/flow.png)
 
 Caffeine Cache는 ConcurrentHashMap을 사용하여 캐시를 관리한다.
 
