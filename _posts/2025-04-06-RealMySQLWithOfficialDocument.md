@@ -482,7 +482,7 @@ InnoDB의 MVCC는 트랜잭션 격리 수준에 따라 다르게 동작합니다
 
 ---
 
-# 4.2.7 [InnoDB - Buffer Pool](https://dev.mysql.com/doc/refman/8.0/en/innodb-buffer-pool.html)
+## 4.2.7 [InnoDB - Buffer Pool](https://dev.mysql.com/doc/refman/8.0/en/innodb-buffer-pool.html)
 
 ### 기본 개념
 
@@ -560,5 +560,131 @@ I/O sum[0]:cur[0], unzip sum[0]:cur[0]
 - `Pages made young`: Buffer Pool LRU 리스트에서 young으로 만들어진 총 페이지 수
 - `Buffer pool hit rate`: 디스크 스토리지 대비 Buffer Pool에서 읽은 페이지 히트율
 
+### 4.2.7.3 버퍼 풀과 리두 로그
+
+두 구성요소의 결합으로 얻을 수 있는 아래와 같다.
+
+- **버퍼링 역할**: 버퍼 풀은 디스크의 데이터 파일이나 인덱스 정보를 메모리에 캐시해 두는 공간이다. 또한 쓰기 작업을 지연시켜 일괄 작업으로 처리할 수 있게 해주는 버퍼 역할도 한다.
+- **데이터 보호**: InnoDB는 변경된 데이터를 버퍼 풀에만 기록하고 디스크에는 기록하지 않은 상태에서 MySQL 서버가 비정상적으로 종료되면 데이터가 유실될 수 있다. 이런 문제를 막기 위해 리두 로그를 사용한다.
+- **변경 기록 과정**: 데이터 변경 시 리두 로그에는 변경 내용을 바로 기록하고, 버퍼 풀의 데이터는 특정 시점에 디스크로 기록된다.
+- **LSN((Log Sequence Number)의 역할**: 
+
+LSN은 데이터베이스 변경 시점을 식별하는 숫자값으로, 로그가 기록된 시점과 해당 로그의 데이터 저장 포인트 등을 담고 있다. 
+
+매번 로그가 기록될 때마다 증가하며, 리두 로그 공간의 어느 지점에 변경 사항이 기록되었는지 나타낸다.
+
+1. redo_lsn: 현재까지 기록된 리두 로그의 LSN
+2. checkpoint_lsn: 체크포인트가 발생한 시점의 LSN (디스크로 안전하게 기록된 지점)
+
+redo_lsn과 checkpoint_lsn의 차이는 아직 디스크로 기록되지 않은 더티 페이지의 양을 의미한다. 이 차이가 크면 클수록 장애 발생 시 복구해야 할 데이터가 많아진다.
+
+InnoDB는 이 차이를 모니터링하고 필요시 체크포인트를 수행해 차이를 줄인다. 특히 리두 로그 공간이 부족해지면 체크포인트를 강제로 수행하여 redo_lsn과 checkpoint_lsn의 차이를 줄인다.
+
+### 4.2.7.4 버퍼 풀 플러시
+
+InnoDB는 버퍼 풀에서 아직 디스크로 기록되지 않은 데이터 페이지를 '더티 페이지(Dirty Page)'라고 한다. 이 더티 페이지들은 특정 시점에 디스크로 동기화되어야 하는데, 이 과정을 '플러시(Flush)'라고 한다.
+
+InnoDB는 다음과 같은 경우에 플러시를 수행한다:
+- 버퍼 풀의 공간이 필요한 경우
+- 체크포인트가 발생하는 경우
+- 리두 로그 공간이 부족한 경우
+
+플러시는 일반적으로 다음 두 종류의 리스트를 이용한다:
+1. LRU(Least Recently Used) 리스트
+2. 플러시 리스트(Flush List)
+
+### 4.2.7.4.1 플러시 리스트 플러시
+
+플러시 리스트는 LSN 기준으로 오래된 것부터 정렬된 더티 페이지의 목록이다. 데이터가 변경되면, 해당 페이지는 플러시 리스트에 추가되고 리스트의 맨 처음은 가장 오래전에 변경된 페이지가 위치한다.
+
+- **Page Cleaner 스레드**: InnoDB는 백그라운드 스레드인 'Page Cleaner' 스레드를 이용해 주기적으로 플러시 리스트에서 오래된 페이지부터 디스크에 기록한다.
+- **적응형 플러시 알고리즘**: adaptive_flush 알고리즘은 현재 서버의 활동 상태에 따라 플러시 비율을 조정한다. `innodb_adaptive_flushing` 파라미터를 통해 이 기능을 켜거나 끌 수 있다.
+- **체크포인트와의 관계**: 체크포인트는 플러시 리스트 플러시와 관련이 깊다. 체크포인트 LSN은 플러시된 더티 페이지 중 가장 오래된 LSN을 의미한다.
+
+### 4.2.7.4.2 LRU 리스트 플러시
+
+LRU 리스트는 버퍼 풀에서 페이지의 사용 빈도를 관리하는 리스트이다. 
+
+최근에 사용된 페이지는 리스트의 앞부분(MRU, Most Recently Used)에, 오래전에 사용된 페이지는 리스트의 뒷부분(LRU, Least Recently Used)에 위치한다.
+
+InnoDB는 LRU 리스트를 다음과 같이 관리한다.
+- 새로운 페이지가 필요하면 LRU의 끝부분(tail)의 페이지를 제거하고 새 페이지를 추가한다.
+- 만약 제거할 페이지가 더티 페이지라면, 먼저 디스크에 기록해야 한다.
+
+InnoDB는 LRU 리스트를 두 부분으로 나눈다.
+1. New 서브리스트(young): 최근에 접근된 페이지들
+2. Old 서브리스트: 상대적으로 오래전에 접근된 페이지들
+
+이 구조는 버퍼 풀 폴루션(Buffer Pool Pollution)을 방지하는 데 도움이 된다. 대용량 테이블 스캔으로 인해 자주 사용되는 페이지들이 버퍼 풀에서 밀려나는 것을 방지한다.
+
+### 4.2.7.5 버퍼 풀 상태 백업 및 복구
+
+MySQL 5.6부터 InnoDB는 버퍼 풀의 상태를 백업하고 복구할 수 있는 기능을 제공한다. 서버가 재시작될 때 워밍업 시간을 줄이기 위한 목적이다.
+
+관련 설정 파라미터:
+- `innodb_buffer_pool_dump_at_shutdown`: 서버 종료 시 버퍼 풀 상태 덤프 여부
+- `innodb_buffer_pool_load_at_startup`: 서버 시작 시 덤프된 버퍼 풀 상태 로드 여부
+
+수동으로 덤프와 로드를 제어하는 명령:
+- `SET GLOBAL innodb_buffer_pool_dump_now=ON`
+- `SET GLOBAL innodb_buffer_pool_load_now=ON`
+- `SET GLOBAL innodb_buffer_pool_load_abort=ON` (로드 작업 중단)
+
+덤프 파일은 기본적으로 데이터 디렉토리에 'ib_buffer_pool'이라는 이름으로 저장되며, 이 파일에는 버퍼 풀에 저장된 페이지의 공간 ID와 페이지 번호 목록이 포함된다.
+
 ---
 
+## 4.2.8 [Double Write Buffer](https://dev.mysql.com/doc/refman/8.0/en/innodb-doublewrite-buffer.html)
+
+![](/images/realmysql/chapter4/doublewritebuffer.png)
+
+### 기본 개념
+
+Double Write Buffer는 InnoDB가 버퍼 풀에서 플러시된 페이지를 데이터 파일의 적절한 위치에 쓰기 전에 페이지를 임시로 저장하는 영역이다. 이는 운영체제, 스토리지 하위 시스템 또는 예기치 않은 mysqld 프로세스 종료 중에 페이지 쓰기가 중단될 경우, InnoDB가 충돌 복구 과정에서 Double Write Buffer에서 페이지의 온전한 복사본을 찾아 데이터 무결성을 보장하기 위한 메커니즘이다.
+
+데이터베이스가 데이터 페이지를 디스크로 플러시하는 도중에 운영체제가 비정상적으로 종료되면 일부만 기록된 페이지(Partial Page Write 또는 Torn Page)가 발생할 수 있는데, Double Write Buffer는 이런 문제를 해결한다.
+
+MySQL 8.0.20 이전에는 Double Write Buffer가 InnoDB 시스템 테이블스페이스에 위치했지만, MySQL 8.0.20부터는 별도의 Double Write 파일에 위치한다.
+
+### 작동 방식
+
+Double Write Buffer의 작동 과정은 다음과 같다.
+
+1. InnoDB가 버퍼 풀에서 더티 페이지를 플러시할 때, 해당 페이지들을 먼저 Double Write Buffer에 기록한다.
+2. Double Write Buffer에 성공적으로 기록된 후에야 실제 데이터 파일의 적절한 위치에 페이지를 기록한다.
+3. 만약 데이터 파일에 쓰는 도중 시스템이 비정상 종료되면, InnoDB는 복구 과정에서 Double Write Buffer에서 완전한 페이지 복사본을 찾아 데이터 파일을 복구할 수 있다.
+
+데이터가 두 번 기록되지만, Double Write Buffer는 두 배의 I/O 오버헤드나 두 배의 I/O 작업을 필요로 하지 않는다. 데이터는 큰 순차적인 덩어리로 Double Write Buffer에 기록되며, 운영 체제에 대한 단일 fsync() 호출만 필요하다(innodb_flush_method가 O_DIRECT_NO_FSYNC로 설정된 경우 제외).
+
+### 성능 영향
+
+Double Write Buffer는 데이터 무결성을 위한 기능이라, 성능에 영향을 미칠 수 있다. 일반적으로 Double Write Buffer를 사용하면 약 5-10% 정도의 성능 저하가 있을 수 있다.
+
+### 구성 변수
+
+MySQL 8.0에서는 다음과 같은 Double Write Buffer 관련 구성 변수를 제공한다.
+
+- **innodb_doublewrite**: Double Write Buffer의 활성화 여부를 제어한다(기본값: ON)
+  - MySQL 8.0.30부터는 다음 설정을 지원한다.
+    - **ON / DETECT_AND_RECOVER**: Double Write Buffer가 완전히 활성화되며, 복구 중 불완전한 페이지 쓰기를 수정하기 위해 Double Write Buffer의 데이터베이스 페이지 내용에 접근한다.
+    - **DETECT_ONLY**: 메타데이터만 Double Write Buffer에 기록되고 데이터베이스 페이지 내용은 기록되지 않는다. 이 가벼운 설정은 불완전한 페이지 쓰기를 감지하는 용도로만 사용된다.
+    - **OFF**: Double Write Buffer를 비활성화한다.
+
+- **innodb_doublewrite_dir**: Double Write 파일이 생성될 디렉토리를 정의한다. 지정하지 않으면 innodb_data_home_dir 디렉토리(기본값: 데이터 디렉토리)에 생성된다.
+
+- **innodb_doublewrite_files**: Double Write 파일의 수를 정의한다. 기본적으로 각 버퍼 풀 인스턴스에 대해 두 개의 Double Write 파일이 생성된다:
+  - 플러시 리스트용 Double Write 파일
+  - LRU 리스트용 Double Write 파일
+
+- **innodb_doublewrite_pages**: 스레드당 최대 Double Write 페이지 수를 제어한다. 값을 지정하지 않으면 innodb_write_io_threads 값으로 설정된다.
+
+### 파일 구조
+
+Double Write 파일 이름은 다음 형식을 따른다: #ib_page_size_file_number.dblwr (또는 DETECT_ONLY 설정의 경우 .bdblwr)
+
+예를 들어, InnoDB 페이지 크기가 16KB이고 단일 버퍼 풀이 있는 MySQL 인스턴스의 경우 다음과 같은 Double Write 파일이 생성된다.
+
+```shell
+#ib_16384_0.dblwr
+#ib_16384_1.dblwr
+```
