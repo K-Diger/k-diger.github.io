@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 750">
+  <!-- 배경 -->
+  <rect width="900" height="750" fill="#f8f9fa"/>
+
+  <!-- 제목 -->
+  <text x="450" y="30" font-family="Arial" font-size="24" text-anchor="middle" font-weight="bold" fill="#333333">MySQL 쿼리 실행 프로세스</text>
+
+  <!-- MySQL 서버 경계 -->
+  <rect x="50" y="50" width="800" height="680" rx="10" ry="10" fill="#f1f8ff" stroke="#0066cc" stroke-width="2"/>
+
+  <!-- 클라이언트 & 커넥션 핸들러 -->
+  <rect x="300" y="60" width="300" height="60" rx="5" ry="5" fill="#e6f7ff" stroke="#0091ff" stroke-width="2"/>
+  <text x="450" y="95" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">클라이언트 & 커넥션 핸들러</text>
+
+  <!-- 쿼리 캐시 (deprecated) -->
+  <rect x="300" y="140" width="300" height="40" rx="5" ry="5" fill="#f3f3f3" stroke="#999" stroke-width="2" stroke-dasharray="5,2"/>
+  <text x="450" y="165" font-family="Arial" font-size="14" text-anchor="middle" fill="#777">(쿼리 캐시 - MySQL 8.0에서 제거됨)</text>
+
+  <!-- 파서 -->
+  <rect x="300" y="200" width="300" height="60" rx="5" ry="5" fill="#fff2e6" stroke="#ff9933" stroke-width="2"/>
+  <text x="450" y="235" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">파서 (Parser)</text>
+
+  <!-- 전처리기 -->
+  <rect x="300" y="280" width="300" height="60" rx="5" ry="5" fill="#fff2e6" stroke="#ff9933" stroke-width="2"/>
+  <text x="450" y="315" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">전처리기 (Preprocessor)</text>
+
+  <!-- 옵티마이저 -->
+  <rect x="300" y="360" width="300" height="60" rx="5" ry="5" fill="#e6ffe6" stroke="#00cc00" stroke-width="2"/>
+  <text x="450" y="395" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">옵티마이저 (Optimizer)</text>
+
+  <!-- 쿼리 실행 엔진 -->
+  <rect x="300" y="440" width="300" height="60" rx="5" ry="5" fill="#e6ffe6" stroke="#00cc00" stroke-width="2"/>
+  <text x="450" y="475" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">쿼리 실행 엔진 (Query Execution Engine)</text>
+
+  <!-- 스토리지 엔진 인터페이스 -->
+  <rect x="240" y="520" width="420" height="50" rx="5" ry="5" fill="#cce5ff" stroke="#0066cc" stroke-width="2"/>
+  <text x="450" y="550" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">스토리지 엔진 인터페이스 (Storage Engine Interface)</text>
+
+  <!-- 스토리지 엔진들 -->
+  <rect x="90" y="590" width="150" height="60" rx="5" ry="5" fill="#f0f5ff" stroke="#4d79ff" stroke-width="2"/>
+  <text x="165" y="625" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">InnoDB</text>
+
+  <rect x="290" y="590" width="150" height="60" rx="5" ry="5" fill="#f0f5ff" stroke="#4d79ff" stroke-width="2"/>
+  <text x="365" y="625" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">MyISAM</text>
+
+  <rect x="490" y="590" width="150" height="60" rx="5" ry="5" fill="#f0f5ff" stroke="#4d79ff" stroke-width="2"/>
+  <text x="565" y="625" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">Memory</text>
+
+  <rect x="690" y="590" width="150" height="60" rx="5" ry="5" fill="#f0f5ff" stroke="#4d79ff" stroke-width="2"/>
+  <text x="765" y="625" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">기타 엔진</text>
+
+  <!-- 물리적 저장소 -->
+  <rect x="90" y="670" width="750" height="40" rx="5" ry="5" fill="#f9ecec" stroke="#cc0000" stroke-width="2"/>
+  <text x="450" y="695" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold" fill="#333333">물리적 저장소 (테이블스페이스, 파일, 인덱스 등)</text>
+
+  <!-- 화살표 및 데이터 흐름 -->
+  <!-- 클라이언트 → 파서 -->
+  <line x1="450" y1="120" x2="450" y2="200" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- 쿼리 캐시 연결 (deprecated) -->
+  <line x1="450" y1="140" x2="480" y2="140" stroke="#999" stroke-width="1" stroke-dasharray="5,2"/>
+
+  <!-- 파서 → 전처리기 -->
+  <line x1="450" y1="260" x2="450" y2="280" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- 전처리기 → 옵티마이저 -->
+  <line x1="450" y1="340" x2="450" y2="360" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- 옵티마이저 → 실행 엔진 -->
+  <line x1="450" y1="420" x2="450" y2="440" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- 실행 엔진 → 스토리지 엔진 인터페이스 -->
+  <line x1="450" y1="500" x2="450" y2="520" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- 스토리지 엔진 인터페이스 → 각 스토리지 엔진 -->
+  <line x1="165" y1="550" x2="165" y2="590" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="365" y1="550" x2="365" y2="590" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="565" y1="550" x2="565" y2="590" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="765" y1="550" x2="765" y2="590" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- 스토리지 엔진 → 물리적 저장소 -->
+  <line x1="165" y1="650" x2="165" y2="670" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="365" y1="650" x2="365" y2="670" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="565" y1="650" x2="565" y2="670" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="765" y1="650" x2="765" y2="670" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- 화살표 정의 -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- 단계별 설명 -->
+  <rect x="620" y="200" width="200" height="30" rx="3" ry="3" fill="#fff2e6" fill-opacity="0.8" stroke="#ff9933" stroke-width="1"/>
+  <text x="720" y="220" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">1. SQL 구문 분석</text>
+
+  <rect x="620" y="280" width="200" height="30" rx="3" ry="3" fill="#fff2e6" fill-opacity="0.8" stroke="#ff9933" stroke-width="1"/>
+  <text x="720" y="300" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">2. 컬럼/테이블 권한 확인</text>
+
+  <rect x="620" y="360" width="200" height="30" rx="3" ry="3" fill="#e6ffe6" fill-opacity="0.8" stroke="#00cc00" stroke-width="1"/>
+  <text x="720" y="380" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">3. 실행 계획 생성</text>
+
+  <rect x="620" y="440" width="200" height="30" rx="3" ry="3" fill="#e6ffe6" fill-opacity="0.8" stroke="#00cc00" stroke-width="1"/>
+  <text x="720" y="460" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">4. 실행 계획에 따라 처리</text>
+
+  <rect x="80" y="520" width="140" height="30" rx="3" ry="3" fill="#cce5ff" fill-opacity="0.8" stroke="#0066cc" stroke-width="1"/>
+  <text x="150" y="538" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">5. 데이터 접근 요청</text>
+</svg>
