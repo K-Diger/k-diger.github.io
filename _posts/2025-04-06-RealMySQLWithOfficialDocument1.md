@@ -11,6 +11,8 @@ mermaid: true
 
 ---
 
+## 목차
+
 ### 4.1 아키텍처
 - [MySQL Server Architecture](https://dev.mysql.com/doc/refman/8.4/en/pluggable-storage-overview.html)
 - [메모리 사용 구조](https://dev.mysql.com/doc/refman/8.0/en/memory-use.html)
