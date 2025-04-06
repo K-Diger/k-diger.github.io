@@ -1,6 +1,6 @@
 ---
 
-title: 김도현의 Real MySQL 정복하기 (그런데... 공식문서를 곁들인) 
+title: 김도현의 Real MySQL 정복하기 1편 (그런데... 공식문서를 곁들인) 
 date: 2025-04-06
 categories: [MySQL]
 tags: [MySQL]
