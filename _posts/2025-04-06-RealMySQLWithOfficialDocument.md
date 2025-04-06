@@ -131,7 +131,7 @@ MySQL은 멀티스레드 아키텍처를 사용하여 클라이언트 요청과 
 
 MySQL의 메모리 사용은 두 가지 영역으로 나뉜다.
 
-![](/images/realmysql/chapter4/memory.svg)
+![](/images/realmysql/chapter4/memory.png)
 
 - **전역 메모리 영역(Global Memory)**: 모든 클라이언트 스레드가 공유하는 메모리 영역
 - **스레드별 메모리 영역(Per-Thread Memory)**: 각 클라이언트 연결마다 할당되는 독립적인 메모리 영역
@@ -253,7 +253,7 @@ MySQL의 메모리 사용은 두 가지 영역으로 나뉜다.
 
 ## 4.1.6 쿼리 실행 구조
 
-![](/images/realmysql/chapter4/query-internal.svg)
+![](/images/realmysql/chapter4/query-internal.png)
 
 ### 4.1.6.1. 연결 및 인증 단계
 
@@ -407,7 +407,7 @@ FK 검사는 `foreign_key_checks` 변수로 제어되며 기본적으로 활성�
 
 ## 4.2.3 [InnoDB - MVCC](https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html)
 
-![](/images/realmysql/chapter4/mvcc.svg)
+![](/images/realmysql/chapter4/mvcc.png)
 
 ### 기본 구조
 
