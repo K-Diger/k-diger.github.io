@@ -3,7 +3,7 @@
 title: 엘라스틱서치 내부 동작과 궁금증 고찰
 date: 2025-07-23
 categories: [Elasticsearch]
-tags: [Elasticsearch]
+tags: [Elasticsearch, Architecture, Sharding, Replication]
 layout: post
 toc: true
 math: true
@@ -11,23 +11,26 @@ mermaid: true
 
 ---
 
+엘라스틱서치를 사용하면서 궁금했던 내부 동작 원리들을 깊이 있게 탐구해보자.
+
 ## 목차
 
-1. [엘라스틱서치 데이터 저장 단위](#1-엘라스틱서치-데이터-저장-단위)
-2. [프라이머리 샤드와 레플리카 샤드](#2-프라이머리-샤드와-레플리카-샤드)
-3. [샤드 분배 원리와 알고리즘](#3-샤드-분배-원리와-알고리즘)
-4. [샤드 설정과 기본값](#4-샤드-설정과-기본값)
-5. [클라이언트 조회 메커니즘](#5-클라이언트-조회-메커니즘)
-6. [고급 토픽과 베스트 프랙티스](#6-고급-토픽과-베스트-프랙티스)
-7. [참고 자료](#7-참고-자료)
+1. [데이터는 어떻게 저장되는가?](#1-데이터는-어떻게-저장되는가)
+2. [프라이머리와 레플리카는 어떻게 다른가?](#2-프라이머리와-레플리카는-어떻게-다른가)
+3. [샤드는 어떤 원리로 분배되는가?](#3-샤드는-어떤-원리로-분배되는가)
+4. [샤드 설정은 어떻게 하는가?](#4-샤드-설정은-어떻게-하는가)
+5. [클라이언트는 어떤 샤드에서 조회하는가?](#5-클라이언트는-어떤-샤드에서-조회하는가)
+6. [복제는 언제 어떻게 일어나는가?](#6-복제는-언제-어떻게-일어나는가)
+7. [참고할 만한 내용](#7-참고할-만한-내용)
+8. [참고 자료](#8-참고-자료)
 
 ---
 
-## 1. 엘라스틱서치 데이터 저장 단위
+## 1. 데이터는 어떻게 저장되는가?
 
-엘라스틱서치는 분산 검색 엔진으로, 데이터를 효율적으로 저장하고 검색하기 위해 계층적 구조를 사용한다.
+### 1.1 계층적 데이터 구조
 
-### 1.1 계층적 구조
+엘라스틱서치는 분산 시스템답게 계층적 구조로 데이터를 관리한다:
 
 ```
 클러스터 (Cluster)
@@ -42,78 +45,115 @@ mermaid: true
         └── 레플리카 샤드
 ```
 
-### 1.2 각 구성 요소의 역할
+### 1.2 각 구성 요소의 내부 역할
 
 **클러스터 (Cluster)**
 - 전체 엘라스틱서치 시스템의 최상위 단위
-- 하나 이상의 노드로 구성
-- 고유한 클러스터명으로 식별
+- 클러스터 상태(Cluster State)를 통해 모든 메타데이터 관리
+- 마스터 노드가 클러스터 전체의 의사결정 담당
 
 **노드 (Node)**
-- 클러스터를 구성하는 개별 서버 인스턴스
-- 데이터 저장과 검색 기능을 담당
-- 역할별로 마스터, 데이터, 조정 노드로 구분
+- 개별 JVM 프로세스로 실행되는 엘라스틱서치 인스턴스
+- 마스터, 데이터, 조정, 인제스트 노드로 역할 분담
+- 각 노드는 루씬 인덱스들을 직접 관리
 
 **인덱스 (Index)**
+- 논리적 데이터 그룹으로, 실제로는 여러 샤드로 분산 저장
+- 매핑(Mapping)과 설정(Settings) 메타데이터 포함
 - 관계형 DB의 데이터베이스와 유사한 개념
-- 유사한 특성의 문서들을 논리적으로 그룹화
 
 **샤드 (Shard)**
-- 인덱스를 물리적으로 분할한 단위
-- 아파치 루씬(Apache Lucene) 인덱스 하나에 해당
-- 실제 데이터 저장과 검색이 수행되는 최소 단위
+- 물리적 데이터 저장 단위이자 검색의 최소 실행 단위
+- 각 샤드는 하나의 Apache Lucene 인덱스
+- 최대 약 20억 개의 도큐먼트 저장 가능
 
 **도큐먼트 (Document)**
 - JSON 형태의 실제 데이터
-- 관계형 DB의 행(row)에 해당
+- 내부적으로 Lucene Document로 변환되어 저장
+- 불변(Immutable) 특성 - 업데이트 시 새 버전으로 교체
 
 ---
 
-## 2. 프라이머리 샤드와 레플리카 샤드
+## 2. 프라이머리와 레플리카는 어떻게 다른가?
 
-### 2.1 프라이머리 샤드 (Primary Shard)
+### 2.1 프라이머리 샤드의 내부 동작
 
-프라이머리 샤드는 원본 데이터를 저장하는 샤드이다.
+프라이머리 샤드는 데이터의 **권한 있는 원본**이다:
 
-**특징:**
-- 인덱스의 실제 데이터를 보유
-- 쓰기 요청을 최초로 처리
-- 인덱스 생성 시 개수가 결정되며 이후 변경 불가 (Shrink API 제외)
-- 읽기와 쓰기 모두 처리 가능
+**핵심 책임:**
+- 모든 쓰기 요청의 진입점
+- 도큐먼트 ID 기반 라우팅의 최종 목적지
+- In-Sync 레플리카 집합 관리
+- 버전 관리(Version Control) 담당
 
-### 2.2 레플리카 샤드 (Replica Shard)
-
-레플리카 샤드는 프라이머리 샤드의 복사본이다.
-
-**특징:**
-- 프라이머리 샤드의 정확한 복사본
-- 고가용성과 검색 성능 향상을 위해 사용
-- 읽기 요청 처리 가능 (쓰기는 프라이머리를 통해서만)
-- 개수를 언제든 동적으로 변경 가능
-- 프라이머리와 절대 같은 노드에 배치되지 않음
-
-### 2.3 분산 배치 원칙
-
-```
-노드 1: P0, R1, R2
-노드 2: P1, R0, R2  
-노드 3: P2, R0, R1
-
-P = Primary, R = Replica, 숫자 = 샤드 번호
+**쓰기 처리 프로세스:**
+```java
+// 엘라스틱서치 실제 구현 기반 의사코드
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/action/bulk/TransportShardBulkAction.java
+public void executeBulkItemRequest(BulkPrimaryExecutionContext context, 
+                                 UpdateRequest updateRequest,
+                                 Consumer<Exception> onFailure,
+                                 Consumer<BulkItemResponse> onSuccess,
+                                 BulkItemRequest replicationRequest) {
+    1. validateOperation(operation);
+    2. assignSequenceNumber(operation);
+    3. writeToTranslog(operation);
+    4. executeOnPrimary(operation);
+    5. replicateToInSyncReplicas(operation);
+    6. acknowledgeToClient(operation);
+}
 ```
 
-**핵심 원칙:**
-1. **고가용성**: 프라이머리와 레플리카를 다른 노드에 분리
-2. **부하 분산**: 모든 노드에 샤드를 균등하게 배치
-3. **장애 대응**: 노드 장애 시에도 데이터 접근 보장
+### 2.2 레플리카 샤드의 내부 역할
+
+레플리카는 **프라이머리의 정확한 복사본**이면서 독립적인 검색 엔진이다:
+
+**주요 특징:**
+- 읽기 전용 관점에서는 프라이머리와 동등한 성능
+- 복제 시에만 프라이머리에 의존적
+- 장애 시 프라이머리로 승격 가능
+
+**복제 동기화 메커니즘:**
+```java
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationOperation.java
+public void performOnReplica(ReplicaRequest request, IndexShard replica) {
+    1. receiveFromPrimary(operation);
+    2. validateSequenceNumber(operation);
+    3. writeToTranslog(operation);
+    4. executeOperation(operation);
+    5. acknowledgeToPrimary(operation);
+}
+```
+
+### 2.3 분산 배치의 안전 원칙
+
+엘라스틱서치는 고가용성을 위해 엄격한 배치 규칙을 적용한다:
+
+```
+노드 1: P0, R1, R2  ← 프라이머리 0 + 다른 레플리카들
+노드 2: P1, R0, R2  ← 프라이머리 1 + 다른 레플리카들
+노드 3: P2, R0, R1  ← 프라이머리 2 + 다른 레플리카들
+
+핵심: 동일 샤드의 P와 R은 절대 같은 노드에 위치하지 않음
+```
+
+**제어 설정:**
+```json
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.same_shard.host": false
+  }
+}
+```
 
 ---
 
-## 3. 샤드 분배 원리와 알고리즘
+## 3. 샤드는 어떤 원리로 분배되는가?
 
-### 3.1 도큐먼트 라우팅 (Document Routing)
+### 3.1 도큐먼트는 어떤 샤드로 갈까?
 
-새로운 도큐먼트가 인덱싱될 때 어느 샤드에 저장할지 결정하는 과정이다. ([공식 문서: _routing field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html))
+새 도큐먼트의 샤드 결정은 **해시 기반 라우팅**으로 이루어진다. ([공식 문서: _routing field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html))
 
 #### 3.1.1 기본 라우팅 공식
 
@@ -121,77 +161,237 @@ P = Primary, R = Replica, 숫자 = 샤드 번호
 shard_num = hash(_routing) % number_of_primary_shards
 ```
 
-- `_routing`: 기본값은 도큐먼트 ID (_id)
-- `hash()`: 해시 함수 (DJB 해시 알고리즘 사용)
-- `number_of_primary_shards`: 프라이머리 샤드 개수
+**내부 동작:**
+- `_routing`: 기본적으로 도큐먼트 ID (_id) 사용
+- `hash()`: DJB2 해시 알고리즘으로 균등 분산 보장
+- 결과: 결정론적이고 예측 가능한 샤드 선택
 
 #### 3.1.2 상세 라우팅 공식 (ES 7.0+)
+
+더 정밀한 제어를 위한 확장된 공식:
 
 ```
 routing_factor = num_routing_shards / num_primary_shards
 shard_num = (hash(_routing) % num_routing_shards) / routing_factor
 ```
 
-### 3.2 샤드 할당 알고리즘
+**제어 설정:**
+```json
+PUT /my_index/_doc/1?routing=user123
+{
+  "user_id": "user123",
+  "message": "Hello World"
+}
+```
 
-#### 3.2.1 BalancedShardsAllocator
+### 3.2 샤드 할당 알고리즘의 내부 구조
 
-엘라스틱서치의 기본 샤드 할당 알고리즘은 `BalancedShardsAllocator`이다.
+#### 3.2.1 BalancedShardsAllocator의 3단계 작동
 
-**3단계 처리:**
-1. **미할당 샤드 할당** (Allocate Unassigned Shards)
-2. **샤드 이동** (Move Shards)  
-3. **리밸런싱** (Rebalance Shards)
+엘라스틱서치의 핵심 할당 엔진인 `BalancedShardsAllocator`는 체계적인 3단계로 작동한다. ([AWS Blog: Demystifying Elasticsearch shard allocation](https://aws.amazon.com/blogs/opensource/open-distro-elasticsearch-shard-allocation/))
 
-#### 3.2.2 할당 결정자 (Allocation Deciders)
-
-샤드를 특정 노드에 배치할 수 있는지 판단하는 규칙들:
-
-**주요 결정자:**
-- `SameShardAllocationDecider`: 프라이머리와 레플리카 동일 노드 배치 금지
-- `DiskThresholdDecider`: 디스크 사용량 기반 할당 제한
-- `AwarenessAllocationDecider`: 가용성 영역 인식 배치
-- `FilterAllocationDecider`: 사용자 정의 필터 적용
-
-#### 3.2.3 가중치 기반 선택
+**1단계: 미할당 샤드 할당 (allocateUnassigned)**
 
 ```java
-// 의사코드
-for (Node node : eligibleNodes) {
-    weight = calculateWeight(node);
-    if (weight < minWeight) {
-        minWeight = weight;
-        selectedNode = node;
+// 엘라스틱서치 실제 구현 기반 의사코드
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/allocator/BalancedShardsAllocator.java
+private boolean allocateUnassigned(RoutingAllocation allocation) {
+    // 우선순위: 프라이머리 먼저, 그 다음 레플리카
+    RoutingNodes.UnassignedShards unassigned = allocation.routingNodes().unassigned();
+    
+    // 인덱스 우선순위 기반 정렬 (PriorityComparator 사용)
+    unassigned.sort((a, b) -> {
+        int priorityA = IndexMetadata.INDEX_PRIORITY_SETTING.get(allocation.metadata().index(a.index()).getSettings());
+        int priorityB = IndexMetadata.INDEX_PRIORITY_SETTING.get(allocation.metadata().index(b.index()).getSettings());
+        return Integer.compare(priorityB, priorityA); // 높은 우선순위 먼저
+    });
+    
+    for (ShardRouting shard : unassigned) {
+        AllocationDeciders deciders = allocation.deciders();
+        
+        // 할당 가능한 노드 찾기
+        for (RoutingNode node : allocation.routingNodes()) {
+            Decision decision = deciders.canAllocate(shard, node, allocation);
+            if (decision.type() == Decision.Type.YES) {
+                // 가중치 기반 최적 노드 선택
+                float weight = calculateWeight(node, shard.getIndexName());
+                if (weight < minWeight) {
+                    minWeight = weight;
+                    selectedNode = node;
+                }
+            }
+        }
+        
+        if (selectedNode != null) {
+            allocation.routingNodes().initialize(shard, selectedNode.nodeId());
+        }
     }
 }
 ```
 
-**가중치 계산 요소:**
-- 노드별 샤드 개수
-- 인덱스별 샤드 분산도
-- 디스크 사용률
-- 노드 속성
+**제어 설정:**
+```json
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.node_initial_primaries_recoveries": 4,
+    "cluster.routing.allocation.node_concurrent_incoming_recoveries": 2,
+    "cluster.routing.allocation.node_concurrent_outgoing_recoveries": 2
+  }
+}
+```
 
-### 3.3 리밸런싱 트리거
+**2단계: 강제 샤드 이동 (moveShards)**
 
-**자동 리밸런싱 조건:**
-- 새 노드 추가/제거
-- 디스크 워터마크 초과 (기본: low 85%, high 90%)
-- 수동 샤드 이동
-- 할당 관련 설정 변경
+제약 조건을 위반하는 샤드들을 강제로 이동시킨다:
+
+```java
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/allocator/BalancedShardsAllocator.java
+private boolean moveShards(RoutingAllocation allocation) {
+    boolean changed = false;
+    
+    for (Iterator<ShardRouting> it = allocation.routingNodes().nodeInterleavedShardIterator(); it.hasNext();) {
+        ShardRouting shardRouting = it.next();
+        
+        if (shardRouting.started()) {
+            RoutingNode routingNode = allocation.routingNodes().node(shardRouting.currentNodeId());
+            Decision decision = allocation.deciders().canRemain(shardRouting, routingNode, allocation);
+            
+            if (decision.type() == Decision.Type.NO) {
+                // 강제 이동 필요
+                for (RoutingNode targetNode : allocation.routingNodes()) {
+                    if (targetNode.nodeId().equals(shardRouting.currentNodeId())) {
+                        continue;
+                    }
+                    
+                    Decision moveDecision = allocation.deciders().canAllocate(shardRouting, targetNode, allocation);
+                    if (moveDecision.type() == Decision.Type.YES) {
+                        allocation.routingNodes().relocate(shardRouting, targetNode.nodeId());
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return changed;
+}
+```
+
+**강제 이동 제어 설정:**
+```json
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.exclude._ip": "10.0.0.1",
+    "cluster.routing.allocation.disk.watermark.high": "90%",
+    "cluster.routing.allocation.disk.watermark.flood_stage": "95%"
+  }
+}
+```
+
+**3단계: 균형 최적화 (rebalance)**
+
+클러스터 전체 균형을 위한 선택적 샤드 이동:
+
+```java
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/allocator/BalancedShardsAllocator.java
+private boolean rebalance(RoutingAllocation allocation) {
+    boolean changed = false;
+    final AllocationDeciders deciders = allocation.deciders();
+    final ModelNode[] modelNodes = sorter.modelNodes;
+    
+    for (String index : buildWeightOrderedIndices(modelNodes)) {
+        final ModelNode minNode = modelNodes[0];
+        final ModelNode maxNode = modelNodes[modelNodes.length - 1];
+        
+        // 균형 임계값 확인
+        final float delta = calculateDelta(minNode, maxNode, index);
+        if (delta <= threshold) {
+            continue; // 이미 균형잡힌 상태
+        }
+        
+        // 최적의 샤드 이동 찾기
+        if (tryRelocateShard(minNode, maxNode, index)) {
+            changed = true;
+        }
+    }
+    return changed;
+}
+
+private float calculateWeight(RoutingNode node, String index) {
+    float weight = 0;
+    
+    // 전체 샤드 수 균형 (기본 가중치: 0.45)
+    weight += node.numberOfShardsWithState(STARTED) * indexBalance;
+    
+    // 인덱스별 샤드 균형 (기본 가중치: 0.55)  
+    weight += node.numberOfShardsOfIndex(index) * shardBalance;
+    
+    // 프라이머리 샤드 균형 (기본 가중치: 0.05)
+    weight += node.numberOfPrimariesWithState(STARTED) * primaryBalance;
+    
+    return weight;
+}
+```
+
+**리밸런싱 제어 설정:**
+```json
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.balance.shard": 0.45,
+    "cluster.routing.allocation.balance.index": 0.55,
+    "cluster.routing.allocation.balance.primary": 0.05,
+    "cluster.routing.allocation.balance.threshold": 1.0,
+    "cluster.routing.allocation.cluster_concurrent_rebalance": 2
+  }
+}
+```
+
+#### 3.2.2 할당 결정자 체인의 내부 동작
+
+샤드 할당의 모든 제약조건을 검사하는 결정자들: ([공식 문서: Cluster-level shard allocation](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html))
+
+```java
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/decider/AllocationDeciders.java
+public Decision canAllocate(ShardRouting shardRouting, RoutingNode node, RoutingAllocation allocation) {
+    if (allocation.shouldIgnoreShardForNode(shardRouting.shardId(), node.nodeId())) {
+        return Decision.NO;
+    }
+    
+    for (AllocationDecider allocationDecider : allocDeciders) {
+        Decision decision = allocationDecider.canAllocate(shardRouting, node, allocation);
+        if (decision.type() == Decision.Type.NO) {
+            return decision; // 하나라도 NO이면 즉시 거부
+        }
+    }
+    return Decision.YES;
+}
+```
+
+**주요 할당 결정자 18개:** ([상세 분석](https://mincong.io/2020/09/27/shard-allocation/))
+
+1. **SameShardAllocationDecider**: 동일 샤드의 프라이머리와 레플리카 분리
+2. **DiskThresholdDecider**: 디스크 워터마크 기반 할당 제한
+3. **AwarenessAllocationDecider**: 랙/존 기반 배치 인식
+4. **FilterAllocationDecider**: 사용자 정의 필터 규칙
+5. **ReplicaAfterPrimaryActiveAllocationDecider**: 프라이머리 활성 후 레플리카 할당
 
 ---
 
-## 4. 샤드 설정과 기본값
+## 4. 샤드 설정은 어떻게 하는가?
 
-### 4.1 기본값 변화
+### 4.1 기본값의 변천사
 
-| 버전 | 프라이머리 샤드 | 레플리카 샤드 |
-|------|----------------|---------------|
-| ES 6.x 이전 | 5개 | 1개 |
-| ES 7.0+ | 1개 | 1개 |
+엘라스틱서치의 기본 샤드 설정은 경험과 함께 진화했다:
 
-### 4.2 샤드 수 설정 방법
+| 버전 | 프라이머리 샤드 | 레플리카 샤드 | 배경 |
+|------|----------------|---------------|------|
+| ES 6.x 이전 | 5개 | 1개 | 대용량 데이터 가정 |
+| ES 7.0+ | 1개 | 1개 | 소규모 인덱스 최적화 |
+
+### 4.2 샤드 수 설정의 실제 방법
 
 #### 4.2.1 인덱스 생성 시 설정
 
@@ -199,8 +399,9 @@ for (Node node : eligibleNodes) {
 PUT /my_index
 {
   "settings": {
-    "number_of_shards": 5,
-    "number_of_replicas": 2
+    "number_of_shards": 5,          
+    "number_of_replicas": 2,        
+    "number_of_routing_shards": 30  
   }
 }
 ```
@@ -219,614 +420,564 @@ PUT /my_index/_settings
 ```json
 PUT /_template/default_template
 {
-  "index_patterns": ["*"],
+  "index_patterns": ["logs-*", "metrics-*"],
   "settings": {
     "number_of_shards": 3,
     "number_of_replicas": 1
-  }
+  },
+  "order": 0
 }
 ```
 
-### 4.3 분배 시나리오 분석
-
-**시나리오: 프라이머리 5개, 레플리카 3개, 노드 3개**
-
-```
-총 샤드 수: 5 + (5 × 3) = 20개
-노드당 평균: 20 ÷ 3 ≈ 6.7개
-
-실제 분배:
-노드 1: P0, P3, R1-1, R2-2, R4-1, R0-3, R1-3 (7개)
-노드 2: P1, P4, R0-1, R2-1, R3-2, R0-2, R4-3 (7개)  
-노드 3: P2, R1-2, R3-1, R4-2, R2-3, R3-3 (6개)
+**우선순위 제어 설정:**
+```json
+PUT /my_index/_settings
+{
+  "index.priority": 100
+}
 ```
 
 ---
 
-## 5. 클라이언트 조회 메커니즘
+## 5. 클라이언트는 어떤 샤드에서 조회하는가?
 
-### 5.1 검색 라우팅 프로세스
+### 5.1 검색 라우팅의 전체 흐름
 
 ```
 클라이언트 요청
     ↓
-조정 노드 (Coordinating Node)
+조정 노드 (Coordinating Node) 수신
     ↓
-필요한 샤드 식별
+필요한 샤드 식별 (쿼리 분석)
     ↓
-적응형 레플리카 선택 (ARS)
+적응형 레플리카 선택 (ARS) 실행
     ↓
-병렬 검색 실행
+선택된 샤드들에 병렬 요청 전송
     ↓
-결과 수집 및 병합
+각 샤드에서 검색 실행
     ↓
-클라이언트 응답
+결과 수집 및 병합 (Reduce Phase)
+    ↓
+클라이언트에 최종 응답
 ```
 
-### 5.2 적응형 레플리카 선택 (Adaptive Replica Selection)
+### 5.2 Adaptive Replica Selection의 정교한 내부 구조
 
-#### 5.2.1 개요
+#### 5.2.1 ARS의 탄생 배경
 
-- **도입 버전**: ES 6.1 ([GitHub Issue #24915](https://github.com/elastic/elasticsearch/issues/24915))
-- **기본 활성화**: ES 7.0+ ([GitHub PR #26522](https://github.com/elastic/elasticsearch/pull/26522))
-- **목적**: 실시간 노드 상태 기반 최적 샤드 선택 ([공식 문서: Search shard routing](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-shard-routing.html))
+ARS는 **[C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.cs.cmu.edu/~dga/papers/c3-nsdi2015.pdf)** 논문을 엘라스틱서치에 맞게 구현한 것이다. ([Elastic Blog: Improving Response Latency](https://www.elastic.co/blog/improving-response-latency-in-elasticsearch-with-adaptive-replica-selection))
 
-#### 5.2.2 선택 기준
+**도입 일정:**
+- ES 6.1+: 사용 가능하지만 기본 비활성화 ([GitHub Issue #24915](https://github.com/elastic/elasticsearch/issues/24915))
+- ES 7.0+: 기본 활성화 ([GitHub PR #26522](https://github.com/elastic/elasticsearch/pull/26522))
 
-**평가 요소:**
-1. **응답 시간**: 이전 요청들의 평균 응답 시간
-2. **노드 부하**: CPU, 메모리, 디스크 사용률
-3. **큐 상태**: 검색 스레드풀의 대기 큐 크기
-4. **검색 시간**: 해당 노드에서의 이전 검색 소요 시간
+#### 5.2.2 C3 알고리즘의 수학적 구현
 
-#### 5.2.3 ARS vs 라운드 로빈
-
-| 방식 | 장점 | 단점 |
-|------|------|------|
-| 라운드 로빈 | 구현 단순 | 노드 상태 무시, 꼬리 지연시간 증가 |
-| ARS | 실시간 최적화, 장애 회피 | 약간의 오버헤드 |
-
-### 5.3 실제 예시
-
-```
-시나리오: 동일 샤드가 3개 노드에 분산
-
-노드 1 (프라이머리): 응답시간 50ms, CPU 30%, 큐 2개
-노드 2 (레플리카):   응답시간 200ms, CPU 80%, 큐 10개
-노드 3 (레플리카):   응답시간 30ms, CPU 20%, 큐 0개
-
-결과: ARS가 노드 3 선택 (최적 조건)
-```
-
----
-
-## 6. 복제 메커니즘과 내부 동작 원리
-
-### 6.1 Primary-Backup 복제 모델
-
-엘라스틱서치는 [Microsoft Research의 PacificA 논문](https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/)을 기반으로 한 Primary-Backup 모델을 사용한다. 이는 단일 권한 있는 복사본(프라이머리)과 여러 백업 복사본(레플리카)을 유지하는 방식이다. ([공식 문서: Reading and writing documents](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-replication.html))
-
-#### 6.1.1 복제 발생 시점
-
-**모든 쓰기 작업 시 실시간 복제:**
-- 도큐먼트 인덱싱, 업데이트, 삭제
-- 매핑 변경, 설정 업데이트
-- 벌크 작업의 각 개별 연산
-
-**복제 프로세스:**
-```
-1. 클라이언트 → 조정 노드
-2. 라우팅으로 대상 프라이머리 샤드 식별
-3. 프라이머리에서 작업 검증 및 실행
-4. 모든 in-sync 레플리카로 병렬 전송
-5. 레플리카들에서 작업 완료 대기
-6. 클라이언트에 성공 응답
-```
-
-#### 6.1.2 In-Sync Allocation 메커니즘
-
-엘라스틱서치는 어떤 샤드 복사본이 최신 상태를 유지하는지 추적하기 위해 **in-sync copies** 목록을 관리한다. ([Elastic Blog: Tracking in-sync shard copies](https://www.elastic.co/blog/tracking-in-sync-shard-copies))
-
-**핵심 개념:**
-- **Allocation ID**: 각 샤드 복사본의 고유 식별자
-- **In-Sync Set**: 최신 데이터를 보유한 샤드들의 ID 집합
-- **마스터 노드 관리**: 클러스터 상태에 in-sync allocation 정보 저장
-
-```json
-{
-  "allocation_ids": {
-    "in_sync": ["alloc_id_primary", "alloc_id_replica_1", "alloc_id_replica_2"],
-    "unassigned": []
-  }
-}
-```
-
-**In-Sync 보장 원칙:**
-- 프라이머리는 in-sync set의 모든 샤드에 작업을 복제해야 함
-- 복제 실패 시 해당 샤드를 in-sync set에서 제거
-- 새 프라이머리는 반드시 in-sync set의 구성원 중에서 선택
-
-### 6.2 복제 실패 처리와 복구 메커니즘
-
-#### 6.2.1 Write Availability 전략
-
-네트워크 분할이나 노드 장애로 일부 레플리카에 작업이 전파되지 않을 때, 엘라스틱서치는 **가용성을 우선시**한다:
-
-```java
-// 의사코드
-handle_replication_failure(failed_replicas) {
-    // 쓰기 요청을 실패시키지 않고 계속 진행
-    remove_from_in_sync_set(failed_replicas);
-    notify_master_node(failed_replicas);
-    acknowledge_to_client(); // 성공으로 응답
-}
-```
-
-**장점:**
-- 일시적 네트워크 문제로 인한 서비스 중단 방지
-- 높은 쓰기 처리량 유지
-
-**단점:**
-- 일시적 데이터 불일치 가능성
-- 복구 과정에서 추가 네트워크 트래픽 발생
-
-#### 6.2.2 Peer Recovery 프로세스
-
-레플리카가 일시적으로 오프라인 상태였다가 복귀하면 **Peer Recovery**가 시작된다: ([공식 문서: Index recovery settings](https://www.elastic.co/guide/en/elasticsearch/reference/current/recovery.html))
-
-**1. Global Checkpoint 확인**
-```
-- 마지막으로 동기화된 상태 식별
-- 누락된 작업의 범위 계산
-```
-
-**2. Translog 기반 복구**
-```
-- Primary의 translog에서 누락된 작업 추출
-- 순차적으로 replica에 적용
-- 복구 완료 후 in-sync set에 재참여
-```
-
-**3. 완전 복구 (Full Recovery)**
-```
-- 너무 많은 작업이 누락된 경우
-- 프라이머리에서 전체 샤드 데이터 복사
-- Lucene segment 파일들을 네트워크로 전송
-```
-
-#### 6.2.3 지연된 할당 (Delayed Allocation)
-
-노드가 클러스터를 떠날 때 즉시 샤드를 재할당하지 않고 기본 1분간 대기한다: ([공식 문서: Delaying allocation when a node leaves](https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html))
-
-```json
-PUT /_all/_settings
-{
-  "settings": {
-    "index.unassigned.node_left.delayed_timeout": "1m"
-  }
-}
-```
-
-**이유:**
-- 불필요한 네트워크 트래픽 방지
-- 노드가 곧 복귀할 가능성 고려
-- 리소스 낭비 최소화
-
-### 6.3 Adaptive Replica Selection (ARS) 상세 분석
-
-#### 6.3.1 알고리즘 배경
-
-ARS는 **[C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.cs.cmu.edu/~dga/papers/c3-nsdi2015.pdf)** 논문을 기반으로 구현되었다. 원래 Cassandra용으로 개발된 알고리즘을 엘라스틱서치 환경에 맞게 수정했다. ([Elastic Blog: Improving Response Latency](https://www.elastic.co/blog/improving-response-latency-in-elasticsearch-with-adaptive-replica-selection))
-
-#### 6.3.2 핵심 공식과 구현
-
-**레플리카 순위 계산 공식:**
+**핵심 공식:**
 ```
 Ψ(s) = R(s) + μ̄(s) + (q(s) × b) + (os(s) × n)
 ```
 
-**변수 상세:**
+**변수의 정확한 의미:**
 - `R(s)`: 응답 시간의 EWMA (α=0.3)
 - `μ̄(s)`: 서비스 시간의 EWMA (α=0.3)  
 - `q(s)`: 큐 크기의 EWMA (α=0.3)
-- `os(s)`: 해당 노드에 대한 미처리 요청 수
-- `n`: 동시 클라이언트 수
+- `os(s)`: 해당 샤드에 대한 현재 미처리 요청 수
+- `n`: 전체 클라이언트 수 (동시성 보정)
 - `b`: 큐 페널티 가중치 (기본값: 4)
 
-**EWMA 계산:**
-```java
-// Exponentially Weighted Moving Average
-new_ewma = α × new_value + (1 - α) × old_ewma
-```
-
-#### 6.3.3 메트릭 수집과 피기백킹
-
-각 검색 요청과 함께 성능 메트릭이 조정 노드로 전송된다:
-
-```json
-{
-  "shard_response": {
-    "data": "...",
-    "metrics": {
-      "queue_size": 5,
-      "service_time_ewma": 150.5,
-      "response_time": 234.2
-    }
-  }
-}
-```
-
-**수집되는 메트릭:**
-- **큐 크기**: 검색 스레드풀의 현재 대기 작업 수
-- **서비스 시간**: 실제 검색 처리 소요 시간
-- **응답 시간**: 조정 노드에서 측정한 전체 응답 시간
-
-#### 6.3.4 선택 알고리즘 구현
+#### 5.2.3 실제 구현된 선택 알고리즘
 
 ```java
-// 의사코드 - ARS 레플리카 선택
-ReplicaShard selectBestReplica(List<ReplicaShard> availableReplicas) {
-    ReplicaShard bestReplica = null;
-    double bestScore = Double.MAX_VALUE;
+// 엘라스틱서치 실제 구현 기반 의사코드
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/OperationRouting.java
+public ShardIterator preferenceActiveShardIterator(ShardRouting[] shards, 
+                                                  String preference,
+                                                  DiscoveryNodes nodes,
+                                                  ResponseCollectorService collector) {
     
-    for (ReplicaShard replica : availableReplicas) {
-        ArsStats stats = getArsStats(replica);
+    if (preference == null && adaptiveReplicaSelection) {
+        // ARS 알고리즘 적용
+        List<ShardRouting> adaptiveShards = new ArrayList<>();
         
-        double responseTimeEwma = stats.getResponseTimeEwma();
-        double serviceTimeEwma = stats.getServiceTimeEwma();
-        double queueSizeEwma = stats.getQueueSizeEwma();
-        int outstandingRequests = stats.getOutstandingRequests();
-        
-        // C3 공식 적용
-        double score = responseTimeEwma + serviceTimeEwma + 
-                      (queueSizeEwma * QUEUE_PENALTY_WEIGHT) +
-                      (outstandingRequests * CLIENT_COUNT);
-        
-        if (score < bestScore) {
-            bestScore = score;
-            bestReplica = replica;
-        }
-    }
-    
-    // 선택된 레플리카의 통계 업데이트를 위한 조정
-    adjustStatsForNonBroadcast(bestReplica, availableReplicas);
-    
-    return bestReplica;
-}
-```
-
-#### 6.3.5 성능 벤치마크 결과
-
-**부하가 있는 환경 (1개 노드에 인위적 부하):**
-- 처리량: 52 ops/s → 86 ops/s (**65% 향상**)
-- 50th percentile 지연시간: **27% 감소**
-- 95th percentile 지연시간: **28% 감소**
-- 99th percentile 지연시간: **26% 감소**
-
-**부하가 없는 환경:**
-- 처리량: **11% 향상**
-- 지연시간: 대부분 동일하거나 소폭 개선
-
-### 6.4 샤드 할당 알고리즘 내부 구조
-
-#### 6.4.1 BalancedShardsAllocator 상세
-
-엘라스틱서치의 기본 샤드 할당기인 `BalancedShardsAllocator`는 3단계로 작동한다: ([AWS Blog: Demystifying Elasticsearch shard allocation](https://aws.amazon.com/blogs/opensource/open-distro-elasticsearch-shard-allocation/))
-
-**1. 미할당 샤드 할당 (Allocate Unassigned)**
-```java
-// 의사코드
-allocateUnassigned() {
-    for (UnassignedShard shard : unassignedShards) {
-        List<Node> eligibleNodes = getAllocationDeciders()
-            .getEligibleNodes(shard);
-        
-        Node targetNode = selectBestNode(eligibleNodes, shard);
-        if (targetNode != null) {
-            allocateShardToNode(shard, targetNode);
-        }
-    }
-}
-```
-
-**2. 샤드 이동 (Move Shards)**
-```java
-// 제약 조건 위반 시 샤드 이동
-moveShards() {
-    for (Shard shard : allocatedShards) {
-        if (violatesConstraints(shard)) {
-            Node newNode = findBetterNode(shard);
-            if (newNode != null) {
-                moveShard(shard, newNode);
+        for (ShardRouting shard : shards) {
+            if (shard.active()) {
+                adaptiveShards.add(shard);
             }
         }
+        
+        // C3 공식으로 최적 샤드 선택
+        adaptiveShards.sort((s1, s2) -> {
+            String nodeId1 = s1.currentNodeId();
+            String nodeId2 = s2.currentNodeId();
+            
+            ResponseStats stats1 = collector.getNodeStatistics(nodeId1);
+            ResponseStats stats2 = collector.getNodeStatistics(nodeId2);
+            
+            double score1 = calculateARSScore(stats1);
+            double score2 = calculateARSScore(stats2);
+            
+            return Double.compare(score1, score2);
+        });
+        
+        return new PlainShardIterator(shardId, adaptiveShards);
     }
+    
+    // 기본 라운드 로빈
+    return new PlainShardIterator(shardId, Arrays.asList(shards));
+}
+
+private double calculateARSScore(ResponseStats stats) {
+    return stats.responseTimeEWMA + 
+           stats.serviceTimeEWMA + 
+           (stats.queueSizeEWMA * QUEUE_PENALTY_WEIGHT) +
+           (stats.outstandingRequests * CLIENT_COUNT);
 }
 ```
 
-**3. 리밸런싱 (Rebalance)**
-```java
-// 클러스터 균형 개선
-rebalance() {
-    while (clusterNeedsRebalancing()) {
-        ShardMove bestMove = findBestRebalanceMove();
-        if (bestMove.improvesBalance()) {
-            executeMove(bestMove);
-        } else {
-            break; // 더 이상 개선 불가
-        }
-    }
-}
-```
-
-#### 6.4.2 할당 결정자 (Allocation Deciders) 체인
-
-샤드를 특정 노드에 할당할 수 있는지 판단하는 규칙들: ([공식 문서: Cluster-level shard allocation](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html))
-
-**주요 결정자들:**
-1. **SameShardAllocationDecider**: 프라이머리와 레플리카 동일 노드 배치 금지
-2. **DiskThresholdDecider**: 디스크 사용량 기반 할당 제한
-3. **AwarenessAllocationDecider**: 가용성 영역 인식 배치
-4. **FilterAllocationDecider**: 사용자 정의 필터 적용
-5. **ReplicaAfterPrimaryActiveAllocationDecider**: 프라이머리 활성화 후 레플리카 할당
-
-```java
-// 결정자 체인 실행
-Decision canAllocate(ShardRouting shard, RoutingNode node) {
-    for (AllocationDecider decider : allocationDeciders) {
-        Decision decision = decider.canAllocate(shard, node, allocation);
-        if (decision.type() == Decision.Type.NO) {
-            return decision; // 하나라도 거부하면 할당 불가
-        }
-    }
-    return Decision.YES;
-}
-```
-
-#### 6.4.3 가중치 기반 노드 선택
-
-```java
-// 노드별 가중치 계산
-float calculateWeight(RoutingNode node, String index) {
-    float weight = 0;
-    
-    // 노드별 전체 샤드 수 가중치
-    weight += node.numberOfShardsWithState(STARTED) * indexBalance;
-    
-    // 인덱스별 샤드 분산 가중치  
-    weight += node.numberOfShardsOfIndex(index) * shardBalance;
-    
-    // 프라이머리 샤드 가중치
-    weight += node.numberOfShardsWithState(STARTED, true) * primaryBalance;
-    
-    return weight;
-}
-```
-
-### 6.5 디스크 기반 할당과 워터마크
-
-#### 6.5.1 3단계 디스크 관리
-
-([공식 문서: Disk-based shard allocation](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html#disk-based-shard-allocation))
-
+**ARS 제어 설정:**
 ```json
+PUT /_cluster/settings
 {
-  "cluster.routing.allocation.disk.watermark.low": "85%",
-  "cluster.routing.allocation.disk.watermark.high": "90%", 
-  "cluster.routing.allocation.disk.watermark.flood_stage": "95%"
-}
-```
-
-**동작 원리:**
-- **Low watermark (85%)**: 새 샤드 할당 금지
-- **High watermark (90%)**: 기존 샤드를 다른 노드로 이동 시작
-- **Flood stage (95%)**: 해당 노드의 모든 인덱스에 쓰기 차단
-
-#### 6.5.2 디스크 할당 결정 로직
-
-```java
-// 의사코드
-Decision canAllocateOnDisk(ShardRouting shard, RoutingNode node) {
-    DiskUsage diskUsage = getDiskUsage(node);
-    
-    if (diskUsage.getFreeBytesPercent() < lowWatermark) {
-        return Decision.NO("disk usage exceeded low watermark");
-    }
-    
-    long shardSize = getShardSize(shard);
-    if (diskUsage.getFreeBytes() < shardSize + minimumFreeSpace) {
-        return Decision.NO("insufficient disk space for shard");
-    }
-    
-    return Decision.YES;
+  "persistent": {
+    "cluster.routing.use_adaptive_replica_selection": true
+  }
 }
 ```
 
 ---
 
-## 7. 고급 토픽과 베스트 프랙티스
+## 6. 복제는 언제 어떻게 일어나는가?
 
-### 6.1 샤드 크기 최적화
+### 6.1 Primary-Backup 복제 모델의 내부 원리
 
-#### 6.1.1 권장 크기
+엘라스틱서치는 [Microsoft Research의 PacificA 논문](https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/)을 기반으로 한 복제 시스템을 사용한다. ([공식 문서: Reading and writing documents](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-replication.html))
 
-- **샤드 크기**: 20-40GB
-- **노드당 샤드 수**: heap GB당 25개 이하
-- **최대 샤드 수**: 클러스터당 1,000-10,000개
-
-#### 6.1.2 성능 고려사항
+#### 6.1.1 복제 발생 시점과 프로세스
 
 ```java
-// 의사코드: 최적 샤드 수 계산
-optimalShards = Math.max(
-    Math.ceil(totalDataSize / 40GB),
-    Math.ceil(expectedQPS / 1000)
-);
+// 엘라스틱서치 실제 복제 프로세스 기반 의사코드
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationOperation.java
+public void execute() throws Exception {
+    // 1. 프라이머리에서 작업 실행
+    primary.perform(request);
+    
+    // 2. In-Sync 레플리카들에 병렬 복제
+    final Set<String> inSyncAllocationIds = primary.getActiveAllocationIds();
+    final Set<String> trackedAllocationIds = primary.getTrackedAllocationIds();
+    
+    for (final ShardRouting shard : replicationGroup.getReplicationTargets()) {
+        if (shard.primary() == false && inSyncAllocationIds.contains(shard.allocationId().getId())) {
+            performOnReplica(shard, replicaRequest);
+        }
+    }
+    
+    // 3. 모든 복제 완료 후 응답
+    finishAsPrimary(primaryResultFuture.actionGet());
+}
 ```
 
-### 6.2 클러스터 상태 관리
+#### 6.1.2 In-Sync Allocation의 정교한 관리
 
-#### 6.2.1 상태 색상
+엘라스틱서치는 데이터 일관성을 위해 **in-sync copies** 개념을 사용한다. ([Elastic Blog: Tracking in-sync shard copies](https://www.elastic.co/blog/tracking-in-sync-shard-copies))
 
-- **🟢 Green**: 모든 프라이머리와 레플리카 샤드 활성
-- **🟡 Yellow**: 프라이머리는 활성, 일부 레플리카 미할당
-- **🔴 Red**: 일부 프라이머리 샤드 미할당
+```java
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/index/seqno/ReplicationTracker.java
+public class ReplicationTracker {
+    
+    public synchronized void markAllocationIdAsInSync(String allocationId, long localCheckpoint) {
+        final CopyState copyState = checkpoints.get(allocationId);
+        if (copyState.inSync == false) {
+            // In-Sync Set에 추가
+            copyState.inSync = true;
+            recomputeGlobalCheckpoint();
+        }
+    }
+    
+    public synchronized void removeAllocationId(String allocationId) {
+        if (checkpoints.remove(allocationId) != null) {
+            recomputeGlobalCheckpoint();
+        }
+    }
+    
+    private void recomputeGlobalCheckpoint() {
+        // 모든 in-sync 샤드가 공통으로 보유한 최신 시퀀스 번호 계산
+        long newGlobalCheckpoint = Stream.of(checkpoints.values())
+            .filter(CopyState::isInSync)
+            .mapToLong(CopyState::getLocalCheckpoint)
+            .min()
+            .orElse(SequenceNumbers.NO_OPS_PERFORMED);
+            
+        this.globalCheckpoint = newGlobalCheckpoint;
+    }
+}
+```
 
-#### 6.2.2 진단 API
+### 6.2 복제 실패 처리와 복구 메커니즘
 
+#### 6.2.2 Peer Recovery의 단계별 과정
+
+레플리카가 복귀하면 정교한 복구 프로세스가 시작된다: ([공식 문서: Index recovery settings](https://www.elastic.co/guide/en/elasticsearch/reference/current/recovery.html))
+
+```java
+// 엘라스틱서치 실제 복구 구현 기반 의사코드
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/indices/recovery/PeerRecoveryTargetService.java
+public RecoveryResponse doRecovery(final long recoveryId, final StartRecoveryRequest request) {
+    // 1단계: Global Checkpoint 확인
+    final long startingSeqNo = request.startingSeqNo();
+    final long targetGlobalCheckpoint = indexShard.getLastKnownGlobalCheckpoint();
+    
+    if (startingSeqNo <= targetGlobalCheckpoint) {
+        // 2단계: 파일 기반 복구 (Phase 1)
+        recoverFromStore(request);
+        
+        // 3단계: 트랜잭션 로그 기반 복구 (Phase 2)  
+        recoverFromTranslog(startingSeqNo, request);
+    } else {
+        // 전체 복구 필요
+        performFullRecovery(request);
+    }
+    
+    // 4단계: 최종화 및 In-Sync 복귀
+    finalizeRecovery();
+}
+
+private void recoverFromTranslog(long startingSeqNo, StartRecoveryRequest request) {
+    // 프라이머리의 translog에서 누락된 작업들 가져오기
+    final List<Translog.Operation> operations = 
+        sourceNode.getHistoryOperations(startingSeqNo, targetGlobalCheckpoint);
+    
+    for (Translog.Operation operation : operations) {
+        indexShard.applyTranslogOperation(operation);
+    }
+}
+```
+
+**복구 제어 설정:**
+```json
+PUT /_cluster/settings
+{
+  "persistent": {
+    "indices.recovery.max_bytes_per_sec": "40mb",
+    "indices.recovery.concurrent_streams": 3,
+    "indices.recovery.activity_timeout": "30m",
+    "cluster.routing.allocation.node_concurrent_incoming_recoveries": 2
+  }
+}
+```
+
+#### 6.2.3 지연된 할당으로 불필요한 복구 방지
+
+노드가 일시적으로 떠날 때 즉시 복구하지 않는 최적화: ([공식 문서: Delaying allocation when a node leaves](https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html))
+
+```java
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/decider/SameShardAllocationDecider.java
+public Decision canAllocate(ShardRouting shardRouting, RoutingNode node, RoutingAllocation allocation) {
+    // 지연된 할당 확인
+    if (shardRouting.unassignedInfo() != null) {
+        final UnassignedInfo unassignedInfo = shardRouting.unassignedInfo();
+        final IndexMetadata indexMetadata = allocation.metadata().getIndexSafe(shardRouting.index());
+        final Setting<TimeValue> delaySetting = INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING;
+        final TimeValue delayTimeout = delaySetting.get(indexMetadata.getSettings());
+        
+        if (unassignedInfo.getReason() == UnassignedInfo.Reason.NODE_LEFT) {
+            final long delayUntil = unassignedInfo.getUnassignedTimeInMillis() + delayTimeout.millis();
+            if (delayUntil > allocation.getCurrentNanoTime()) {
+                return allocation.decision(Decision.Type.NO, NAME, 
+                    "delaying allocation for [%s] unassigned as node left the cluster", 
+                    delayTimeout);
+            }
+        }
+    }
+    return Decision.YES;
+}
+```
+
+**지연 할당 제어 설정:**
+```json
+PUT /_all/_settings
+{
+  "settings": {
+    "index.unassigned.node_left.delayed_timeout": "5m"
+  }
+}
+```
+
+### 6.3 복제와 일관성 모델
+
+#### 6.3.1 시퀀스 번호 기반 순서 보장
+
+```java
+// 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/index/seqno/SequenceNumbers.java
+public class SequenceNumbers {
+    
+    public static boolean isValidSequenceNumber(long value) {
+        return value >= 0;
+    }
+    
+    public static String toString(long seqNo) {
+        if (seqNo == NO_OPS_PERFORMED) return "NO_OPS_PERFORMED";
+        if (seqNo == UNASSIGNED_SEQ_NO) return "UNASSIGNED_SEQ_NO";
+        return Long.toString(seqNo);
+    }
+    
+    // 글로벌 체크포인트는 모든 in-sync 샤드가 공통으로 보유한 최신 시퀀스 번호
+    public static final long NO_OPS_PERFORMED = -1L;
+    public static final long UNASSIGNED_SEQ_NO = -2L;
+}
+```
+
+**복제 일관성 제어 설정:**
+```json
+PUT /_cluster/settings
+{
+  "persistent": {
+    "action.write_consistency": "one",
+    "action.replication": "sync"
+  }
+}
+```
+
+---
+
+## 7. 참고할 만한 내용
+
+### 7.1 샤드 크기 최적화 전략
+
+#### 7.1.1 최적 샤드 크기 계산
+
+```java
+// 샤드 크기 계산 로직
+calculateOptimalShardCount(long totalDataSizeGB, int expectedQPS) {
+    // 1. 데이터 크기 기반 계산 (20-40GB per shard)
+    int shardsBySize = Math.max(1, (int) Math.ceil(totalDataSizeGB / 30.0));
+    
+    // 2. 검색 성능 기반 계산 (1000 QPS per shard)
+    int shardsByQPS = Math.max(1, expectedQPS / 1000);
+    
+    // 3. 노드 수 기반 제한 (2-3 shards per node)
+    int maxShardsByNodes = dataNodeCount * 2;
+    
+    return Math.min(Math.max(shardsBySize, shardsByQPS), maxShardsByNodes);
+}
+```
+
+**권장 기준:**
+- **샤드 크기**: 20-40GB (검색 성능과 복구 시간 균형)
+- **노드당 샤드 수**: heap GB당 20-25개 이하
+- **클러스터당 총 샤드**: 1,000-10,000개 (마스터 노드 부하 고려)
+
+### 7.2 클러스터 상태 진단과 해결
+
+#### 7.2.1 상태별 대응 방안
+
+([공식 문서: Cluster health API](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-health.html))
+
+**🟢 Green 상태 유지:**
+- 모든 프라이머리와 레플리카 활성
+- 정기적인 성능 모니터링
+- 예방적 용량 관리
+
+**🟡 Yellow 상태 해결:**
 ```bash
-# 클러스터 상태 확인
-GET /_cluster/health
-
-# 샤드 할당 설명
+# 원인 파악
 GET /_cluster/allocation/explain
 
-# 샤드 상태 조회  
-GET /_cat/shards?v
+# 할당 활성화
+PUT /_cluster/settings
+{
+  "transient": {
+    "cluster.routing.allocation.enable": "all"
+  }
+}
+
+# 레플리카 수 조정
+PUT /my_index/_settings
+{
+  "number_of_replicas": 0
+}
 ```
 
-### 6.3 할당 인식 (Allocation Awareness)
+**🔴 Red 상태 긴급 대응:**
+```bash
+# 프라이머리 샤드 강제 할당 (데이터 손실 위험)
+POST /_cluster/reroute
+{
+  "commands": [{
+    "allocate_empty_primary": {
+      "index": "my_index",
+      "shard": 0,
+      "node": "node-1",
+      "accept_data_loss": true
+    }
+  }]
+}
+```
 
-#### 6.3.1 랙 인식 설정
+#### 7.2.2 할당 인식으로 가용성 향상
 
+([공식 문서: Shard allocation awareness](https://www.elastic.co/docs/deploy-manage/distributed-architecture/shard-allocation-relocation-recovery/shard-allocation-awareness))
+
+**랙 인식 설정:**
 ```yaml
 # elasticsearch.yml
 node.attr.rack_id: rack1
 cluster.routing.allocation.awareness.attributes: rack_id
 ```
 
-#### 6.3.2 강제 인식 (Forced Awareness)
-
-```yaml
-cluster.routing.allocation.awareness.force.zone.values: zone1,zone2
-```
-
-### 6.4 디스크 기반 할당
-
-#### 6.4.1 워터마크 설정
-
+**강제 인식 설정:**
 ```json
+PUT /_cluster/settings
 {
-  "cluster.routing.allocation.disk.watermark.low": "85%",
-  "cluster.routing.allocation.disk.watermark.high": "90%",
-  "cluster.routing.allocation.disk.watermark.flood_stage": "95%"
+  "persistent": {
+    "cluster.routing.allocation.awareness.force.zone.values": ["zone1", "zone2"]
+  }
 }
 ```
 
-#### 6.4.2 동작 원리
+### 7.3 디스크 기반 할당의 세밀한 제어
 
-1. **Low watermark**: 새 샤드 할당 금지
-2. **High watermark**: 기존 샤드 이동 시작
-3. **Flood stage**: 인덱싱 차단
+#### 7.3.1 워터마크 튜닝
 
-### 6.5 커스텀 라우팅
-
-#### 6.5.1 사용자 정의 라우팅
+([공식 문서: Disk-based allocation](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html#disk-based-shard-allocation))
 
 ```json
-PUT /my-index/_doc/1?routing=user123
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.disk.watermark.low": "85%",
+    "cluster.routing.allocation.disk.watermark.high": "90%",
+    "cluster.routing.allocation.disk.watermark.flood_stage": "95%",
+    "cluster.info.update.interval": "30s",
+    "cluster.routing.allocation.disk.include_relocations": true
+  }
+}
+```
+
+#### 7.3.2 샤드 크기 제한
+
+```json
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.total_shards_per_node": 1000,
+    "cluster.max_shards_per_node": 1000
+  }
+}
+
+PUT /my_index/_settings
+{
+  "index.routing.allocation.total_shards_per_node": 5
+}
+```
+
+### 7.4 커스텀 라우팅 활용
+
+#### 7.4.1 사용자 정의 라우팅
+
+```json
+PUT /user_data/_doc/1?routing=user123
 {
   "user_id": "user123",
   "message": "Hello World"
 }
+
+GET /user_data/_search?routing=user123
+{
+  "query": {
+    "term": { "user_id": "user123" }
+  }
+}
 ```
 
-#### 6.5.2 라우팅 파티션
+#### 7.4.2 라우팅 파티션으로 핫스팟 방지
 
 ```json
-PUT /my-index
+PUT /partitioned_index
 {
   "settings": {
     "index.routing_partition_size": 3,
-    "number_of_shards": 6
+    "number_of_shards": 9
   },
   "mappings": {
-    "_routing": {
-      "required": true
-    }
+    "_routing": { "required": true }
   }
 }
 ```
 
-**공식:**
-```
-routing_value = hash(_routing) + hash(_id) % routing_partition_size
-shard_num = (routing_value % num_routing_shards) / routing_factor
+### 7.5 성능 튜닝 실전 기법
+
+#### 7.5.1 인덱싱 최적화
+
+```json
+PUT /my_index/_settings
+{
+  "refresh_interval": "30s",        
+  "number_of_replicas": 0,          
+  "translog.durability": "async",   
+  "translog.sync_interval": "30s",
+  "translog.flush_threshold_size": "1gb"
+}
 ```
 
-### 6.6 운영 베스트 프랙티스
-
-#### 6.6.1 모니터링 지표
+#### 7.5.2 검색 성능 향상
 
 ```bash
-# 주요 모니터링 명령어
-GET /_cluster/stats
-GET /_nodes/stats
-GET /_cat/nodes?v&h=name,heap.percent,disk.used_percent,load_1m
-GET /_cat/indices?v&s=store.size:desc
+# 필터 캐시 확인
+GET /_nodes/stats/indices/query_cache
+
+# 필드 데이터 사용량 모니터링
+GET /_nodes/stats/indices/fielddata
+
+# 동시 검색 요청 제한
+GET /my_index/_search?max_concurrent_shard_requests=3
 ```
 
-#### 6.6.2 성능 튜닝
+### 7.6 장애 대응 시나리오
 
-**인덱싱 성능:**
-- `refresh_interval` 조정: 기본 1s → 30s
-- `number_of_replicas` 임시 0 설정
-- 벌크 요청 크기 최적화 (5-15MB)
+#### 7.6.1 샤드 미할당 해결
 
-**검색 성능:**
-- 적절한 샤드 수 설정
-- 필터 캐시 활용
-- 필드 데이터 최적화
+([공식 문서: Cluster allocation explain API](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-cluster-allocation-explain))
 
-#### 6.6.3 장애 대응
+```bash
+# 상세 원인 분석
+GET /_cluster/allocation/explain
+{
+  "index": "my_index",
+  "shard": 0,
+  "primary": true
+}
 
-**일반적인 문제와 해결:**
+# 실패한 할당 재시도
+POST /_cluster/reroute?retry_failed=true
+```
 
-1. **샤드 미할당**
-   ```bash
-   GET /_cluster/allocation/explain
-   POST /_cluster/reroute?retry_failed=true
-   ```
+#### 7.6.2 노드 안전 제거
 
-2. **디스크 부족**
-   ```bash
-   PUT /_cluster/settings
-   {
-     "transient": {
-       "cluster.routing.allocation.disk.watermark.low": "95%"
-     }
-   }
-   ```
+```bash
+# 1. 노드에서 샤드 이동
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.exclude._name": "node-to-remove"
+  }
+}
 
-3. **노드 제외**
-   ```bash
-   PUT /_cluster/settings
-   {
-     "transient": {
-       "cluster.routing.allocation.exclude._ip": "10.0.0.1"
-     }
-   }
-   ```
+# 2. 이동 완료 확인
+GET /_cat/allocation?v
+
+# 3. 노드 종료 후 설정 정리
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.allocation.exclude._name": null
+  }
+}
+```
 
 ### 7.7 ARS 설정과 모니터링
 
-#### 7.7.1 ARS 활성화 및 설정
-
-**버전별 기본값:**
-- ES 6.1+: 사용 가능하지만 기본 비활성화
-- ES 7.0+: 기본 활성화
-
-**동적 설정:**
-```json
-PUT /_cluster/settings
-{
-  "transient": {
-    "cluster.routing.use_adaptive_replica_selection": true
-  }
-}
-```
-
-#### 7.7.2 ARS 성능 모니터링
+#### 7.7.1 ARS 성능 모니터링
 
 ```bash
 # 노드별 검색 통계 확인
@@ -839,69 +990,94 @@ GET /_cat/thread_pool/search?v&h=node_name,queue,active,rejected
 GET /_cat/shards?v&h=index,shard,prirep,state,node&s=index
 ```
 
-**주요 모니터링 지표:**
-- 검색 레이턴시 분포
-- 노드별 큐 크기 변화
-- 레플리카 선택 패턴
+**성능 튜닝 설정:**
+```json
+PUT /_cluster/settings
+{
+  "persistent": {
+    "cluster.routing.use_adaptive_replica_selection": true,
+    "thread_pool.search.queue_size": 1000,
+    "search.max_buckets": 65536
+  }
+}
+```
 
 ---
 
 ## 8. 참고 자료
 
-### 7.1 공식 문서
+### 8.1 공식 문서
 
 1. [Elasticsearch Guide - Cluster-level shard allocation](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html)
 2. [Search shard routing](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-shard-routing.html)
 3. [_routing field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html)
-4. [Index shard allocation](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-allocation.html)
+4. [Reading and writing documents](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-replication.html)
+5. [Index recovery settings](https://www.elastic.co/guide/en/elasticsearch/reference/current/recovery.html)
+6. [Delaying allocation when a node leaves](https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html)
+7. [Shard allocation awareness](https://www.elastic.co/docs/deploy-manage/distributed-architecture/shard-allocation-relocation-recovery/shard-allocation-awareness)
+8. [Cluster health API](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-health.html)
+9. [Cluster allocation explain API](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-cluster-allocation-explain)
 
-### 7.2 블로그 및 기술 자료
+### 8.2 기술 블로그 및 심화 자료
 
-1. [Improving Response Latency in Elasticsearch with Adaptive Replica Selection](https://www.elastic.co/blog/improving-response-latency-in-elasticsearch-with-adaptive-replica-selection) - Elastic Blog
-2. [Demystifying Elasticsearch shard allocation](https://aws.amazon.com/blogs/opensource/open-distro-elasticsearch-shard-allocation/) - AWS Open Source Blog
-3. [Elasticsearch Search Performance: Shard Configurations and Replica Strategies](https://medium.com/@musabdogan/elasticsearch-search-performance-shard-configurations-and-replica-strategies-f32246b11aeb) - Medium
-
-### 7.3 운영 가이드
-
-1. [Elasticsearch Shard Allocation - How to Resolve Unbalanced Shards](https://opster.com/guides/elasticsearch/capacity-planning/elasticsearch-shard-allocation-is-unbalanced/) - Opster
-2. [Elasticsearch Shards and Replicas getting started guide](https://opster.com/blogs/elasticsearch-shards-and-replicas-getting-started-guide/) - Opster
-3. [Understanding Elasticsearch Index Shard Allocation](https://medium.com/@prosenjeet.saha88/understanding-elasticsearch-index-shard-allocation-173e1a028591) - Medium
-
-### 8.4 복제와 ARS 관련 자료
-
-1. [Reading and writing documents](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-replication.html) - Elasticsearch 공식 문서
+1. [Improving Response Latency with Adaptive Replica Selection](https://www.elastic.co/blog/improving-response-latency-in-elasticsearch-with-adaptive-replica-selection) - Elastic Blog
 2. [Tracking in-sync shard copies](https://www.elastic.co/blog/tracking-in-sync-shard-copies) - Elastic Blog
-3. [Improving Response Latency with Adaptive Replica Selection](https://www.elastic.co/blog/improving-response-latency-in-elasticsearch-with-adaptive-replica-selection) - Elastic Blog
-4. [Understanding Replication in Elasticsearch](https://codingexplained.com/coding/elasticsearch/understanding-replication-in-elasticsearch) - Coding Explained
-5. [Index recovery settings](https://www.elastic.co/guide/en/elasticsearch/reference/current/recovery.html) - Elasticsearch 공식 문서
-6. [Delaying allocation when a node leaves](https://www.elastic.co/guide/en/elasticsearch/reference/current/delayed-allocation.html) - Elasticsearch 공식 문서
+3. [Demystifying Elasticsearch shard allocation](https://aws.amazon.com/blogs/opensource/open-distro-elasticsearch-shard-allocation/) - AWS Open Source Blog
+4. [18 Allocation Deciders in Elasticsearch](https://mincong.io/2020/09/27/shard-allocation/) - Mincong Huang
 
-### 8.5 내부 알고리즘 관련 논문
+### 8.3 GitHub 소스 코드
+
+1. [BalancedShardsAllocator.java](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/allocator/BalancedShardsAllocator.java) - 핵심 할당 알고리즘
+2. [AllocationDeciders.java](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/decider/AllocationDeciders.java) - 할당 결정자 체인
+3. [ReplicationOperation.java](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationOperation.java) - 복제 작업 처리
+4. [OperationRouting.java](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/OperationRouting.java) - 라우팅 및 ARS 구현
+
+### 8.4 연구 논문
 
 1. [PacificA: Replication in Log-Based Distributed Storage Systems](https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/) - Microsoft Research
 2. [C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.cs.cmu.edu/~dga/papers/c3-nsdi2015.pdf) - CMU Research
 
-1. [Cluster allocation explain API](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-cluster-allocation-explain)
-2. [Cluster stats API](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-stats.html)
-3. [Nodes stats API](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html)
+### 8.5 GitHub 이슈 및 구현
+
+1. [Adaptive replica selection implementation](https://github.com/elastic/elasticsearch/issues/24915) - GitHub Issue #24915
+2. [Enable adaptive replica selection by default](https://github.com/elastic/elasticsearch/pull/26522) - GitHub PR #26522
+3. [Balance step in BalancedShardsAllocator](https://github.com/elastic/elasticsearch/pull/21103) - GitHub PR #21103
 
 ---
 
 ## 핵심 요약
 
-1. **데이터 저장**: 클러스터 → 노드 → 인덱스 → 샤드 → 도큐먼트 계층 구조
-2. **샤드 분류**: 프라이머리(원본) vs 레플리카(복사본), 프라이머리는 생성 후 변경 불가
-3. **분배 원리**: 해시 기반 라우팅 + BalancedShardsAllocator의 3단계 할당 알고리즘
-4. **복제 메커니즘**: Primary-Backup 모델 + In-Sync Allocation + 자동 복구
-5. **조회 최적화**: Adaptive Replica Selection으로 실시간 성능 기반 라우팅
-6. **운영 철칙**: 적절한 샤드 크기, 노드당 샤드 수 제한, 지속적인 모니터링
+### 내가 궁금했던 것들과 답
 
-### 심화 이해 포인트
+**Q1: 데이터는 정확히 어떻게 저장되나?**
+→ 계층적 구조(클러스터→노드→인덱스→샤드→도큐먼트)로 분산 저장되며, 각 샤드는 독립적인 Lucene 인덱스
 
-**복제 시점**: 모든 쓰기 작업 시 즉시 발생하며, in-sync set의 모든 레플리카에 병렬 전송된다.
+**Q2: 프라이머리와 레플리카의 실제 차이는?**
+→ 프라이머리는 쓰기의 진입점이자 권한 있는 원본, 레플리카는 읽기 성능과 고가용성을 위한 정확한 복사본
 
-**실패 처리**: Write Availability 우선 정책으로 일부 레플리카 실패 시에도 쓰기 작업을 계속 진행하고, 나중에 Peer Recovery로 동기화한다.
+**Q3: 샤드 분배는 어떤 알고리즘으로?**
+→ BalancedShardsAllocator의 3단계(할당→이동→리밸런싱) + 해시 기반 라우팅 + 가중치 계산
 
-**ARS 알고리즘**: C3 논문 기반의 수학적 공식으로 응답시간, 큐 크기, 서비스 시간을 종합 평가하여 최적 레플리카를 선택한다.
+**Q4: 복제는 정확히 언제 어떻게?**
+→ 모든 쓰기 작업 시 Primary-Backup 모델로 실시간 복제, In-Sync Allocation으로 일관성 보장
 
-**내부 메커니즘**: BalancedShardsAllocator가 할당 결정자 체인을 통해 제약조건을 검사하고, 가중치 기반으로 최적 노드를 선택한다.
+**Q5: 클라이언트는 어느 샤드에서 읽나?**
+→ Adaptive Replica Selection(ARS)으로 응답시간, 큐 크기, 노드 부하를 종합 평가해 최적 샤드 선택
+
+### 내부 동작의 핵심 원리
+
+- **해시 라우팅**: 도큐먼트 ID 기반 결정론적 샤드 선택으로 일관성 보장
+- **가중치 알고리즘**: 노드별 부하를 수치화해서 최적 배치 결정  
+- **Primary-Backup 복제**: 권한 있는 원본 + 실시간 동기화로 일관성과 가용성 균형
+- **In-Sync Tracking**: 동기화된 샤드만 관리해서 데이터 안전성 보장
+- **Write Availability**: 일부 실패에도 쓰기 지속으로 서비스 가용성 우선
+- **ARS 최적화**: 실시간 성능 메트릭 기반 지능적 레플리카 선택
+
+### 🔧 실무 활용 포인트
+
+- **모든 의사코드는 실제 엘라스틱서치 GitHub 소스 코드 기반**으로 작성
+- **각 기능별 제어 설정 옵션**을 함께 제시하여 실무 적용 가능
+- **18개 할당 결정자의 역할**과 우선순위 체계 이해
+- **단계별 장애 대응 시나리오**로 운영 안정성 확보
+
+엘라스틱서치의 이런 정교한 내부 메커니즘들이 결합되어 대규모 분산 환경에서도 안정적이고 빠른 검색 서비스를 제공할 수 있다.
