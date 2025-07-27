@@ -1,7 +1,7 @@
 ---
 
-title: NCP 적용 후기
-date: 2099-08-30
+title: MashUp 15기 - NCP 적용 후기
+date: 2025-07-27
 categories: [NCP]
 tags: [NCP]
 layout: post
@@ -13,49 +13,45 @@ mermaid: true
 
 # Q. 프로젝트 소개
 
-[개발 중인 서비스](https://piikii.co.kr)
+Flif'n은 금전운 기반 소비습관 개선 서비스다. 기존 가계부 앱들이 단순히 기록과 분석에만 집중하는 것과 달리, 게임화 요소를 통해 재미있게 소비습관을 개선할 수 있도록 설계했다. 매일 금전운 카드를 통해 개인화된 미션 난이도를 제공하고, 미션 성공률과 소비 패턴을 분석해 또래와 비교할 수 있는 리포트를 제공한다. 향후 카드 수집 시스템도 추가할 예정이다.
 
-모임 관리 서비스로 모임에 참여할 인원들과 함께 모임 계획을 구성할 수 있는 서비스이다.
-
-함께 모임 후보지를 모아오는 `방`이라는 개념이 있고 해당 방에 장소를 추가하여 일행들과 어떤 장소들이 있는지 상호 공유할 수 있고
-
-지정한 시간이 되면 추가해놓은 장소들을 투표하여 투표에서 선정된 장소들을 모아 하나의 모임 코스를 만들어주는 서비스.
+- [iOS](https://apps.apple.com/kr/app/flifn-%ED%94%8C%EB%A6%AC%ED%95%80/id6744862480)
+- [Android](https://play.google.com/store/apps/details?id=com.dhc.dhcandroid&hl=ko)
 
 ---
 
-# Q. Ncloud 활용 서비스
+# Q. Ncloud에서 어떤 서비스를 활용하셨나요?
 
-- Server
-- VPC
+- VPC (Virtual Private Cloud)
+- Subnet
+- Server (Cloud Server)
+- Public IP
 - Object Storage
 - Container Registry
-
----
+- Load Balancer
+- Global DNS
+- Certificate Manager
 
 # Q. Ncloud 서비스를 어떻게 적용 하였나요?
 
-![](https://github.com/mash-up-kr/piikii_Spring/raw/develop/docs/architecture/overall.png)
-
-API, 모니터링 서버를 띄우는데 사용했으며 정적 파일을 보관하기 위한 Object Storage를 사용했다.
-
-그리고 서버를 이미징한 도커 이미지를 보관하기 위한 Container Registry를 사용하여 이미지를 관리하고 있다.
-
----
+- VPC로 네트워크 환경을 구성
+- Public Subnet으로 서브넷 환경 구성
+- Load Balancer를 활용해 HTTPS 리버스 프록싱 적용 
+- Container Registry에 애플리케이션 이미지를 저장
+- Object Storage를 통해 사용자 프로필 이미지와 카드 이미지 등의 정적 파일을 관리
+- Certificate Manager로 SSL 인증서를 관리하고, 
+- Global DNS를 통해 도메인 연결 및 글로벌 서비스 제공을 위한 DNS 라우팅을 처리했다.
 
 # Q. Ncloud 사용 중 특히 만족했던 점과, 아쉬웠던 점은 무엇인가요?
 
-한국어 문서화가 된 것이 마음에 들었다. 하지만 비용이 꽤나 비싸서 크레딧이 금방 소진되는 점이 아쉬웠다.
+만족했던 점: 국내 서비스라서 문서가 한국어로 잘 정리되어 있고, 콘솔 UI가 직관적이어서 학습 비용이 적었다. Load Balancer의 설정이 간단하면서도 안정적이었고, Certificate Manager를 통한 SSL 인증서 자동 갱신 기능이 매우 편리했다. Object Storage의 성능과 안정성도 뛰어났다.
 
-Object Storage를 사용하기 위한 SDK 문서가 꽤나 오래전 버전의 SDK 라이브러를 사용하게 하는 것으로 보였다. 최신 버전에도 대응할 수 있도록 되었으면 좋겠다.
+아쉬웠던 점: Terraform과 Object Storage 가 연동되지 않는점이 아쉬웠다.
 
----
+# Q. Green Developers 프로그램 참여 소감 말씀 부탁 드립니다
 
-# Q. Green Developers 프로그램 참여 소감 말씀 부탁 드립니다. (50자 이상)
-
-앞으로도 동일한 기회가 주어진다면 더 다양한 서비스들을 써보고 싶습니다. 한국 친화적인 서비스라 편의성에 만족하고 갑니다.
-
----
+무료로 다양한 클라우드 서비스를 활용해 볼 수 있어서 부담없이 작업할 수 있었습니다. 매번 사용할 때마다 느끼는 점은, Ncloud는 문서가 한글친화적이여서 큰 장점인 것 같습니다. 
 
 # Q. 마지막 한 말씀 부탁 드립니다.
 
-NCP서비스가 번성하길 바랍니다. 더 좋은 서비스 제공 해주세요!
+향후에는 Auto Scaling이나 컨테이너 오케스트레이션 서비스도 Ncloud에서 시도해보고 싶다. 조금 더 숙련된 인프라 역량을 갖게 되면 기회를 활용해볼 것 같다.
