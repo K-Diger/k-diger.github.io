@@ -1,7 +1,7 @@
 ---
 
-title: 김도현의 쿠버네티스 입문장벽 낮추기 1 - 쿠버네티스 용어 유래로 알아보기 
-date: 2025-03-14
+title: 쿠버네티스 용어 유래로 알아보기 
+date: 2025-08-15
 categories: [Kubernetes]
 tags: [Kubernetes]
 layout: post
@@ -136,5 +136,3 @@ graph TD
 쿠버네티스는 애플리케이션의 롤링 업데이트를 지원하며, 문제 발생 시 이전 버전으로 쉽게 롤백할 수 있다.
 
 ---
-
-- [다음 글 - 쿠버네티스 컴포넌트 역할 알아보기](https://k-diger.github.io/posts/KubernetesSeries2Components)
