@@ -19,7 +19,7 @@ mermaid: true
 
   * [Kubernetes란?](#11-kubernetes란)
   * [Kubernetes의 역사](#12-kubernetes의-역사)
-  * [Kubernetes 핵심 개념](#13-kubernetes-핵심-개념)
+  * [Kubernetes 주요 개념](#13-kubernetes-주요-개념)
   * [Kubernetes 설치](#14-kubernetes-설치)
 
 2. [Kubernetes 아키텍처](#2-kubernetes-아키텍처)
@@ -43,7 +43,7 @@ mermaid: true
     * [CNI (Container Network Interface)](#cni-container-network-interface)
   * [클러스터 통신 흐름](#24-클러스터-통신-흐름)
 
-3. [Kubernetes 핵심 오브젝트](#3-kubernetes-핵심-오브젝트)
+3. [Kubernetes 주요 오브젝트](#3-kubernetes-주요-오브젝트)
 
   * [Pod](#31-pod)
 
@@ -293,9 +293,9 @@ Kubernetes(K8s)는 **컨테이너화된 애플리케이션의 배포, 스케일�
 **2019-현재: 성숙 단계**
 - 안정적인 릴리스 주기 (연 3회)
 - 다양한 생태계 도구
-- 멀티 클라우드, 하이브리드 클라우드의 핵심
+- 멀티 클라우드, 하이브리드 클라우드의 주요
 
-### 1.3 Kubernetes 핵심 개념
+### 1.3 Kubernetes 주요 개념
 
 **선언적 설정 (Declarative Configuration)**
 
@@ -696,7 +696,7 @@ kubectl create deployment nginx --image=nginx
 
 ---
 
-## 3. Kubernetes 핵심 오브젝트
+## 3. Kubernetes 주요 오브젝트
 
 ### 3.1 Pod
 
