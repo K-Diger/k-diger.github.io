@@ -14,15 +14,70 @@ mermaid: true
 ## 목차
 
 ### Part 1: 운영체제
-1. [운영체제와 커널](#1-운영체제와-커널)
-2. [시스템 콜과 인터럽트](#2-시스템-콜과-인터럽트)
-3. [메모리 관리](#3-메모리-관리)
-4. [프로세스 관리](#4-프로세스-관리)
-5. [프로세스 스케줄링](#5-프로세스-스케줄링)
-6. [시그널과 IPC](#6-시그널과-ipc)
-7. [파일 시스템](#7-파일-시스템)
-8. [디바이스와 I/O](#8-디바이스와-io)
-9. [보안 메커니즘](#9-보안-메커니즘)
+
+1.  [운영체제와 커널](https://www.google.com/search?q=%231-%EC%9A%B4%EC%98%81%EC%B2%B4%EC%A0%9C%EC%99%80-%EC%BB%A4%EB%84%90)
+
+* [1.1 운영체제의 역할](https://www.google.com/search?q=%2311-%EC%9A%B4%EC%98%81%EC%B2%B4%EC%A0%9C%EC%9D%98-%EC%97%AD%ED%95%A0)
+* [1.2 Kernel Space vs User Space](https://www.google.com/search?q=%2312-kernel-space-vs-user-space)
+* [1.3 Monolithic Kernel 아키텍처](https://www.google.com/search?q=%2313-monolithic-kernel-%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98)
+
+2.  [시스템 콜과 인터럽트](https://www.google.com/search?q=%232-%EC%8B%9C%EC%8A%A4%ED%85%9C-%EC%BD%9C%EA%B3%BC-%EC%9D%B8%ED%84%B0%EB%9F%BD%ED%8A%B8)
+
+* [2.1 System Call의 이해](https://www.google.com/search?q=%2321-system-call%EC%9D%98-%EC%9D%B4%ED%95%B4)
+* [2.2 Interrupt와 Exception](https://www.google.com/search?q=%2322-interrupt%EC%99%80-exception)
+* [2.3 C 표준 라이브러리 (glibc)](https://www.google.com/search?q=%2323-c-%ED%91%9C%EC%A4%80-%EB%9D%BC%EC%9D%B4%EB%B8%8C%EB%9F%AC%EB%A6%AC-glibc)
+
+3.  [메모리 관리](https://www.google.com/search?q=%233-%EB%A9%94%EB%AA%A8%EB%A6%AC-%EA%B4%80%EB%A6%AC)
+
+* [3.1 Virtual Memory (가상 메모리)](https://www.google.com/search?q=%2331-virtual-memory-%EA%B0%80%EC%83%81-%EB%A9%94%EB%AA%A8%EB%A6%AC)
+* [3.2 Paging과 Page Table](https://www.google.com/search?q=%2332-paging%EA%B3%BC-page-table)
+* [3.3 Page Fault](https://www.google.com/search?q=%2333-page-fault)
+* [3.4 Page Cache](https://www.google.com/search?q=%2334-page-cache)
+* [3.5 Swap과 OOM Killer](https://www.google.com/search?q=%2335-swap%EA%B3%BC-oom-killer)
+* [3.6 NUMA (Non-Uniform Memory Access)](https://www.google.com/search?q=%2336-numa-non-uniform-memory-access)
+
+4.  [프로세스 관리](https://www.google.com/search?q=%234-%ED%94%84%EB%A1%9C%EC%84%B8%EC%8A%A4-%EA%B4%80%EB%A6%AC)
+
+* [4.1 프로세스와 스레드](https://www.google.com/search?q=%2341-%ED%94%84%EB%A1%9C%EC%84%B8%EC%8A%A4%EC%99%80-%EC%8A%A4%EB%A0%88%EB%93%9C)
+* [4.2 프로세스 생성: Fork와 Exec](https://www.google.com/search?q=%2342-%ED%94%84%EB%A1%9C%EC%84%B8%EC%8A%A4-%EC%83%9D%EC%84%B1-fork%EC%99%80-exec)
+* [4.3 PID와 프로세스 계층](https://www.google.com/search?q=%2343-pid%EC%99%80-%ED%94%84%EB%A1%9C%EC%84%B8%EC%8A%A4-%EA%B3%84%EC%B8%B5)
+* [4.4 프로세스 상태](https://www.google.com/search?q=%2344-%ED%94%84%EB%A1%9C%EC%84%B8%EC%8A%A4-%EC%83%81%ED%83%9C)
+
+5.  [프로세스 스케줄링](https://www.google.com/search?q=%235-%ED%94%84%EB%A1%9C%EC%84%B8%EC%8A%A4-%EC%8A%A4%EC%BC%80%EC%A4%84%EB%A7%81)
+
+* [5.1 스케줄러의 역할](https://www.google.com/search?q=%2351-%EC%8A%A4%EC%BC%80%EC%A4%84%EB%9F%AC%EC%9D%98-%EC%97%AD%ED%95%A0)
+* [5.2 CFS (Completely Fair Scheduler)](https://www.google.com/search?q=%2352-cfs-completely-fair-scheduler)
+* [5.3 실시간 스케줄링](https://www.google.com/search?q=%2353-%EC%8B%A4%EC%8B%9C%EA%B0%84-%EC%8A%A4%EC%BC%80%EC%A4%84%EB%A7%81)
+* [5.4 CPU Affinity](https://www.google.com/search?q=%2354-cpu-affinity)
+* [5.5 Context Switching](https://www.google.com/search?q=%2355-context-switching)
+
+6.  [시그널과 IPC](https://www.google.com/search?q=%236-%EC%8B%9C%EA%B7%B8%EB%84%90%EA%B3%BC-ipc)
+
+* [6.1 Signal (시그널)](https://www.google.com/search?q=%2361-signal-%EC%8B%9C%EA%B7%B8%EB%84%90)
+* [6.2 IPC (Inter-Process Communication)](https://www.google.com/search?q=%2362-ipc-inter-process-communication)
+
+7.  [파일 시스템](https://www.google.com/search?q=%237-%ED%8C%8C%EC%9D%BC-%EC%8B%9C%EC%8A%A4%ED%85%9C)
+
+* [7.1 VFS (Virtual File System)](https://www.google.com/search?q=%2371-vfs-virtual-file-system)
+* [7.2 inode와 Hard Link / Symbolic Link](https://www.google.com/search?q=%2372-inode%EC%99%80-hard-link-symbolic-link)
+* [7.3 파일 디스크립터 (File Descriptor)](https://www.google.com/search?q=%2373-%ED%8C%8C%EC%9D%BC-%EB%94%94%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%84%B0-file-descriptor)
+* [7.4 Block Device와 Journaling](https://www.google.com/search?q=%2374-block-device%EC%99%80-journaling)
+* [7.5 파일 시스템 마운트](https://www.google.com/search?q=%2375-%ED%8C%8C%EC%9D%BC-%EC%8B%9C%EC%8A%A4%ED%85%9C-%EB%A7%88%EC%9A%B4%ED%8A%B8)
+
+8.  [디바이스와 I/O](https://www.google.com/search?q=%238-%EB%94%94%EB%B0%94%EC%9D%B4%EC%8A%A4%EC%99%80-io)
+
+* [8.1 디바이스 파일](https://www.google.com/search?q=%2381-%EB%94%94%EB%B0%94%EC%9D%B4%EC%8A%A4-%ED%8C%8C%EC%9D%BC)
+* [8.2 Major/Minor Number](https://www.google.com/search?q=%2382-major-minor-number)
+* [8.3 I/O 모델](https://www.google.com/search?q=%2383-io-%EB%AA%A8%EB%8D%B8)
+* [8.4 Direct I/O와 Buffer I/O](https://www.google.com/search?q=%2384-direct-io%EC%99%80-buffer-io)
+* [8.5 Zero-Copy](https://www.google.com/search?q=%2385-zero-copy)
+
+9.  [보안 메커니즘](https://www.google.com/search?q=%239-%EB%B3%B4%EC%95%88-%EB%A9%94%EC%BB%A4%EB%8B%88%EC%A6%98)
+
+* [9.1 UID/GID와 Permission Model](https://www.google.com/search?q=%2391-uid-gid%EC%99%80-permission-model)
+* [9.2 DAC vs MAC](https://www.google.com/search?q=%2392-dac-vs-mac)
+* [9.3 Linux Capabilities](https://www.google.com/search?q=%2393-linux-capabilities)
+* [9.4 Seccomp (Secure Computing Mode)](https://www.google.com/search?q=%2394-seccomp-secure-computing-mode)
 
 ---
 
