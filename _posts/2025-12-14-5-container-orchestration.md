@@ -3899,19 +3899,13 @@ spec:
 
 ---
 
-제공하신 CKA 커리큘럼과 제가 작성한 내용을 비교한 결과, 다음 개념들이 누락되어 있습니다. Part 5에 추가하겠습니다.
-
----
-
-# Part 5: Kubernetes (추가 내용)
-
 ## 11. 고급 스케줄링
 
 ### 11.1 Static Pods
 
 **Static Pods란?**
 
-Static Pods는 **Kubelet이 직접 관리하는 Pod**로, API Server를 거치지 않습니다.
+Static Pods는 **Kubelet이 직접 관리하는 Pod**로, API Server를 거치지 않는다.
 
 **특징**
 - API Server 없이도 실행 가능
@@ -3986,7 +3980,7 @@ ls /etc/kubernetes/manifests/
 
 **Multiple Schedulers란?**
 
-Kubernetes는 **여러 개의 스케줄러를 동시에 실행**할 수 있습니다.
+Kubernetes는 **여러 개의 스케줄러를 동시에 실행**할 수 있다.
 
 **왜 필요한가?**
 - 특정 워크로드에 맞춤형 스케줄링 로직 적용
@@ -4068,7 +4062,7 @@ profiles:
 
 **Priority Classes란?**
 
-Priority Classes는 **Pod의 우선순위를 정의**하여 리소스 부족 시 어떤 Pod를 먼저 evict할지 결정합니다.
+Priority Classes는 **Pod의 우선순위를 정의**하여 리소스 부족 시 어떤 Pod를 먼저 evict할지 결정한다.
 
 **PriorityClass 생성**
 
@@ -4131,7 +4125,7 @@ kubectl get priorityclasses
 
 **Scheduling Framework**
 
-Kubernetes Scheduler는 플러그인 아키텍처를 사용합니다.
+Kubernetes Scheduler는 플러그인 아키텍처를 사용한다.
 
 **Extension Points**
 - **PreFilter**: 필터링 전 사전 처리
@@ -4179,7 +4173,7 @@ profiles:
 
 **Admission Controllers의 역할**
 
-Admission Controllers는 **API 요청을 가로채서 검증 또는 수정**하는 플러그인입니다.
+Admission Controllers는 **API 요청을 가로채서 검증 또는 수정**하는 플러그인이다.
 
 **실행 순서**
 1. 인증 (Authentication)
@@ -4247,7 +4241,7 @@ spec:
 
 **Validating Admission Webhooks란?**
 
-외부 서비스를 호출하여 **요청을 검증**하는 동적 Admission Controller입니다.
+외부 서비스를 호출하여 **요청을 검증**하는 동적 Admission Controller이다.
 
 **ValidatingWebhookConfiguration 생성**
 
@@ -4359,7 +4353,7 @@ spec:
 
 **Mutating Admission Webhooks란?**
 
-외부 서비스를 호출하여 **요청을 수정**하는 동적 Admission Controller입니다.
+외부 서비스를 호출하여 **요청을 수정**하는 동적 Admission Controller이다.
 
 **MutatingWebhookConfiguration 생성**
 
@@ -4450,7 +4444,7 @@ def mutate():
 
 **CRD란?**
 
-CRD는 **사용자 정의 리소스를 Kubernetes API에 추가**하는 메커니즘입니다.
+CRD는 **사용자 정의 리소스를 Kubernetes API에 추가**하는 메커니즘이다.
 
 **왜 필요한가?**
 - 도메인 특화 객체 정의
@@ -4580,7 +4574,7 @@ spec:
 
 **Custom Controller란?**
 
-Custom Controller는 **CRD를 감시하고 원하는 상태를 유지**하는 컨트롤러입니다.
+Custom Controller는 **CRD를 감시하고 원하는 상태를 유지**하는 컨트롤러이다.
 
 **Controller 패턴**
 
@@ -4730,7 +4724,7 @@ subjects:
 
 **Operator란?**
 
-Operator는 **도메인 지식을 코드화한 Kubernetes 확장**입니다.
+Operator는 **도메인 지식을 코드화한 Kubernetes 확장**이다.
 
 **Operator = CRD + Custom Controller**
 
@@ -4779,11 +4773,11 @@ make deploy IMG=myregistry.com/myapp-operator:v0.0.1
 
 **노드 유지보수**
 
-노드를 유지보수할 때는 **Drain → 작업 → Uncordon** 순서로 진행합니다.
+노드를 유지보수할 때는 **Drain → 작업 → Uncordon** 순서로 진행한다.
 
 **Drain**
 
-노드에서 모든 Pod를 안전하게 제거합니다.
+노드에서 모든 Pod를 안전하게 제거한다.
 
 ```bash
 # 노드에서 Pod 제거 (새 Pod 스케줄링 차단)
@@ -4994,7 +4988,7 @@ velero restore create --from-backup my-backup --include-namespaces production
 
 **VPA란?**
 
-VPA는 **Pod의 리소스 요청/제한을 자동으로 조정**합니다.
+VPA는 **Pod의 리소스 요청/제한을 자동으로 조정**한다.
 
 **VPA 설치**
 
@@ -5064,7 +5058,7 @@ kubectl describe vpa my-app-vpa
 
 **In-Place Resize란?**
 
-Kubernetes 1.27+ (Alpha)에서 **Pod를 재시작하지 않고 리소스를 변경**할 수 있습니다.
+Kubernetes 1.27+ (Alpha)에서 **Pod를 재시작하지 않고 리소스를 변경**할 수 있다.
 
 **Feature Gate 활성화**
 
@@ -5116,7 +5110,7 @@ kubectl patch pod my-pod --type='json' -p='[
 
 ### 16.1 Gateway API란?
 
-**Gateway API**는 **Ingress를 대체하는 차세대 네트워킹 API**입니다.
+**Gateway API**는 **Ingress를 대체하는 차세대 네트워킹 API**이다.
 
 **Ingress vs Gateway API**
 
