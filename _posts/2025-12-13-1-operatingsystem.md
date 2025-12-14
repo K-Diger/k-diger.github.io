@@ -1,6 +1,6 @@
 ---
 
-title: Fundamental1, 운영체제
+title: Fundamental-1: 운영체제
 date: 2025-12-13
 categories: [OperatingSystem, OS, Linux]
 tags: [OperatingSystem, OS, Linux]
