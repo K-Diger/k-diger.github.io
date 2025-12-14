@@ -1,9 +1,9 @@
 ---
 
-title: DevOps Engineer Fundermental: OperatingSystem
+title: Fundamental1, 운영체제
 date: 2025-12-13
-categories: [OperatingSystem]
-tags: [OperatingSystem]
+categories: [OperatingSystem, OS, Linux]
+tags: [OperatingSystem, OS, Linux]
 layout: post
 toc: true
 math: true
