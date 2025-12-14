@@ -1,6 +1,6 @@
 ---
 
-title: Fundamental-1: OS
+title: OS
 date: 2025-12-13
 categories: [OperatingSystem, OS, Linux]
 tags: [OperatingSystem, OS, Linux]

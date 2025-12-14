@@ -1,6 +1,6 @@
 ---
 
-title: Fundamental-5: Container Orchestration
+title: Container Orchestration
 date: 2025-12-14
 categories: [Container]
 tags: [Container]
