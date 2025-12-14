@@ -1,0 +1,2026 @@
+---
+
+title: DevOps Engineer Fundermental: Container
+date: 2025-12-14
+categories: [Container]
+tags: [Container]
+layout: post
+toc: true
+math: true
+mermaid: true
+
+---
+
+## 목차
+
+### Part 3: 컨테이너 기술
+1. [컨테이너의 탄생과 진화](#1-컨테이너의-탄생과-진화)
+2. [Linux Namespaces](#2-linux-namespaces)
+3. [Control Groups (Cgroups)](#3-control-groups-cgroups)
+4. [Union Filesystem](#4-union-filesystem)
+5. [컨테이너 런타임](#5-컨테이너-런타임)
+6. [컨테이너 보안](#6-컨테이너-보안)
+7. [컨테이너 네트워킹](#7-컨테이너-네트워킹)
+
+---
+
+## 1. 컨테이너의 탄생과 진화
+
+### 1.1 컨테이너 이전의 세계
+
+**전통적인 배포 방식의 문제점**
+
+컨테이너 이전에는 애플리케이션 배포에 여러 문제가 있었다:
+
+**물리 서버 시대**
+- 하나의 서버에 하나의 애플리케이션
+- 낮은 자원 활용률 (보통 10-15%)
+- 느린 프로비저닝 (주 단위)
+- 높은 비용
+- 확장성 부족
+
+**가상 머신 시대**
+- 하이퍼바이저를 통한 가상화
+- 자원 활용률 향상 (50-70%)
+- 더 나은 격리
+- 하지만 여전히 무거움 (GB 단위 크기, 분 단위 부팅)
+- Guest OS 오버헤드
+
+**의존성 지옥 (Dependency Hell)**
+- "내 컴퓨터에서는 되는데요" 문제
+- 라이브러리 버전 충돌
+- 환경 차이 (개발/스테이징/프로덕션)
+- 복잡한 설정 관리
+
+### 1.2 컨테이너의 핵심 아이디어
+
+**컨테이너의 정의**
+
+컨테이너는 **애플리케이션과 그 의존성을 하나로 패키징한 경량 실행 환경**이다.
+
+**핵심 개념**
+
+- **프로세스 격리**: 각 컨테이너는 독립된 프로세스 공간
+- **파일시스템 격리**: 독립된 루트 파일시스템
+- **네트워크 격리**: 독립된 네트워크 스택
+- **리소스 제한**: CPU, 메모리 등의 자원 제한
+- **이식성**: "한 번 빌드하면 어디서나 실행"
+
+**컨테이너 vs 가상머신**
+
+**가상머신 구조**
+- 하드웨어 → 하이퍼바이저 → Guest OS → 애플리케이션
+- 각 VM은 완전한 OS 포함
+- 무겁고 느림 (GB 단위, 분 단위 부팅)
+- 강력한 격리
+
+**컨테이너 구조**
+- 하드웨어 → Host OS → 컨테이너 런타임 → 애플리케이션
+- 호스트 커널 공유
+- 가볍고 빠름 (MB 단위, 초 단위 시작)
+- 프로세스 수준 격리
+
+**장점**
+- 빠른 시작 속도
+- 적은 리소스 사용
+- 높은 밀도 (한 호스트에 수백 개 컨테이너)
+- 일관된 환경
+- 마이크로서비스 아키텍처에 적합
+
+**단점**
+- VM보다 약한 격리 (같은 커널 공유)
+- 호스트와 다른 OS 커널 사용 불가
+- 보안 고려사항 더 많음
+
+### 1.3 컨테이너 기술의 역사
+
+**chroot (1979)**
+- Unix V7에서 처음 등장
+- 루트 디렉토리 변경
+- 프로세스를 특정 디렉토리에 "감금"
+- 컨테이너의 시초
+
+**FreeBSD Jails (2000)**
+- 더 강력한 격리
+- 네트워크, 파일시스템 격리
+- 프로세스 격리
+
+**Solaris Zones (2004)**
+- 완전한 가상 환경
+- 자원 관리 포함
+
+**Linux-VServer (2001)**
+- Linux에서의 OS-level 가상화 시도
+
+**OpenVZ (2005)**
+- Linux 기반 컨테이너 기술
+- 패치된 커널 필요
+
+**LXC (Linux Containers, 2008)**
+- Linux 커널 기능 활용 (Namespace, Cgroups)
+- 사용자 공간 도구 제공
+- Docker의 초기 백엔드
+
+**Docker (2013)**
+- 컨테이너 대중화
+- 간단한 사용성
+- 이미지 레이어링
+- Docker Hub (이미지 공유)
+- 개발자 친화적 도구
+
+**Kubernetes (2014)**
+- Google의 컨테이너 오케스트레이션
+- 컨테이너 관리 자동화
+- 사실상 표준이 됨
+
+**현재 (2020s)**
+- OCI 표준화
+- Containerd, CRI-O 등 다양한 런타임
+- Rootless 컨테이너
+- WebAssembly와 컨테이너 융합
+
+### 1.4 컨테이너를 가능하게 하는 Linux 기술
+
+컨테이너는 Linux 커널의 여러 기능을 조합하여 구현된다:
+
+**Namespaces**
+- 프로세스, 네트워크, 파일시스템 등의 격리
+- 각 컨테이너가 독립된 시스템처럼 보이게 함
+
+**Cgroups (Control Groups)**
+- CPU, 메모리, I/O 등의 자원 제한
+- 컨테이너가 호스트 자원을 독점하지 못하게 함
+
+**Union Filesystem (OverlayFS, AUFS 등)**
+- 여러 파일시스템 레이어를 하나로 합침
+- 효율적인 이미지 저장 및 공유
+
+**Capabilities**
+- root 권한을 세분화
+- 필요한 최소 권한만 부여
+
+**Seccomp**
+- 시스템 콜 필터링
+- 위험한 시스템 콜 차단
+
+**SELinux/AppArmor**
+- 강제 접근 제어 (MAC)
+- 추가 보안 계층
+
+---
+
+## 2. Linux Namespaces
+
+### 2.1 Namespace의 개념
+
+**Namespace란?**
+
+Namespace는 **전역 시스템 리소스를 추상화하여 각 프로세스가 자신만의 독립된 인스턴스를 가지게** 하는 Linux 커널 기능이다.
+
+**왜 필요한가?**
+
+- 프로세스 격리
+- 멀티테넌시 (여러 사용자/애플리케이션이 같은 시스템 공유)
+- 보안 강화
+- 컨테이너 구현의 핵심
+
+**Namespace 종류**
+
+Linux는 현재 8가지 타입의 Namespace를 제공한다:
+
+1. **PID Namespace**: 프로세스 ID 격리
+2. **Network Namespace**: 네트워크 스택 격리
+3. **Mount Namespace**: 파일시스템 마운트 포인트 격리
+4. **UTS Namespace**: 호스트명과 도메인명 격리
+5. **IPC Namespace**: System V IPC, POSIX 메시지 큐 격리
+6. **User Namespace**: UID/GID 매핑 격리
+7. **Cgroup Namespace**: Cgroup 루트 디렉토리 격리
+8. **Time Namespace**: 시스템 시계 격리 (커널 5.6+)
+
+### 2.2 PID Namespace
+
+**PID Namespace의 역할**
+
+PID Namespace는 **프로세스 ID 공간을 격리**한다.
+
+**특징**
+
+- 각 PID Namespace는 독립적인 PID 번호 체계를 가짐
+- 새 Namespace의 첫 프로세스는 PID 1
+- Namespace 내부에서는 외부 프로세스를 볼 수 없음
+- 부모 Namespace에서는 자식 Namespace의 프로세스를 볼 수 있음
+
+**계층 구조**
+
+PID Namespace는 트리 구조를 형성한다:
+
+```
+Host (PID 1000)
+├── Container A (PID 1 in namespace, PID 2000 in host)
+│   ├── Process (PID 2 in namespace, PID 2001 in host)
+│   └── Process (PID 3 in namespace, PID 2002 in host)
+└── Container B (PID 1 in namespace, PID 3000 in host)
+    └── Process (PID 2 in namespace, PID 3001 in host)
+```
+
+**PID 1의 특별한 역할**
+
+각 PID Namespace의 PID 1 프로세스는:
+- 고아 프로세스를 입양
+- 좀비 프로세스를 수확 (reaping)
+- 신호에 대한 특별한 처리
+- 종료 시 Namespace 내 모든 프로세스 종료
+
+**실습: PID Namespace 생성**
+
+```bash
+# unshare로 새 PID Namespace 생성
+unshare --pid --fork --mount-proc /bin/bash
+
+# 새 Namespace 내에서 프로세스 확인
+ps aux
+# PID 1이 bash임을 확인
+
+# 호스트에서 확인 (다른 터미널)
+ps aux | grep bash
+# 실제 PID는 수천 번대
+```
+
+### 2.3 Network Namespace
+
+**Network Namespace의 역할**
+
+Network Namespace는 **전체 네트워크 스택을 격리**한다.
+
+**격리되는 요소**
+
+- 네트워크 인터페이스 (물리적, 가상)
+- IP 주소
+- 라우팅 테이블
+- iptables 규칙
+- /proc/net 디렉토리
+- 포트 번호
+- 소켓
+
+**기본 사용**
+
+```bash
+# 네트워크 Namespace 생성
+ip netns add container1
+
+# Namespace 목록 확인
+ip netns list
+
+# Namespace 내에서 명령 실행
+ip netns exec container1 ip link show
+# 기본적으로 lo만 존재 (DOWN 상태)
+
+# lo 활성화
+ip netns exec container1 ip link set lo up
+
+# Namespace 삭제
+ip netns delete container1
+```
+
+**veth pair로 연결**
+
+```bash
+# 두 Namespace 생성
+ip netns add ns1
+ip netns add ns2
+
+# veth pair 생성
+ip link add veth1 type veth peer name veth2
+
+# 각 끝을 다른 Namespace에 배치
+ip link set veth1 netns ns1
+ip link set veth2 netns ns2
+
+# IP 주소 할당 및 활성화
+ip netns exec ns1 ip addr add 10.0.0.1/24 dev veth1
+ip netns exec ns1 ip link set veth1 up
+ip netns exec ns1 ip link set lo up
+
+ip netns exec ns2 ip addr add 10.0.0.2/24 dev veth2
+ip netns exec ns2 ip link set veth2 up
+ip netns exec ns2 ip link set lo up
+
+# 연결 테스트
+ip netns exec ns1 ping 10.0.0.2
+```
+
+**컨테이너 네트워킹 구조**
+
+Docker 컨테이너의 전형적인 네트워크 구조:
+
+1. 컨테이너마다 독립된 Network Namespace
+2. veth pair 생성 (한쪽은 컨테이너, 한쪽은 호스트)
+3. 호스트 쪽 veth를 docker0 브리지에 연결
+4. 컨테이너에 IP 주소 할당 (보통 172.17.0.0/16)
+5. 기본 게이트웨이를 브리지로 설정
+6. NAT를 통해 외부 통신
+
+### 2.4 Mount Namespace
+
+**Mount Namespace의 역할**
+
+Mount Namespace는 **파일시스템 마운트 포인트를 격리**한다.
+
+**특징**
+
+- 각 Namespace는 독립적인 마운트 테이블
+- 한 Namespace의 마운트/언마운트가 다른 Namespace에 영향 없음
+- 컨테이너가 독립적인 파일시스템 뷰를 가지게 함
+
+**전파 (Propagation) 타입**
+
+Mount Namespace 간 마운트 이벤트 전파 방식:
+
+**shared (공유)**
+- 마운트 이벤트가 양방향으로 전파
+- 동일한 peer group의 모든 마운트에 영향
+
+**slave (슬레이브)**
+- 마스터에서 슬레이브로만 전파 (단방향)
+- 슬레이브의 변경은 마스터에 영향 없음
+
+**private (프라이빗)**
+- 전파 없음 (기본값)
+- 완전히 독립적
+
+**unbindable**
+- bind mount 불가능
+
+**실습: Mount Namespace**
+
+```bash
+# 새 Mount Namespace에서 실행
+unshare --mount /bin/bash
+
+# 새 tmpfs 마운트
+mount -t tmpfs tmpfs /mnt
+
+# 이 Namespace에서만 보임
+ls /mnt
+
+# 호스트에서는 영향 없음 (다른 터미널에서 확인)
+ls /mnt
+```
+
+**컨테이너와 Mount Namespace**
+
+컨테이너는 다음과 같은 마운트를 가진다:
+
+- **rootfs**: 컨테이너의 루트 파일시스템 (이미지에서)
+- **proc**: 컨테이너의 /proc
+- **sys**: 컨테이너의 /sys
+- **dev**: 컨테이너의 /dev
+- **tmpfs**: 임시 파일시스템 (/tmp 등)
+- **볼륨**: 호스트나 다른 스토리지의 bind mount
+
+### 2.5 UTS Namespace
+
+**UTS Namespace의 역할**
+
+UTS (Unix Time-Sharing) Namespace는 **호스트명과 도메인명을 격리**한다.
+
+**용도**
+
+- 각 컨테이너가 독립적인 호스트명 가짐
+- 네트워크 식별
+- 애플리케이션 설정 (호스트명 기반)
+
+**실습**
+
+```bash
+# 새 UTS Namespace에서 실행
+unshare --uts /bin/bash
+
+# 호스트명 확인
+hostname
+
+# 호스트명 변경
+hostname container1
+
+# 이 Namespace에서만 변경됨
+hostname
+
+# 호스트에서는 원래 호스트명 유지 (다른 터미널에서 확인)
+```
+
+**Docker에서의 사용**
+
+```bash
+# 기본: 컨테이너 ID가 호스트명
+docker run --rm alpine hostname
+# 출력: a1b2c3d4e5f6 (컨테이너 ID)
+
+# 커스텀 호스트명
+docker run --rm --hostname mycontainer alpine hostname
+# 출력: mycontainer
+
+# 호스트의 UTS Namespace 공유
+docker run --rm --uts=host alpine hostname
+# 출력: (호스트 호스트명)
+```
+
+### 2.6 IPC Namespace
+
+**IPC Namespace의 역할**
+
+IPC Namespace는 **프로세스 간 통신 리소스를 격리**한다.
+
+**격리되는 IPC 메커니즘**
+
+- System V IPC
+  - 메시지 큐
+  - 세마포어
+  - 공유 메모리
+- POSIX 메시지 큐
+
+**특징**
+
+- 각 Namespace는 독립적인 IPC 객체 집합
+- 다른 Namespace의 IPC 객체에 접근 불가
+- 보안 및 격리 강화
+
+**실습**
+
+```bash
+# 호스트에서 공유 메모리 생성
+ipcmk -M 1024
+# 키: 0x12345678, ID: 123
+
+# 호스트에서 확인
+ipcs -m
+
+# 새 IPC Namespace에서 실행
+unshare --ipc /bin/bash
+
+# 새 Namespace에서 확인
+ipcs -m
+# 호스트의 공유 메모리가 보이지 않음
+```
+
+### 2.7 User Namespace
+
+**User Namespace의 역할**
+
+User Namespace는 **UID/GID 매핑을 격리**한다. 이는 컨테이너 보안의 핵심이다.
+
+**핵심 개념**
+
+- Namespace 내부의 UID를 외부(호스트)의 다른 UID로 매핑
+- 컨테이너 내부의 root(UID 0)를 호스트의 일반 사용자로 매핑 가능
+- **Rootless 컨테이너**의 기반 기술
+
+**UID/GID 매핑**
+
+매핑 파일:
+- `/proc/<PID>/uid_map`: UID 매핑
+- `/proc/<PID>/gid_map`: GID 매핑
+
+매핑 형식: `<namespace_id> <host_id> <range>`
+
+예시:
+```
+0 1000 1
+# Namespace UID 0 → Host UID 1000 (1개)
+
+1 100000 65536
+# Namespace UID 1-65536 → Host UID 100000-165535
+```
+
+**보안 이점**
+
+- 컨테이너 내부에서 root여도 호스트에서는 일반 사용자
+- 컨테이너 탈출 시에도 제한된 권한
+- 더 안전한 멀티테넌시
+
+**실습**
+
+```bash
+# User Namespace 없이 (위험)
+unshare --mount --pid --fork /bin/bash
+id
+# uid=0(root) - 실제 호스트의 root!
+
+# User Namespace와 함께 (안전)
+unshare --user --map-root-user /bin/bash
+id
+# uid=0(root) - Namespace 내부에서만 root
+
+# 호스트에서 확인 (다른 터미널)
+ps aux | grep bash
+# 실제로는 일반 사용자 권한으로 실행 중
+```
+
+**Rootless 컨테이너**
+
+```bash
+# Rootless Docker 실행
+dockerd-rootless.sh
+
+# 컨테이너 실행
+docker run --rm alpine id
+# uid=0(root) - 하지만 호스트에서는 일반 사용자
+
+# 보안 강화
+# - 컨테이너 내부 root = 호스트 일반 사용자
+# - 권한 상승 공격 방어
+# - 더 안전한 멀티테넌시
+```
+
+### 2.8 Cgroup Namespace
+
+**Cgroup Namespace의 역할**
+
+Cgroup Namespace는 **프로세스가 보는 cgroup 계층의 루트를 가상화**한다.
+
+**특징**
+
+- 컨테이너가 자신의 cgroup 계층만 볼 수 있음
+- 호스트의 전체 cgroup 구조 숨김
+- 보안 향상 (정보 누출 방지)
+
+**사용 시기**
+
+- Kubernetes 같은 중첩 컨테이너 환경
+- 컨테이너 내에서 컨테이너 실행 (Docker-in-Docker)
+- 정보 격리가 중요한 멀티테넌트 환경
+
+### 2.9 Time Namespace
+
+**Time Namespace의 역할**
+
+Time Namespace는 **시스템 시계를 격리**한다 (Linux 5.6+).
+
+**격리되는 시계**
+
+- **CLOCK_MONOTONIC**: 부팅 이후 경과 시간
+- **CLOCK_BOOTTIME**: 부팅 시간 (suspend 시간 포함)
+
+**사용 사례**
+
+- 컨테이너 마이그레이션 후 시간 일관성 유지
+- 시간 기반 테스트 및 시뮬레이션
+- 체크포인트/복원 (CRIU)
+
+**제한사항**
+
+- CLOCK_REALTIME (실제 시계)는 격리되지 않음
+- 아직 제한적으로 사용됨
+
+---
+
+## 3. Control Groups (Cgroups)
+
+### 3.1 Cgroup의 개념
+
+**Cgroup이란?**
+
+Control Groups (Cgroups)는 **프로세스 그룹의 자원 사용을 제한, 계정, 격리**하는 Linux 커널 기능이다.
+
+**주요 기능**
+
+- **Resource Limiting**: 리소스 사용량 제한
+- **Prioritization**: 우선순위 설정
+- **Accounting**: 리소스 사용량 측정
+- **Control**: 프로세스 그룹 제어 (freezing, restarting)
+
+**Namespace vs Cgroup**
+
+- **Namespace**: "무엇을 볼 수 있는가" (격리)
+- **Cgroup**: "얼마나 사용할 수 있는가" (자원 제한)
+
+둘이 함께 컨테이너를 구성한다.
+
+### 3.2 Cgroup v1 vs v2
+
+**Cgroup v1 (레거시)**
+
+여러 독립적인 계층 구조:
+- 각 컨트롤러(cpu, memory 등)마다 별도의 계층
+- 복잡한 관리
+- 일관성 없는 동작
+
+```
+/sys/fs/cgroup/
+├── cpu/
+│   ├── docker/
+│   │   └── <container-id>/
+├── memory/
+│   ├── docker/
+│   │   └── <container-id>/
+└── blkio/
+    ├── docker/
+    │   └── <container-id>/
+```
+
+**Cgroup v2 (현대적)**
+
+단일 통합 계층:
+- 모든 컨트롤러가 하나의 계층에서 관리
+- 일관된 인터페이스
+- 더 나은 성능
+- 권장 방식
+
+```
+/sys/fs/cgroup/
+└── docker/
+    └── <container-id>/
+        ├── cpu.max
+        ├── memory.max
+        ├── io.max
+        └── ...
+```
+
+**마이그레이션**
+
+현재는 과도기:
+- 대부분 시스템이 v1 사용
+- 일부 최신 배포판은 v2로 전환 중
+- systemd 246+ 버전부터 v2 지원 강화
+
+### 3.3 주요 Cgroup 컨트롤러
+
+**CPU Controller**
+
+CPU 사용 시간을 제어한다.
+
+**Cgroup v1**
+
+```bash
+# CPU 쿼터 설정 (100ms 중 50ms 사용 = 50%)
+echo 50000 > /sys/fs/cgroup/cpu/mycontainer/cpu.cfs_quota_us
+echo 100000 > /sys/fs/cgroup/cpu/mycontainer/cpu.cfs_period_us
+
+# CPU 공유 비율 (상대적 가중치)
+echo 512 > /sys/fs/cgroup/cpu/mycontainer/cpu.shares
+# 기본값 1024, 512 = 절반의 우선순위
+```
+
+**Cgroup v2**
+
+```bash
+# CPU 최대 사용량 설정
+echo "50000 100000" > /sys/fs/cgroup/mycontainer/cpu.max
+# 형식: <quota> <period>
+
+# CPU 가중치
+echo 100 > /sys/fs/cgroup/mycontainer/cpu.weight
+# 범위: 1-10000, 기본값 100
+```
+
+**Docker에서의 사용**
+
+```bash
+# CPU 제한 (1 CPU = 100%)
+docker run --cpus="1.5" nginx
+# 1.5 CPU 사용 제한
+
+# CPU 공유
+docker run --cpu-shares=512 nginx
+# 상대적 가중치
+```
+
+**Memory Controller**
+
+메모리 사용량을 제어한다.
+
+**Cgroup v1**
+
+```bash
+# 메모리 제한 (512MB)
+echo 536870912 > /sys/fs/cgroup/memory/mycontainer/memory.limit_in_bytes
+
+# Swap 포함 제한
+echo 1073741824 > /sys/fs/cgroup/memory/mycontainer/memory.memsw.limit_in_bytes
+
+# OOM 제어
+echo 0 > /sys/fs/cgroup/memory/mycontainer/memory.oom_control
+# 0: OOM kill 활성화, 1: OOM kill 비활성화 (프로세스 멈춤)
+
+# 현재 사용량 확인
+cat /sys/fs/cgroup/memory/mycontainer/memory.usage_in_bytes
+```
+
+**Cgroup v2**
+
+```bash
+# 메모리 최대값
+echo 536870912 > /sys/fs/cgroup/mycontainer/memory.max
+
+# Swap 최대값
+echo 536870912 > /sys/fs/cgroup/mycontainer/memory.swap.max
+
+# 메모리 사용량 확인
+cat /sys/fs/cgroup/mycontainer/memory.current
+
+# 상세 통계
+cat /sys/fs/cgroup/mycontainer/memory.stat
+```
+
+**Docker에서의 사용**
+
+```bash
+# 메모리 제한
+docker run -m 512m nginx
+docker run --memory=512m nginx
+
+# 메모리 + Swap 제한
+docker run -m 512m --memory-swap=1g nginx
+
+# 메모리 예약 (소프트 제한)
+docker run --memory-reservation=256m nginx
+```
+
+**메모리 초과 시 동작**
+
+1. 컨테이너가 메모리 제한 초과
+2. 커널이 메모리 회수 시도 (페이지 캐시 등)
+3. 회수 실패 시 OOM Killer 발동
+4. 컨테이너 내에서 메모리를 가장 많이 사용하는 프로세스 종료
+5. 컨테이너 전체가 종료될 수 있음
+
+**Block I/O Controller**
+
+디스크 I/O를 제어한다.
+
+**Cgroup v1**
+
+```bash
+# 읽기 대역폭 제한 (10MB/s)
+# 형식: <major>:<minor> <bytes_per_second>
+echo "8:0 10485760" > /sys/fs/cgroup/blkio/mycontainer/blkio.throttle.read_bps_device
+
+# 쓰기 대역폭 제한
+echo "8:0 5242880" > /sys/fs/cgroup/blkio/mycontainer/blkio.throttle.write_bps_device
+
+# IOPS 제한
+echo "8:0 1000" > /sys/fs/cgroup/blkio/mycontainer/blkio.throttle.read_iops_device
+```
+
+**Cgroup v2**
+
+```bash
+# I/O 최대값 설정
+echo "8:0 rbps=10485760 wbps=5242880" > /sys/fs/cgroup/mycontainer/io.max
+
+# I/O 가중치
+echo "8:0 100" > /sys/fs/cgroup/mycontainer/io.weight
+```
+
+**Docker에서의 사용**
+
+```bash
+# 블록 I/O 가중치
+docker run --blkio-weight=500 nginx
+
+# 디바이스별 읽기 제한
+docker run --device-read-bps=/dev/sda:10mb nginx
+
+# 디바이스별 쓰기 제한
+docker run --device-write-bps=/dev/sda:5mb nginx
+```
+
+**PIDs Controller**
+
+프로세스/스레드 개수를 제한한다.
+
+```bash
+# Cgroup v1/v2 공통
+echo 100 > /sys/fs/cgroup/pids/mycontainer/pids.max
+
+# 현재 프로세스 수
+cat /sys/fs/cgroup/pids/mycontainer/pids.current
+```
+
+**용도**
+- 포크 폭탄 (fork bomb) 방지
+- 리소스 고갈 공격 방어
+- 예측 가능한 리소스 사용
+
+**Docker에서의 사용**
+
+```bash
+# PID 제한
+docker run --pids-limit=100 nginx
+```
+
+### 3.4 OOM Killer와 Cgroup
+
+**OOM Killer의 동작**
+
+메모리 부족 시 커널이 프로세스를 강제 종료한다.
+
+**Cgroup 수준 OOM**
+
+- Cgroup 메모리 제한 초과 시 해당 Cgroup 내에서만 OOM 발생
+- 호스트 전체에 영향 없음
+- 컨테이너 격리의 중요한 이점
+
+**OOM Score 조정**
+
+```bash
+# 컨테이너의 OOM score 조정
+docker run --oom-score-adj=500 nginx
+
+# 값 범위: -1000 ~ 1000
+# -1000: OOM kill 절대 안 됨 (주의!)
+# 1000: 가장 먼저 kill됨
+```
+
+**OOM Kill 비활성화**
+
+```bash
+# Cgroup v1
+echo 1 > /sys/fs/cgroup/memory/mycontainer/memory.oom_control
+
+# 비활성화 시 메모리 초과하면:
+# - 프로세스가 멈춤 (hang)
+# - 메모리 회수되면 재개
+# - 프로덕션에서는 권장하지 않음
+```
+
+**컨테이너 종료 감지**
+
+```bash
+# 컨테이너가 OOM으로 종료되었는지 확인
+docker inspect <container> | grep OOMKilled
+```
+
+### 3.5 Cgroup 계층 관리
+
+**Cgroup 생성 및 삭제**
+
+```bash
+# Cgroup 생성 (v1)
+mkdir /sys/fs/cgroup/cpu/mygroup
+
+# 프로세스 추가
+echo <PID> > /sys/fs/cgroup/cpu/mygroup/cgroup.procs
+
+# 태스크 확인
+cat /sys/fs/cgroup/cpu/mygroup/cgroup.procs
+
+# Cgroup 삭제 (프로세스가 없어야 함)
+rmdir /sys/fs/cgroup/cpu/mygroup
+```
+
+**systemd와 Cgroup**
+
+현대 리눅스는 systemd가 Cgroup을 관리:
+
+```bash
+# systemd slice 확인
+systemctl status
+
+# 서비스의 Cgroup 확인
+systemctl status docker.service
+
+# 특정 서비스의 리소스 제한
+systemctl set-property docker.service MemoryLimit=2G
+```
+
+**Docker의 Cgroup 관리**
+
+```bash
+# Docker 컨테이너의 Cgroup 위치
+ls /sys/fs/cgroup/*/docker/<container-id>/
+
+# 실시간 리소스 사용량 확인
+docker stats
+
+# Cgroup 드라이버 확인
+docker info | grep "Cgroup Driver"
+# cgroupfs 또는 systemd
+```
+
+### 3.6 Cgroup v2 마이그레이션
+
+**Cgroup v2로 전환**
+
+```bash
+# 시스템이 v2를 사용하는지 확인
+stat -fc %T /sys/fs/cgroup
+
+# cgroup2fs: v2 사용 중
+# tmpfs: v1 사용 중
+
+# 부팅 파라미터로 v2 강제 (GRUB)
+# systemd.unified_cgroup_hierarchy=1
+```
+
+**호환성 고려사항**
+
+- Docker 20.10+ 버전부터 v2 지원
+- Kubernetes 1.25+ 버전에서 v2 베타 지원
+- 일부 레거시 도구는 v1만 지원
+- 점진적 마이그레이션 권장
+
+---
+
+## 4. Union Filesystem
+
+### 4.1 Union Filesystem의 개념
+
+**Union Filesystem이란?**
+
+Union Filesystem은 **여러 파일시스템을 하나로 합쳐서 보여주는** 기술이다. 마치 투명한 레이어를 여러 겹 쌓은 것과 같다.
+
+**핵심 개념**
+
+- **레이어**: 각 파일시스템 계층
+- **Lower Layer**: 읽기 전용 레이어 (여러 개 가능)
+- **Upper Layer**: 읽기/쓰기 가능한 레이어 (하나)
+- **Merged View**: 모든 레이어를 합친 최종 뷰
+
+**컨테이너 이미지와의 관계**
+
+컨테이너 이미지는 여러 레이어로 구성:
+- 각 Dockerfile 명령이 새 레이어 생성
+- 레이어는 불변 (immutable)
+- 레이어 공유로 저장 공간 절약
+- 효율적인 이미지 배포
+
+### 4.2 Copy-on-Write (CoW)
+
+**CoW 메커니즘**
+
+Copy-on-Write는 Union Filesystem의 핵심 기능이다.
+
+**작동 방식**
+
+1. **읽기**: Lower Layer에서 직접 읽기
+2. **쓰기 (새 파일)**: Upper Layer에 새 파일 생성
+3. **수정 (기존 파일)**:
+  - Lower Layer의 파일을 Upper Layer로 복사
+  - Upper Layer에서 수정
+  - 원본은 그대로 유지
+
+**장점**
+
+- 레이어 공유로 저장 공간 절약
+- 빠른 컨테이너 시작
+- 불변 이미지 보장
+
+**단점**
+
+- 첫 수정 시 복사 오버헤드
+- 큰 파일 수정 시 성능 저하
+
+### 4.3 OverlayFS
+
+**OverlayFS란?**
+
+OverlayFS는 **Linux 커널에 내장된 Union Filesystem**이다. 현재 Docker의 기본 스토리지 드라이버이다.
+
+**구조**
+
+```
+Merged (통합 뷰)
+    ↑
+┌───────────────┐
+│  UpperDir     │  (읽기/쓰기)
+│  /var/lib/...  │
+├───────────────┤
+│  LowerDir     │  (읽기 전용)
+│  /var/lib/...  │
+├───────────────┤
+│  LowerDir     │  (읽기 전용)
+│  /var/lib/...  │
+└───────────────┘
+     WorkDir (임시 작업 공간)
+```
+
+**마운트 예시**
+
+```bash
+# OverlayFS 마운트
+mount -t overlay overlay \
+  -o lowerdir=/lower1:/lower2,upperdir=/upper,workdir=/work \
+  /merged
+
+# 확인
+ls /merged
+# lower1, lower2, upper의 내용이 모두 보임
+
+# 파일 수정
+echo "modified" > /merged/file.txt
+# 실제로는 /upper에 복사되어 수정됨
+
+# lower 디렉토리는 변경 없음
+cat /lower1/file.txt
+# 원본 내용 그대로
+```
+
+**OverlayFS 특징**
+
+- **빠른 성능**: 커널 내장, 최적화됨
+- **간단한 구조**: 이해하기 쉬움
+- **POSIX 호환**: 대부분의 파일 작업 지원
+- **제한사항**:
+  - NFS 위에서 제한적 지원
+  - SELinux와 함께 사용 시 주의 필요
+
+### 4.4 Docker의 스토리지 드라이버
+
+**스토리지 드라이버 종류**
+
+Docker는 여러 스토리지 드라이버를 지원한:
+
+**overlay2 (권장)**
+- OverlayFS 사용
+- 가장 빠르고 안정적
+- Linux 커널 4.0+ 필요
+
+**aufs**
+- 초기 Docker의 기본값
+- Ubuntu 등 일부 배포판만 지원
+- 레거시
+
+**devicemapper**
+- Red Hat 계열에서 과거 사용
+- 복잡한 설정
+- 성능 문제
+
+**btrfs**
+- Btrfs 파일시스템 사용
+- 서브볼륨 및 스냅샷 기능
+- 특수 용도
+
+**zfs**
+- ZFS 파일시스템 사용
+- 고급 기능 (압축, 중복 제거)
+- 성능 오버헤드
+
+**vfs**
+- Union Filesystem 없음
+- 전체 복사
+- 테스트 용도
+
+**현재 드라이버 확인**
+
+```bash
+docker info | grep "Storage Driver"
+# Storage Driver: overlay2
+```
+
+**드라이버 변경**
+
+```bash
+# /etc/docker/daemon.json 편집
+{
+  "storage-driver": "overlay2"
+}
+
+# Docker 재시작
+sudo systemctl restart docker
+
+# 주의: 기존 이미지/컨테이너 삭제됨!
+```
+
+### 4.5 이미지 레이어 구조
+
+**Dockerfile과 레이어**
+
+각 Dockerfile 명령이 새 레이어를 생성한다:
+
+```dockerfile
+FROM ubuntu:20.04          # Layer 1: 베이스 이미지
+RUN apt-get update         # Layer 2: 패키지 목록 업데이트
+RUN apt-get install -y nginx  # Layer 3: nginx 설치
+COPY index.html /var/www/  # Layer 4: 파일 복사
+CMD ["nginx", "-g", "daemon off;"]  # Layer 5: 메타데이터 (레이어 아님)
+```
+
+**레이어 확인**
+
+```bash
+# 이미지 히스토리 확인
+docker history nginx:latest
+
+# 각 레이어의 크기와 생성 명령 확인
+```
+
+**레이어 재사용**
+
+동일한 명령은 같은 레이어를 생성하여 재사용된다:
+
+```dockerfile
+# 이미지 A
+FROM ubuntu:20.04
+RUN apt-get update
+
+# 이미지 B
+FROM ubuntu:20.04
+RUN apt-get update
+
+# 두 이미지는 처음 두 레이어를 공유
+```
+
+**레이어 최적화**
+
+```dockerfile
+# 비효율적
+RUN apt-get update
+RUN apt-get install -y nginx
+RUN apt-get install -y curl
+
+# 효율적 (레이어 하나로 통합)
+RUN apt-get update && \
+    apt-get install -y \
+      nginx \
+      curl && \
+    rm -rf /var/lib/apt/lists/*
+```
+
+### 4.6 컨테이너 레이어 (Container Layer)
+
+**읽기/쓰기 레이어**
+
+컨테이너가 시작되면 이미지 위에 읽기/쓰기 레이어가 추가된다:
+
+```
+Container (읽기/쓰기 레이어)
+    ↓
+Image Layer 3 (읽기 전용)
+    ↓
+Image Layer 2 (읽기 전용)
+    ↓
+Image Layer 1 (읽기 전용)
+```
+
+**컨테이너에서의 파일 작업**
+
+**새 파일 생성**
+- 컨테이너 레이어에 직접 생성
+
+**파일 수정**
+- 이미지 레이어의 파일을 컨테이너 레이어로 복사 (CoW)
+- 컨테이너 레이어에서 수정
+- Whiteout 파일로 원본 숨김
+
+**파일 삭제**
+- Whiteout 파일 생성으로 파일 숨김
+- 실제 삭제는 안 됨 (이미지 레이어는 불변)
+
+**컨테이너 종료 시**
+
+- 컨테이너 레이어의 모든 변경사항 손실
+- 이미지는 그대로 유지
+- 영구 저장이 필요하면 볼륨 사용
+
+### 4.7 볼륨과 Bind Mount
+
+**볼륨 (Volume)**
+
+Docker가 관리하는 영구 저장소:
+
+```bash
+# 볼륨 생성
+docker volume create myvolume
+
+# 볼륨 마운트
+docker run -v myvolume:/data nginx
+
+# 볼륨 위치
+ls /var/lib/docker/volumes/myvolume/_data
+
+# 볼륨 목록
+docker volume ls
+
+# 볼륨 삭제
+docker volume rm myvolume
+```
+
+**장점**
+- Docker가 관리하여 쉬움
+- 백업 및 마이그레이션 용이
+- 플랫폼 독립적
+- 볼륨 드라이버로 원격 저장소 지원
+
+**Bind Mount**
+
+호스트 디렉토리를 직접 마운트:
+
+```bash
+# Bind mount
+docker run -v /host/path:/container/path nginx
+
+# 또는 --mount 사용 (더 명시적)
+docker run --mount type=bind,source=/host/path,target=/container/path nginx
+```
+
+**장점**
+- 호스트 파일에 직접 접근
+- 개발 시 편리 (코드 수정 즉시 반영)
+
+**단점**
+- 호스트 경로 의존성
+- 보안 위험 (호스트 파일시스템 노출)
+
+**tmpfs Mount**
+
+메모리에만 존재하는 임시 저장소:
+
+```bash
+docker run --mount type=tmpfs,target=/app/cache nginx
+```
+
+**용도**
+- 민감한 정보 임시 저장
+- 성능이 중요한 캐시
+- 컨테이너 종료 시 자동 삭제
+
+---
+
+## 5. 컨테이너 런타임
+
+### 5.1 컨테이너 런타임 계층
+
+**High-level vs Low-level Runtime**
+
+컨테이너 런타임은 두 계층으로 나뉜다:
+
+**High-level Runtime (Container Managers)**
+- 이미지 관리 (pull, push, build)
+- 컨테이너 생명주기 관리
+- 네트워크 및 스토리지 설정
+- CRI (Container Runtime Interface) 구현
+- 예: containerd, CRI-O, Docker Engine
+
+**Low-level Runtime (OCI Runtime)**
+- 실제 컨테이너 실행
+- Namespace 및 Cgroup 설정
+- Rootfs 준비
+- OCI Runtime Spec 구현
+- 예: runc, crun, kata-runtime, gVisor
+
+### 5.2 OCI (Open Container Initiative)
+
+**OCI란?**
+
+OCI는 **컨테이너 표준을 정의하는 오픈 소스 프로젝트**이다.
+
+**주요 표준**
+
+**Runtime Specification**
+- 컨테이너를 어떻게 실행할 것인가
+- config.json 형식 정의
+- Namespace, Cgroup 설정 방법
+- 생명주기 (create, start, kill, delete)
+
+**Image Specification**
+- 컨테이너 이미지 형식
+- 레이어 구조
+- 매니페스트 및 설정
+- 레지스트리와의 상호작용
+
+**Distribution Specification**
+- 이미지 배포 방법
+- 레지스트리 API
+- 푸시/풀 프로토콜
+
+**OCI의 중요성**
+
+- **상호 운용성**: 다양한 도구가 같은 이미지 사용
+- **벤더 중립성**: 특정 회사에 종속되지 않음
+- **혁신 촉진**: 표준화된 인터페이스로 새 도구 개발 용이
+
+### 5.3 runc
+
+**runc란?**
+
+runc는 **OCI Runtime Spec을 구현한 참조 구현**이다.
+
+**특징**
+
+- Go 언어로 작성
+- Docker에서 분리되어 독립 프로젝트화
+- 가장 널리 사용되는 low-level 런타임
+- 대부분의 컨테이너 플랫폼의 기본 런타임
+
+**기본 사용법**
+
+```bash
+# OCI 번들 디렉토리 생성
+mkdir rootfs
+# rootfs를 Alpine 루트로 채움
+docker export $(docker create alpine) | tar -C rootfs -xf -
+
+# config.json 생성
+runc spec
+
+# 컨테이너 실행
+runc run mycontainer
+
+# 컨테이너 목록
+runc list
+
+# 컨테이너 삭제
+runc delete mycontainer
+```
+
+**config.json 구조**
+
+주요 필드:
+- `ociVersion`: OCI 버전
+- `process`: 실행할 프로세스 정보
+- `root`: Rootfs 경로
+- `mounts`: 마운트 포인트
+- `linux.namespaces`: Namespace 설정
+- `linux.resources`: Cgroup 설정
+- `linux.capabilities`: Capability 설정
+
+### 5.4 containerd
+
+**containerd란?**
+
+containerd는 **Docker에서 분리된 고수준 컨테이너 런타임**이다.
+
+**특징**
+
+- CNCF 졸업 프로젝트
+- 산업 표준 core 컨테이너 런타임
+- Kubernetes의 기본 런타임
+- 이미지 관리, 스토리지, 네트워킹 제공
+
+**아키텍처**
+
+```
+Client (ctr, crictl, kubectl)
+    ↓
+containerd (gRPC API)
+    ↓
+containerd-shim (컨테이너당 하나)
+    ↓
+runc (실제 컨테이너 실행)
+```
+
+**주요 컴포넌트**
+
+**containerd daemon**
+- gRPC API 서버
+- 이미지 및 컨테이너 관리
+- 스냅샷 및 content store
+
+**containerd-shim**
+- 컨테이너와 containerd 사이의 중개자
+- 컨테이너의 stdout/stderr 포워딩
+- 종료 코드 보고
+- containerd 재시작 시에도 컨테이너 유지
+
+**ctr 도구**
+
+```bash
+# 이미지 pull
+ctr image pull docker.io/library/nginx:latest
+
+# 이미지 목록
+ctr image ls
+
+# 컨테이너 실행
+ctr run --rm docker.io/library/nginx:latest mynginx
+
+# 컨테이너 목록
+ctr container ls
+
+# Task 목록 (실행 중인 컨테이너)
+ctr task ls
+```
+
+### 5.5 CRI-O
+
+**CRI-O란?**
+
+CRI-O는 **Kubernetes 전용 경량 컨테이너 런타임**이다.
+
+**특징**
+
+- Kubernetes CRI를 직접 구현
+- 불필요한 기능 제거 (Kubernetes에 필요한 것만)
+- 표준 준수 (OCI Runtime, OCI Image)
+- Red Hat, SUSE 등이 주도
+
+**아키텍처**
+
+```
+Kubelet (CRI client)
+    ↓
+CRI-O (CRI server)
+    ↓
+conmon (컨테이너 모니터)
+    ↓
+runc (실제 컨테이너 실행)
+```
+
+**containerd vs CRI-O**
+
+| 특성 | containerd | CRI-O |
+|------|-----------|-------|
+| 용도 | 범용 런타임 | Kubernetes 전용 |
+| Docker 지원 | 예 (Docker 백엔드) | 아니오 |
+| 복잡도 | 더 많은 기능 | 더 단순 |
+| 커뮤니티 | Docker, Kubernetes | 주로 Kubernetes |
+| 성능 | 최적화됨 | 경량화됨 |
+
+### 5.6 Docker 아키텍처
+
+**Docker의 계층 구조**
+
+```
+docker CLI
+    ↓
+dockerd (Docker daemon)
+    ↓
+containerd
+    ↓
+containerd-shim
+    ↓
+runc
+```
+
+**각 계층의 역할**
+
+**docker CLI**
+- 사용자 명령 인터페이스
+- REST API를 통해 dockerd와 통신
+
+**dockerd**
+- 이미지 빌드
+- 볼륨 관리
+- 네트워크 관리
+- API 서버
+- containerd에게 실제 컨테이너 작업 위임
+
+**containerd**
+- 컨테이너 생명주기 관리
+- 이미지 pull/push
+- 스토리지 관리
+
+**containerd-shim + runc**
+- 실제 컨테이너 실행
+
+**Docker vs dockerd vs containerd**
+
+- **Docker**: 전체 플랫폼 (CLI, daemon, 빌드, 네트워크 등)
+- **dockerd**: Docker daemon (고수준 기능)
+- **containerd**: Core 컨테이너 런타임 (Docker에서 분리됨)
+
+### 5.7 대체 런타임
+
+**crun**
+
+C 언어로 작성된 OCI 런타임:
+- runc보다 빠르고 메모리 효율적
+- Go 런타임 오버헤드 없음
+- systemd 통합 우수
+
+**kata-containers**
+
+VM 기반 경량 컨테이너:
+- 각 컨테이너가 전용 VM에서 실행
+- 더 강력한 격리
+- 멀티테넌트 환경에 적합
+- 성능 오버헤드
+
+**gVisor (runsc)**
+
+Google의 사용자 공간 커널:
+- 시스템 콜을 가로채서 사용자 공간에서 처리
+- 커널 공격 표면 축소
+- 보안 강화
+- 성능 저하 (약 10-50%)
+
+**Firecracker**
+
+AWS의 마이크로VM:
+- 서버리스 워크로드용
+- 밀리초 단위 부팅
+- 최소 메모리 오버헤드
+- Lambda, Fargate에서 사용
+
+---
+
+## 6. 컨테이너 보안
+
+### 6.1 컨테이너 보안의 중요성
+
+**컨테이너의 보안 과제**
+
+컨테이너는 VM보다 격리가 약다:
+- 호스트 커널 공유
+- Namespace 탈출 가능성
+- 권한 상승 위험
+- 이미지 취약점
+
+**다층 보안 (Defense in Depth)**
+
+여러 보안 계층을 쌓아 종합적으로 방어:
+1. 안전한 이미지 사용
+2. Namespace 격리
+3. Cgroup 제한
+4. Capability 제한
+5. Seccomp 프로필
+6. SELinux/AppArmor
+7. User Namespace
+8. 네트워크 정책
+9. 런타임 보안 모니터링
+
+### 6.2 안전한 이미지 관리
+
+**베이스 이미지 선택**
+
+```dockerfile
+# 나쁜 예: 너무 큰 이미지
+FROM ubuntu:latest
+
+# 좋은 예: 최소 이미지
+FROM alpine:3.18
+
+# 더 좋은 예: Distroless
+FROM gcr.io/distroless/base-debian11
+```
+
+**최소 이미지 사용 이유**
+- 공격 표면 축소
+- 취약점 감소
+- 빌드 시간 단축
+- 저장 공간 절약
+
+**이미지 스캐닝**
+
+```bash
+# Trivy로 이미지 스캔
+trivy image nginx:latest
+
+# Clair, Anchore 등 다른 도구도 사용 가능
+
+# CI/CD 파이프라인에 통합
+# 취약점 발견 시 빌드 실패
+```
+
+**이미지 서명 및 검증**
+
+```bash
+# Docker Content Trust 활성화
+export DOCKER_CONTENT_TRUST=1
+
+# 서명된 이미지만 pull 가능
+docker pull nginx:latest
+```
+
+**최신 패치 유지**
+
+```dockerfile
+# 정기적으로 베이스 이미지 업데이트
+FROM alpine:3.18
+
+# 패키지 업데이트
+RUN apk update && apk upgrade
+
+# 불필요한 패키지 제거
+RUN apk add --no-cache nginx && \
+    rm -rf /var/cache/apk/*
+```
+
+### 6.3 Capability 제한
+
+**기본 Capability**
+
+Docker는 기본적으로 제한된 capability를 부여합하:
+
+```bash
+# 기본 Capability 확인
+docker run --rm alpine sh -c 'apk add -q libcap; capsh --print'
+
+# 기본 허용되는 Capability:
+# CAP_CHOWN, CAP_DAC_OVERRIDE, CAP_FOWNER, CAP_FSETID,
+# CAP_KILL, CAP_SETGID, CAP_SETUID, CAP_SETPCAP,
+# CAP_NET_BIND_SERVICE, CAP_NET_RAW, CAP_SYS_CHROOT,
+# CAP_MKNOD, CAP_AUDIT_WRITE, CAP_SETFCAP
+```
+
+**Capability 제거**
+
+```bash
+# 모든 Capability 제거
+docker run --cap-drop=ALL nginx
+
+# 특정 Capability만 제거
+docker run --cap-drop=NET_RAW --cap-drop=CHOWN nginx
+
+# 최소 권한으로 실행 (권장)
+docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE nginx
+```
+
+**위험한 Capability**
+
+절대 부여하지 말아야 할 Capability:
+
+- **CAP_SYS_ADMIN**: 거의 모든 관리 작업 허용
+- **CAP_SYS_MODULE**: 커널 모듈 로드
+- **CAP_SYS_RAWIO**: 직접 I/O 접근
+- **CAP_SYS_PTRACE**: 다른 프로세스 디버깅
+- **CAP_DAC_READ_SEARCH**: 모든 파일 읽기
+
+### 6.4 Seccomp 프로필
+
+**기본 Seccomp 프로필**
+
+Docker는 기본 seccomp 프로필을 적용한다:
+
+```bash
+# 기본 프로필로 실행
+docker run --rm nginx
+
+# Seccomp 없이 실행 (위험!)
+docker run --security-opt seccomp=unconfined nginx
+```
+
+**차단되는 시스템 콜 예시**
+
+- `reboot`: 시스템 재부팅
+- `swapon`/`swapoff`: 스왑 제어
+- `mount`/`umount`: 파일시스템 마운트
+- `clock_settime`: 시스템 시계 변경
+- `acct`: 프로세스 어카운팅
+- `settimeofday`: 시간 설정
+
+**커스텀 Seccomp 프로필**
+
+```json
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "architectures": ["SCMP_ARCH_X86_64"],
+  "syscalls": [
+    {
+      "names": ["read", "write", "open", "close"],
+      "action": "SCMP_ACT_ALLOW"
+    }
+  ]
+}
+```
+
+```bash
+# 커스텀 프로필 적용
+docker run --security-opt seccomp=myprofile.json nginx
+```
+
+### 6.5 User Namespace Remapping
+
+**User Namespace의 중요성**
+
+컨테이너 내부의 root를 호스트의 일반 사용자로 매핑:
+
+```bash
+# Dockerd에서 User Namespace 활성화
+# /etc/docker/daemon.json
+{
+  "userns-remap": "default"
+}
+
+# Docker 재시작
+sudo systemctl restart docker
+
+# 이제 컨테이너 프로세스가 일반 사용자로 실행
+ps aux | grep nginx
+# dockremap:dockremap으로 실행됨
+```
+
+**장점**
+
+- 컨테이너 탈출 시에도 호스트에서 제한된 권한
+- 멀티테넌트 환경 보안 강화
+- 호스트 파일시스템 접근 제한
+
+**제한사항**
+
+- 일부 기능 제약 (특권 포트 바인딩 등)
+- 볼륨 권한 문제 가능
+- 추가 설정 필요
+
+### 6.6 읽기 전용 루트 파일시스템
+
+**읽기 전용 컨테이너**
+
+```bash
+# 루트 파일시스템을 읽기 전용으로
+docker run --read-only nginx
+
+# tmpfs로 쓰기 가능한 임시 디렉토리 제공
+docker run --read-only --tmpfs /tmp nginx
+
+# 볼륨은 여전히 쓰기 가능
+docker run --read-only -v myvolume:/data nginx
+```
+
+**장점**
+
+- 악성 코드가 파일 수정 불가
+- 컨테이너 불변성 보장
+- 예측 가능한 동작
+
+**주의사항**
+
+- 로그 디렉토리를 tmpfs 또는 볼륨으로 제공
+- 애플리케이션이 쓰기가 필요한 경로 확인
+
+### 6.7 네트워크 격리
+
+**기본 브리지 네트워크의 문제**
+
+```bash
+# 기본 브리지 네트워크
+docker run --name web nginx
+docker run --name db postgres
+
+# 같은 네트워크에 있어 서로 통신 가능 (위험!)
+docker exec web ping db
+```
+
+**사용자 정의 네트워크**
+
+```bash
+# 네트워크 생성
+docker network create frontend
+docker network create backend
+
+# 웹 서버는 frontend만
+docker run --name web --network frontend nginx
+
+# DB는 backend만
+docker run --name db --network backend postgres
+
+# 웹과 DB 격리됨
+docker exec web ping db  # 실패
+```
+
+**Internal 네트워크**
+
+```bash
+# 외부 통신 차단
+docker network create --internal private
+
+# 컨테이너는 서로 통신 가능하지만 외부 불가
+docker run --network private nginx
+```
+
+### 6.8 보안 모범 사례
+
+**최소 권한 원칙**
+
+```dockerfile
+# root가 아닌 사용자로 실행
+FROM nginx:alpine
+
+# 사용자 생성
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# 소유권 변경
+RUN chown -R appuser:appgroup /app
+
+# 사용자 전환
+USER appuser
+
+# 이제 appuser로 실행
+CMD ["./app"]
+```
+
+**민감 정보 관리**
+
+```bash
+# Secrets 사용 (Docker Swarm 또는 Kubernetes)
+docker secret create db_password password.txt
+docker service create --secret db_password nginx
+
+# 환경 변수 대신 파일로 전달
+# /run/secrets/db_password에서 읽기
+```
+
+**보안 스캔 자동화**
+
+```yaml
+# CI/CD 파이프라인 예시
+# .gitlab-ci.yml
+security_scan:
+  stage: test
+  script:
+    - trivy image $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - if [ $? -ne 0 ]; then exit 1; fi
+```
+
+**런타임 보안 모니터링**
+
+- Falco: 런타임 위협 탐지
+- Sysdig: 컨테이너 모니터링 및 보안
+- Aqua Security: 종합 컨테이너 보안 플랫폼
+
+---
+
+## 7. 컨테이너 네트워킹
+
+### 7.1 Docker 네트워크 드라이버
+
+**Bridge 네트워크 (기본)**
+
+단일 호스트에서 컨테이너 간 통신:
+
+```bash
+# 기본 브리지 확인
+docker network inspect bridge
+
+# 사용자 정의 브리지 생성
+docker network create --driver bridge mybridge
+
+# 컨테이너 연결
+docker run --network mybridge nginx
+
+# 장점:
+# - 자동 DNS 해석 (컨테이너 이름으로 통신)
+# - 격리된 네트워크
+# - 포트 매핑
+```
+
+**Host 네트워크**
+
+컨테이너가 호스트 네트워크 스택 사용:
+
+```bash
+docker run --network host nginx
+
+# 특징:
+# - 최고 성능 (네트워크 오버헤드 없음)
+# - 포트 매핑 불필요
+# - 호스트와 포트 충돌 가능
+# - 격리 없음 (보안 위험)
+```
+
+**None 네트워크**
+
+네트워크 완전 비활성화:
+
+```bash
+docker run --network none nginx
+
+# 용도:
+# - 최대 격리
+# - 네트워크가 필요 없는 작업
+# - 커스텀 네트워킹 구성
+```
+
+**Overlay 네트워크**
+
+여러 Docker 호스트에 걸친 네트워크:
+
+```bash
+# Docker Swarm 초기화 필요
+docker swarm init
+
+# Overlay 네트워크 생성
+docker network create --driver overlay myoverlay
+
+# 서비스 배포
+docker service create --network myoverlay nginx
+
+# 특징:
+# - 멀티 호스트 통신
+# - 자동 로드 밸런싱
+# - Swarm/Kubernetes에서 사용
+```
+
+**Macvlan 네트워크**
+
+컨테이너에 MAC 주소 할당:
+
+```bash
+# Macvlan 네트워크 생성
+docker network create -d macvlan \
+  --subnet=192.168.1.0/24 \
+  --gateway=192.168.1.1 \
+  -o parent=eth0 mymacvlan
+
+# 컨테이너가 물리 네트워크에 직접 연결된 것처럼 보임
+docker run --network mymacvlan nginx
+
+# 용도:
+# - 레거시 애플리케이션 (MAC 주소 필요)
+# - 네트워크 모니터링
+# - 특수 프로토콜
+```
+
+### 7.2 포트 매핑과 NAT
+
+**포트 매핑 메커니즘**
+
+```bash
+# 포트 매핑
+docker run -p 8080:80 nginx
+
+# iptables 규칙 확인
+sudo iptables -t nat -L -n
+
+# Docker가 추가한 규칙:
+# DNAT: 8080 → 172.17.0.2:80
+# MASQUERADE: 172.17.0.0/16 → 호스트 IP
+```
+
+**여러 포트 매핑**
+
+```bash
+# 여러 포트
+docker run -p 8080:80 -p 4443:443 nginx
+
+# 호스트 IP 지정
+docker run -p 127.0.0.1:8080:80 nginx
+
+# 임의 포트 할당
+docker run -p 80 nginx
+docker port <container>
+```
+
+**UDP 포트**
+
+```bash
+# UDP 포트 매핑
+docker run -p 53:53/udp dns-server
+```
+
+### 7.3 컨테이너 간 통신
+
+**같은 네트워크 내 통신**
+
+```bash
+# 사용자 정의 네트워크 생성
+docker network create mynet
+
+# 컨테이너 실행
+docker run -d --name web --network mynet nginx
+docker run -d --name db --network mynet postgres
+
+# DNS로 통신
+docker exec web ping db  # 성공!
+
+# IP가 아닌 이름으로 통신 가능
+# 애플리케이션 설정:
+# DATABASE_HOST=db
+```
+
+**링크 (레거시)**
+
+```bash
+# 구식 방법 (deprecated)
+docker run --name db postgres
+docker run --link db:database app
+
+# 대신 사용자 정의 네트워크 사용 권장
+```
+
+**네트워크 별칭**
+
+```bash
+# 여러 이름으로 참조 가능
+docker run --network mynet --network-alias db --network-alias database postgres
+
+# 둘 다 작동
+ping db
+ping database
+```
+
+### 7.4 Docker DNS
+
+**내장 DNS 서버**
+
+Docker는 각 사용자 정의 네트워크에 DNS 서버를 제공 (127.0.0.11):
+
+```bash
+# 컨테이너 내부에서 확인
+docker exec web cat /etc/resolv.conf
+# nameserver 127.0.0.11
+
+# Docker DNS가 컨테이너 이름을 IP로 해석
+nslookup db 127.0.0.11
+```
+
+**서비스 디스커버리**
+
+```bash
+# 같은 서비스의 여러 인스턴스
+docker run -d --name web1 --network mynet nginx
+docker run -d --name web2 --network mynet nginx
+
+# 라운드 로빈 DNS
+# 반복 조회 시 다른 IP 반환
+```
+
+**외부 DNS**
+
+```bash
+# 커스텀 DNS 서버 지정
+docker run --dns 8.8.8.8 nginx
+
+# DNS 검색 도메인
+docker run --dns-search example.com nginx
+```
