@@ -19,7 +19,7 @@ function refreshTheme(event) {
     const newTheme = themeMapper[Theme.visualState];
 
     mermaid.initialize({ theme: newTheme });
-    mermaid.init(null, `.${MERMAID}`);
+    mermaid.run();
   }
 }
 
@@ -53,6 +53,7 @@ export function loadMermaid() {
   [...basicList].forEach(setNode);
 
   mermaid.initialize(mermaidConf);
+  mermaid.run();
 
   if (Theme.switchable) {
     window.addEventListener('message', refreshTheme);
