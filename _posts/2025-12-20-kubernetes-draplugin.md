@@ -1,6 +1,6 @@
 ---
 
-title Kubernetes DRA Plugin gRPC 연결 관리 개선기  
+title: Kubernetes DRA Plugin gRPC 연결 관리 개선기  
 date: 2025-12-20  
 categories: [Kubernetes, DRA]  
 tags: [Kubernetes, DRA, gRPC, Kubelet, DevOps, Infrastructure]  
