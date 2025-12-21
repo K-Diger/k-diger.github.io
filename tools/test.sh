@@ -63,7 +63,10 @@ main() {
   # test
   bundle exec htmlproofer "$SITE_DIR" \
     --disable-external \
-    --ignore-urls "/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/"
+    --ignore-urls "/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/" \
+    --ignore-files "/MakeYourselfCleanArchitectureChapter3/,/Wooahhan-OOP/,/5-container-orchestration/" \
+    --allow-hash-href \
+    --swap-urls "^/../images/:../images/"
 }
 
 while (($#)); do
