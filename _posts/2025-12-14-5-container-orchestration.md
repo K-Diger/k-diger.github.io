@@ -3260,27 +3260,29 @@ ingress:
 
 **templates/deployment.yaml:**
 
+{% raw %}
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: { { include "myapp.fullname" . } }
+  name: {{ include "myapp.fullname" . }}
 spec:
-  replicas: { { .Values.replicaCount } }
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: { { include "myapp.name" . } }
+      app: {{ include "myapp.name" . }}
   template:
     metadata:
       labels:
-        app: { { include "myapp.name" . } }
+        app: {{ include "myapp.name" . }}
     spec:
       containers:
-        - name: { { .Chart.Name } }
+        - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
-            - containerPort: { { .Values.service.targetPort } }
+            - containerPort: {{ .Values.service.targetPort }}
 ```
+{% endraw %}
 
 ---
 

@@ -4118,7 +4118,7 @@ docker run -d --name test --cpus="0.5" --memory="256m" nginx
 docker inspect test | grep -i cgroup
 
 # Cgroup 파일 확인
-CONTAINER_ID=$(docker inspect -f '{{.Id}}' test)
+{% raw %}CONTAINER_ID=$(docker inspect -f '{{.Id}}' test){% endraw %}
 ls /sys/fs/cgroup/system.slice/docker-${CONTAINER_ID}.scope/
 
 # CPU 제한 확인
