@@ -2629,7 +2629,7 @@ Page Cache는 "사용 가능한" 메모리로 간주된다:
 - 더티 페이지(수정된 페이지)는 먼저 디스크에 기록 후 회수
 - 깨끗한 페이지는 즉시 회수 가능
 
-### 3.5 Swap과 OOM Killer
+### 6.5 Swap과 OOM Killer
 
 **Swap 메모리**
 
@@ -2678,7 +2678,7 @@ OOM Score는 다음 요소를 고려한다:
 - 호스트 시스템 전체에 영향을 주지 않음
 - 이것이 Cgroup의 중요한 역할 중 하나
 
-### 3.6 NUMA (Non-Uniform Memory Access)
+### 6.6 NUMA (Non-Uniform Memory Access)
 
 **NUMA의 개념**
 
