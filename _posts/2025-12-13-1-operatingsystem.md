@@ -135,6 +135,94 @@ Model name:              Intel(R) Core(TM) i7-8565U CPU @ 1.80GHz
 - 논리 코어: 8개 (Thread per core × Core per socket)
 - 하이퍼스레딩: 활성화 (Thread per core = 2)
 
+**lscpu 출력 항목 상세 설명**
+
+```bash
+Architecture:            x86_64
+  → CPU 아키텍처 (64비트 Intel/AMD 호환)
+
+CPU op-mode(s):          32-bit, 64-bit
+  → 지원하는 명령어 모드
+
+Address sizes:           40 bits physical, 48 bits virtual
+  → 물리 주소: 2^40 = 1TB, 가상 주소: 2^48 = 256TB 지원
+
+CPU(s):                  4
+  → 총 논리 프로세서 개수 (OS가 인식하는 CPU 개수)
+  → 계산: Socket × Core per socket × Thread per core
+
+Thread(s) per core:      1 또는 2
+  → 1: 하이퍼스레딩 비활성화
+  → 2: 하이퍼스레딩 활성화
+
+Core(s) per socket:      1, 2, 4, 8, 16...
+  → 각 물리 CPU(소켓)당 포함된 물리 코어 수
+
+Socket(s):               1, 2, 4...
+  → 시스템에 장착된 물리 CPU 칩 개수
+  → 멀티소켓 시스템일수록 NUMA 고려 필요
+
+NUMA node(s):            1, 2, 4...
+  → NUMA 노드 개수
+  → Socket 수와 일치하는 경우가 많음
+
+Vendor ID:               GenuineIntel 또는 AuthenticAMD
+  → CPU 제조사
+
+Flags:                   fpu vme de ... hypervisor ...
+  → CPU가 지원하는 기능 플래그
+  → 'hypervisor' 플래그가 있으면 가상머신
+
+BogoMIPS:                5187.72
+  → CPU 속도 측정값 (참고용, 정확한 성능 지표 아님)
+```
+
+**실제 사례 분석**
+
+```bash
+# 사례 1: 이상적인 구성 (1소켓 4코어)
+Socket(s):           1
+Core(s) per socket:  4
+Thread(s) per core:  1
+CPU(s):              4
+→ 1 × 4 × 1 = 4 CPU
+→ 단일 NUMA, 메모리 레이턴시 균일
+
+# 사례 2: 비효율적 구성 (4소켓 1코어)
+Socket(s):           4          ← 문제!
+Core(s) per socket:  1
+Thread(s) per core:  1
+CPU(s):              4
+→ 4 × 1 × 1 = 4 CPU
+→ 4개 NUMA 노드, 크로스 소켓 통신 느림
+→ 성능 20-35% 저하 가능
+
+# 사례 3: 하이퍼스레딩 활성화
+Socket(s):           1
+Core(s) per socket:  4
+Thread(s) per core:  2          ← HT ON
+CPU(s):              8
+→ 1 × 4 × 2 = 8 CPU
+→ 물리 코어 4개, 논리 코어 8개
+```
+
+**가상머신 확인 방법**
+
+```bash
+# Flags에 'hypervisor' 있으면 VM
+$ lscpu | grep -o hypervisor
+hypervisor
+
+# 또는 virt-what 사용
+$ sudo virt-what
+kvm
+
+# DMI 정보로 확인
+$ sudo dmidecode -s system-manufacturer
+QEMU
+VMware, Inc.
+```
+
 ### 0.3 CPU 사용률 확인
 
 ```bash
@@ -899,6 +987,29 @@ CPU는 다음과 같은 핵심 부품으로 구성된다:
 
 하이퍼스레딩(HT)은 인텔의 기술로, 하나의 물리 코어가 두 개의 하드웨어 스레드(논리 코어)로 보이게 하는 기술이다. AMD에서는 SMT(Simultaneous Multi-Threading)라고 부른다.
 
+**혼동 주의: 하이퍼스레딩 vs 하이퍼바이저**
+
+이름이 비슷하지만 완전히 다른 개념이다:
+
+| 구분 | 하이퍼스레딩 (Hyper-Threading) | 하이퍼바이저 (Hypervisor) |
+|------|-------------------------------|---------------------------|
+| 레벨 | CPU 하드웨어 기술 | 소프트웨어 가상화 계층 |
+| 위치 | CPU 코어 내부 | 하드웨어와 OS 사이 |
+| 목적 | 단일 코어 활용도 향상 | 여러 OS 동시 실행 |
+| 성능 | 이론상 30-40% 향상 | 약간의 오버헤드 존재 |
+| 예시 | Intel HT, AMD SMT | KVM, VMware, Xen |
+
+```
+물리 서버에서 하이퍼스레딩 확인:
+$ lscpu | grep Thread
+Thread(s) per core:  1    ← HT OFF
+Thread(s) per core:  2    ← HT ON
+
+가상머신인지 확인:
+$ lscpu | grep Flags | grep hypervisor
+Flags: ... hypervisor ...  ← VM에서만 나타남
+```
+
 **물리 코어 vs 논리 코어**
 
 - **물리 코어 (Physical Core)**: 실제 하드웨어 실행 유닛
@@ -918,6 +1029,105 @@ CPU는 다음과 같은 핵심 부품으로 구성된다:
 - 하나의 물리 코어 내부의 실행 유닛을 두 개의 스레드가 공유
 - 한 스레드가 메모리 대기 중일 때 다른 스레드가 CPU 활용
 - 이론상 30-40% 성능 향상 (상황에 따라 다름)
+
+**하드웨어 구조 상세**
+
+하이퍼스레딩에서 각 논리 코어(하드웨어 스레드)는 **독립적인 아키텍처 상태**와 **공유 실행 유닛**으로 구성된다.
+
+```
+┌─────────────────────────────────────────────────┐
+│              Physical Core                       │
+│                                                  │
+│  ┌──────────────┐        ┌──────────────┐      │
+│  │ Logical CPU 0│        │ Logical CPU 1│      │
+│  │              │        │              │      │
+│  │ ✓ 독립적:     │        │ ✓ 독립적:     │      │
+│  │ - Registers  │        │ - Registers  │      │
+│  │ - PC (RIP)   │        │ - PC (RIP)   │      │
+│  │ - APIC ID    │        │ - APIC ID    │      │
+│  └──────────────┘        └──────────────┘      │
+│         ↓                       ↓               │
+│  ┌─────────────────────────────────────┐       │
+│  │      공유 실행 유닛 (경쟁)            │       │
+│  │  - ALU (산술/논리 연산)               │       │
+│  │  - FPU (부동소수점 연산)              │       │
+│  │  - Load/Store Unit                  │       │
+│  │  - Branch Predictor                 │       │
+│  └─────────────────────────────────────┘       │
+│         ↓                                       │
+│  ┌─────────────────────────────────────┐       │
+│  │      공유 캐시 (경쟁)                 │       │
+│  │  - L1 I-Cache, L1 D-Cache           │       │
+│  │  - L2 Cache                          │       │
+│  └─────────────────────────────────────┘       │
+└─────────────────────────────────────────────────┘
+```
+
+**CPU 유휴 시간 활용**
+
+단일 스레드는 메모리 대기, 캐시 미스 등으로 인해 실행 유닛을 100% 활용하지 못한다. 하이퍼스레딩은 이 유휴 시간에 다른 스레드를 실행한다.
+
+```
+하이퍼스레딩 OFF (한 스레드만):
+Clock 1: [명령어 Fetch]
+Clock 2: [명령어 Decode]
+Clock 3: [실행 - ALU 사용]
+Clock 4: [메모리 대기...] ← CPU 놀고 있음!
+Clock 5: [메모리 대기...]
+Clock 6: [메모리 대기...]
+Clock 7: [결과 저장]
+CPU 활용률: ~30-40%
+
+하이퍼스레딩 ON (두 스레드 교차 실행):
+         Thread A          Thread B
+Clock 1: [A: Fetch]        [대기]
+Clock 2: [A: Decode]       [B: Fetch]
+Clock 3: [A: 실행-ALU]     [B: Decode]
+Clock 4: [A: 메모리 대기]  [B: 실행-ALU] ← 빈 시간 활용!
+Clock 5: [A: 메모리 대기]  [B: 실행-FPU]
+Clock 6: [A: 메모리 대기]  [B: 메모리 접근]
+Clock 7: [A: 저장]         [B: 대기]
+CPU 활용률: ~60-80%
+```
+
+**리소스 경쟁과 동시성 처리**
+
+여러 스레드가 같은 실행 유닛을 사용하려 하면 CPU가 하드웨어 레벨에서 중재(arbitration)한다.
+
+예를 들어 Intel Skylake 아키텍처는:
+- ALU (정수 연산): 4개
+- FPU (실수 연산): 2개
+- Load Unit: 2개
+- Store Unit: 1개
+
+따라서:
+- 두 스레드가 모두 정수 연산 → 충돌 없음 (ALU 4개)
+- 두 스레드가 모두 메모리 쓰기 → 충돌 발생 (Store Unit 1개) → 하나는 대기
+
+**캐시 공유와 False Sharing**
+
+캐시는 64바이트 단위의 캐시 라인으로 관리되는데, 서로 다른 변수가 같은 캐시 라인에 있으면 성능 저하가 발생할 수 있다.
+
+```c
+// 나쁜 예: False Sharing
+struct {
+    int counter_a;  // Thread A 사용
+    int counter_b;  // Thread B 사용 (같은 캐시 라인!)
+} data;
+
+// Thread A가 counter_a 수정 → Thread B의 캐시 무효화
+// Thread B가 counter_b 수정 → Thread A의 캐시 무효화
+// → 계속 핑퐁! 성능 10-100배 저하 가능
+
+// 좋은 예: 캐시 라인 분리
+struct {
+    int counter_a;
+    char padding[60];  // 64바이트 채우기
+    int counter_b;
+    char padding2[60];
+} data;
+// → 서로 다른 캐시 라인, 충돌 없음
+```
 
 **하이퍼스레딩 확인**
 
@@ -996,6 +1206,122 @@ node 0 cpus: 0 1 2 3 4 5 6 7
 node 0 size: 32GB
 node 1 cpus: 8 9 10 11 12 13 14 15
 node 1 size: 32GB
+```
+
+**멀티 소켓 구성에 따른 성능 비교**
+
+동일한 총 코어 수(4코어)를 가진 시스템도 소켓 구성에 따라 성능이 크게 달라진다.
+
+```
+구성 A: 4 Socket × 1 Core = 4 CPU
+구성 B: 2 Socket × 2 Core = 4 CPU
+구성 C: 1 Socket × 4 Core = 4 CPU
+```
+
+**아키텍처 비교**
+
+```
+구성 A (4소켓 × 1코어) - 가장 비효율적:
+┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐
+│Socket│  │Socket│  │Socket│  │Socket│
+│  0   │  │  1   │  │  2   │  │  3   │
+│Core 0│  │Core 0│  │Core 0│  │Core 0│
+└──┬───┘  └──┬───┘  └──┬───┘  └──┬───┘
+   │         │         │         │
+[MEM 0]  [MEM 1]  [MEM 2]  [MEM 3]
+   └─────────┴─────────┴─────────┘
+        QPI/UPI 링크 (느림!)
+
+문제점:
+- 4개의 독립된 NUMA 노드
+- 크로스 소켓 통신 시 레이턴시 2-3배 증가
+- 캐시 일관성 오버헤드 최대
+- L3 캐시 공유 불가
+
+
+구성 C (1소켓 × 4코어) - 가장 효율적:
+┌──────────────────────────┐
+│       Socket 0           │
+│  ┌────┐ ┌────┐          │
+│  │C0  │ │C1  │          │
+│  └────┘ └────┘          │
+│  ┌────┐ ┌────┐          │
+│  │C2  │ │C3  │          │
+│  └────┘ └────┘          │
+│      ↓                   │
+│  [Shared L3 Cache]       │
+└──────────┬───────────────┘
+           │
+      [단일 메모리]
+
+장점:
+- 단일 NUMA 노드 (UMA)
+- 모든 코어가 동일한 메모리 레이턴시
+- L3 캐시 공유로 코어 간 통신 효율적
+- 캐시 일관성 오버헤드 최소
+```
+
+**성능 차이 분석**
+
+| 워크로드 유형 | 1소켓 4코어 | 2소켓 2코어 | 4소켓 1코어 |
+|--------------|-------------|-------------|-------------|
+| 단일 스레드 | 100% | 100% | 100% |
+| 메모리 집약적 (DB, 캐시) | 100% | 85-95% | 65-75% |
+| 멀티스레드 (공유 데이터) | 100% | 80-90% | 60-70% |
+| 병렬 처리 (독립 작업) | 100% | 95-100% | 90-95% |
+
+**실제 예시: 4소켓 × 1코어 가상머신**
+
+```bash
+$ lscpu
+Architecture:        x86_64
+CPU(s):              4
+Socket(s):           4          ← 문제!
+Core(s) per socket:  1          ← 각 소켓에 1코어만
+Thread(s) per core:  1
+Flags:              ... hypervisor ...  ← VM 환경
+
+# NUMA 토폴로지 확인
+$ numactl --hardware
+available: 4 nodes (0-3)
+node 0 cpus: 0
+node 1 cpus: 1
+node 2 cpus: 2
+node 3 cpus: 3
+node distances:
+node   0   1   2   3
+  0:  10  20  20  20    ← 원격 메모리는 2배 느림
+  1:  20  10  20  20
+  2:  20  20  10  20
+  3:  20  20  20  10
+```
+
+이런 구성은 주로 VM에서 발생하며, 성능이 20-35% 낮을 수 있다.
+
+**권장 사항**
+
+- **일반적인 경우**: 1소켓 다중코어 구성 선택
+  - 메모리 레이턴시 최소화
+  - 관리 복잡도 감소
+  - 비용/전력 효율성 최고
+
+- **멀티소켓이 필요한 경우**:
+  - 256GB 이상 대용량 메모리 (소켓당 메모리 채널 한계)
+  - 미션 크리티컬 하드웨어 리던던시
+  - 점진적 확장이 필수인 환경
+
+**VM 재구성 방법**
+
+```bash
+# vSphere 또는 KVM에서 vCPU 토폴로지 변경
+현재: 4 Socket × 1 Core
+변경: 1 Socket × 4 Core
+
+# VM 정의 수정 (예: KVM libvirt)
+<vcpu placement='static'>4</vcpu>
+<cpu>
+  <topology sockets='1' cores='4' threads='1'/>
+</cpu>
 ```
 
 ### 1.4 CPU 캐시
