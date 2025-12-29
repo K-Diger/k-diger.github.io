@@ -905,12 +905,10 @@ if [ $USAGE -gt 80 ]; then
 fi
 ```
 
-**면접 질문 대응 완벽 정리**
-
-**질문**: "/var/lib/docker를 격리할 수 있나요?"
+**질문**: "/var/lib/docker를 격리할 수 있는가?"
 
 **모범 답변**:
-"네, 여러 방법이 있는데 가장 권장하는 방법은 **LVM으로 별도 Logical Volume을 생성**하는 것입니다.
+"여러 방법이 있는데 가장 권장하는 방법은 **LVM으로 별도 Logical Volume을 생성**하는 것이다.
 
 **LVM을 추천하는 이유:**
 
@@ -936,7 +934,7 @@ mount /dev/vg-docker/lv-docker /var/lib/docker
 - 네트워크 장애 시 Docker 전체 중단
 - IOPS 부족으로 성능 저하
 
-프로덕션 환경에서는 LVM + Thin Provisioning 조합이 가장 유연하고 안정적입니다."
+프로덕션 환경에서는 LVM + Thin Provisioning 조합이 가장 유연하고 안정적이다."
 
 ---
 
@@ -3496,9 +3494,6 @@ Page Cache를 우회하고 직접 디스크와 통신:
 ---
 
 ## 12. 리눅스 보안 메커니즘 (컨테이너 기술의 기반)
-
-> **Note**: 이 섹션은 컨테이너 기술(Docker, Kubernetes)의 핵심 기반이 되는 리눅스 격리 및 보안 기술을 다룹니다. 특히 Namespaces와 Cgroups는 컨테이너가 동작하는 근본
-> 원리이므로, 컨테이너를 깊이 이해하려면 반드시 학습해야 합니다.
 
 ### 12.1 UID/GID와 Permission Model
 
