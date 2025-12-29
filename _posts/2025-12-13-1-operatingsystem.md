@@ -16,6 +16,20 @@ mermaid: true
 ### Part 0: 시스템 정보 확인
 
 0. [리눅스 시스템 정보 확인](#0-리눅스-시스템-정보-확인)
+   - 0.1 [시스템 기본 정보](#01-시스템-기본-정보)
+   - 0.2 [CPU 정보 확인](#02-cpu-정보-확인)
+   - 0.3 [CPU 사용률 확인](#03-cpu-사용률-확인)
+   - 0.4 [메모리 정보 확인](#04-메모리-정보-확인)
+   - 0.5 [디스크 및 파티션 정보](#05-디스크-및-파티션-정보)
+   - 0.6 [네트워크 인터페이스 정보](#06-네트워크-인터페이스-정보)
+   - 0.7 [종합 시스템 정보](#07-종합-시스템-정보)
+   - 0.8 [리눅스 디렉토리 구조](#08-리눅스-디렉토리-구조-fhs---filesystem-hierarchy-standard)
+   - 0.9 [/var/lib/docker 디렉토리 격리 전략](#09-varlibdocker-디렉토리-격리-전략)
+   - 0.10 [systemd 및 서비스 관리](#010-systemd-및-서비스-관리)
+   - 0.11 [로그 관리](#011-로그-관리)
+   - 0.12 [프로세스 모니터링 상세](#012-프로세스-모니터링-상세)
+   - 0.13 [네트워크 트러블슈팅 기초](#013-네트워크-트러블슈팅-기초)
+   - 0.14 [시스템 모니터링 기초](#014-시스템-모니터링-기초)
 
 ### Part 1: 하드웨어 기초 개념
 
@@ -26,6 +40,7 @@ mermaid: true
 ### Part 2: 운영체제 핵심
 
 4. [운영체제와 커널](#4-운영체제와-커널)
+   - 4.5 [리눅스 부팅 프로세스](#45-리눅스-부팅-프로세스)
 5. [시스템 콜과 인터럽트](#5-시스템-콜과-인터럽트)
 6. [메모리 관리](#6-메모리-관리)
 7. [프로세스 관리](#7-프로세스-관리)
@@ -935,6 +950,1857 @@ mount /dev/vg-docker/lv-docker /var/lib/docker
 - IOPS 부족으로 성능 저하
 
 프로덕션 환경에서는 LVM + Thin Provisioning 조합이 가장 유연하고 안정적이다."
+
+---
+
+### 0.10 systemd 및 서비스 관리
+
+**systemd란?**
+
+systemd는 현대 Linux 시스템의 init 시스템이자 시스템 및 서비스 매니저이다. 전통적인 SysV init을 대체하여 더 빠른 부팅과 강력한 서비스 관리 기능을 제공한다.
+
+**전통적 init (SysV init)과의 차이**
+
+| 항목 | SysV init | systemd |
+|------|-----------|---------|
+| 시작 방식 | 순차적 (직렬) | 병렬 |
+| 설정 파일 | 쉘 스크립트 (/etc/init.d/) | .service 파일 |
+| 의존성 관리 | 순서 번호 (S01, S02...) | 명시적 의존성 선언 |
+| 부팅 속도 | 느림 | 빠름 (병렬 시작) |
+| 로그 시스템 | syslog | journald (통합) |
+
+**systemctl 기본 명령어**
+
+```bash
+# 서비스 상태 확인
+systemctl status nginx
+systemctl is-active nginx    # running 여부만
+systemctl is-enabled nginx   # 부팅 시 자동 시작 여부
+
+# 서비스 시작/중지/재시작
+systemctl start nginx
+systemctl stop nginx
+systemctl restart nginx
+systemctl reload nginx       # 설정만 재로드 (중단 없이)
+
+# 부팅 시 자동 시작 설정
+systemctl enable nginx       # 부팅 시 자동 시작
+systemctl disable nginx      # 자동 시작 해제
+systemctl enable --now nginx # enable + start 동시에
+
+# 서비스 목록
+systemctl list-units --type=service                # 로드된 서비스
+systemctl list-units --type=service --state=running # 실행 중인 서비스
+systemctl list-units --type=service --state=failed  # 실패한 서비스
+systemctl list-unit-files --type=service            # 모든 서비스 파일
+
+# 서비스 의존성 확인
+systemctl list-dependencies nginx
+systemctl list-dependencies --reverse nginx  # 역 의존성
+```
+
+**서비스 파일 구조**
+
+```bash
+# /etc/systemd/system/myapp.service 예시
+
+[Unit]
+Description=My Application Service
+Documentation=https://example.com/docs
+After=network.target                    # network.target 이후에 시작
+Wants=postgresql.service                # postgresql이 있으면 좋음 (선택)
+Requires=redis.service                  # redis 필수 (없으면 시작 실패)
+
+[Service]
+Type=simple                             # 프로세스 타입
+User=appuser                            # 실행 사용자
+Group=appgroup                          # 실행 그룹
+WorkingDirectory=/opt/myapp             # 작업 디렉토리
+ExecStart=/usr/local/bin/myapp          # 시작 명령
+ExecReload=/bin/kill -HUP $MAINPID     # 재로드 명령
+Restart=on-failure                      # 실패 시 재시작
+RestartSec=5s                           # 재시작 대기 시간
+StandardOutput=journal                  # stdout → journald
+StandardError=journal                   # stderr → journald
+
+# 리소스 제한
+LimitNOFILE=65536                       # 파일 디스크립터 제한
+MemoryLimit=1G                          # 메모리 제한
+CPUQuota=50%                            # CPU 제한
+
+[Install]
+WantedBy=multi-user.target              # 멀티 유저 모드에서 시작
+```
+
+**Service Type 설명**
+
+```bash
+Type=simple    # ExecStart가 메인 프로세스 (기본값)
+Type=forking   # ExecStart가 자식 프로세스를 fork하고 종료 (전통적 데몬)
+Type=oneshot   # 한 번 실행하고 종료 (백업 스크립트 등)
+Type=notify    # 프로세스가 systemd에 준비 완료 알림 (sd_notify)
+Type=dbus      # D-Bus 이름을 획득하면 준비 완료
+```
+
+**실습: 간단한 서비스 만들기**
+
+```bash
+# 1. 애플리케이션 생성
+cat > /usr/local/bin/hello-service.sh <<'EOF'
+#!/bin/bash
+while true; do
+    echo "$(date): Hello from my service"
+    sleep 10
+done
+EOF
+
+chmod +x /usr/local/bin/hello-service.sh
+
+# 2. 서비스 파일 생성
+cat > /etc/systemd/system/hello.service <<'EOF'
+[Unit]
+Description=Hello World Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/hello-service.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 3. systemd에 새 서비스 인식시키기
+systemctl daemon-reload
+
+# 4. 서비스 시작 및 활성화
+systemctl start hello
+systemctl enable hello
+
+# 5. 상태 확인
+systemctl status hello
+
+# 6. 로그 확인
+journalctl -u hello -f
+```
+
+**트러블슈팅 시나리오**
+
+```bash
+# 시나리오: nginx 서비스가 시작되지 않음
+
+# 1. 서비스 상태 확인
+$ systemctl status nginx
+● nginx.service - A high performance web server
+     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)
+     Active: failed (Result: exit-code) since Mon 2024-01-01 10:00:00 UTC; 5s ago
+    Process: 1234 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=1/FAILURE)
+   Main PID: 1234 (code=exited, status=1/FAILURE)
+
+# Active: failed → 서비스 시작 실패
+# Result: exit-code → 프로세스가 0이 아닌 코드로 종료
+# status=1/FAILURE → exit code 1
+
+# 2. 최근 로그 확인
+$ journalctl -u nginx -n 50 --no-pager
+Jan 01 10:00:00 host nginx[1234]: nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Address already in use)
+Jan 01 10:00:00 host nginx[1234]: nginx: configuration file /etc/nginx/nginx.conf test failed
+
+# → 포트 80이 이미 사용 중
+
+# 3. 포트 충돌 확인
+$ ss -tulpn | grep :80
+tcp   LISTEN 0   128   0.0.0.0:80   0.0.0.0:*   users:(("apache2",pid=999,fd=4))
+
+# → apache2가 80 포트 사용 중
+
+# 4. 충돌 해결
+systemctl stop apache2
+systemctl disable apache2
+
+# 5. 설정 파일 검증
+$ nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+# 6. 재시작
+systemctl start nginx
+systemctl status nginx
+# ● nginx.service - A high performance web server
+#      Active: active (running)
+```
+
+**일반적인 서비스 문제 패턴**
+
+```bash
+# 1. 권한 문제
+# 증상: Permission denied
+# 해결: User, Group, 파일 권한 확인
+
+# 2. 포트 충돌
+# 증상: Address already in use
+# 해결: ss -tulpn으로 확인, 충돌 서비스 중지
+
+# 3. 의존성 문제
+# 증상: 서비스 시작 전에 필요한 서비스 미시작
+# 해결: After, Requires, Wants 확인
+
+# 4. 설정 파일 오류
+# 증상: Configuration file test failed
+# 해결: 서비스별 설정 검증 명령 실행 (nginx -t, apachectl -t)
+
+# 5. 리소스 부족
+# 증상: Cannot allocate memory
+# 해결: 메모리 확인, Limit 설정 조정
+```
+
+**systemd-analyze (부팅 시간 분석)**
+
+```bash
+# 전체 부팅 시간
+$ systemd-analyze
+Startup finished in 2.547s (kernel) + 8.135s (userspace) = 10.682s
+graphical.target reached after 8.091s in userspace
+
+# 서비스별 부팅 시간 (느린 순서)
+$ systemd-analyze blame
+         3.234s NetworkManager-wait-online.service
+         2.123s docker.service
+         1.456s mysql.service
+          892ms redis.service
+          654ms nginx.service
+
+# 부팅 과정 시각화 (SVG 생성)
+systemd-analyze plot > boot.svg
+
+# Critical Chain (부팅 지연 원인 분석)
+$ systemd-analyze critical-chain
+graphical.target @8.091s
+└─multi-user.target @8.089s
+  └─docker.service @5.966s +2.123s
+    └─network.target @5.952s
+      └─NetworkManager.service @2.718s +3.234s
+        └─dbus.service @2.701s
+          └─basic.target @2.695s
+
+# 특정 서비스의 Critical Chain
+systemd-analyze critical-chain nginx.service
+```
+
+**systemctl 고급 기능**
+
+```bash
+# 서비스 마스킹 (완전히 시작 불가능하게)
+systemctl mask apache2        # 심볼릭 링크 → /dev/null
+systemctl unmask apache2
+
+# 서비스 임시 비활성화 (isolate 제외)
+systemctl isolate multi-user.target  # GUI 종료, 콘솔만
+
+# 전체 시스템 재부팅/종료
+systemctl reboot
+systemctl poweroff
+systemctl suspend    # 절전 모드
+systemctl hibernate  # 최대 절전 모드
+
+# 설정 다시 로드 (daemon-reload)
+systemctl daemon-reload  # 서비스 파일 수정 후 필수
+
+# 서비스 설정 확인
+systemctl show nginx           # 모든 속성
+systemctl show nginx -p User   # 특정 속성만
+systemctl cat nginx            # 서비스 파일 내용 확인
+```
+
+**타이머 (Cron 대체)**
+
+systemd 타이머는 cron의 더 강력한 대체재이다.
+
+```bash
+# /etc/systemd/system/backup.service
+[Unit]
+Description=Backup Service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup.sh
+
+# /etc/systemd/system/backup.timer
+[Unit]
+Description=Daily Backup Timer
+
+[Timer]
+OnCalendar=daily              # 매일
+OnCalendar=*-*-* 02:00:00     # 매일 새벽 2시
+OnCalendar=Mon *-*-* 00:00:00 # 매주 월요일 자정
+Persistent=true               # 부팅 시 놓친 작업 실행
+
+[Install]
+WantedBy=timers.target
+
+# 타이머 활성화
+systemctl enable --now backup.timer
+systemctl list-timers           # 타이머 목록 확인
+```
+
+**Target (Runlevel 대체)**
+
+```bash
+# Target 목록
+systemctl list-units --type=target
+
+# 주요 Target
+multi-user.target    # 멀티 유저 모드 (구 runlevel 3)
+graphical.target     # GUI 모드 (구 runlevel 5)
+rescue.target        # 복구 모드 (구 runlevel 1)
+emergency.target     # 긴급 모드
+
+# 기본 Target 확인
+systemctl get-default
+
+# 기본 Target 변경
+systemctl set-default multi-user.target  # GUI 비활성화
+systemctl set-default graphical.target   # GUI 활성화
+
+# Target 전환 (재부팅 없이)
+systemctl isolate multi-user.target
+```
+
+---
+
+### 0.11 로그 관리
+
+**journalctl (systemd 로그 시스템)**
+
+systemd는 journald를 통해 모든 시스템 로그를 중앙 집중식으로 관리한다.
+
+**기본 사용법**
+
+```bash
+# 전체 로그 보기
+journalctl
+
+# 최근 N줄만 보기
+journalctl -n 50                # 최근 50줄
+journalctl -n 100 --no-pager    # 페이저 없이 100줄
+
+# 실시간 로그 (tail -f와 유사)
+journalctl -f
+journalctl -f -n 20             # 최근 20줄부터 실시간
+
+# 특정 서비스 로그
+journalctl -u nginx             # nginx 서비스
+journalctl -u nginx -f          # nginx 실시간 로그
+journalctl -u nginx -u mysql    # 여러 서비스 동시에
+
+# 시간 범위 필터
+journalctl --since "2024-01-01 00:00:00"
+journalctl --since "1 hour ago"
+journalctl --since yesterday
+journalctl --since "2024-01-01" --until "2024-01-02"
+journalctl --since today
+journalctl --since "10 minutes ago"
+
+# 조합 예제
+journalctl -u nginx --since "1 hour ago" -n 100 --no-pager
+```
+
+**우선순위 필터링**
+
+```bash
+# 로그 레벨 (0-7)
+# 0: emerg   (긴급, 시스템 사용 불가)
+# 1: alert   (즉시 조치 필요)
+# 2: crit    (치명적 상태)
+# 3: err     (에러)
+# 4: warning (경고)
+# 5: notice  (정상이지만 중요)
+# 6: info    (정보)
+# 7: debug   (디버그)
+
+# 에러 이상만 보기
+journalctl -p err               # err, crit, alert, emerg
+journalctl -p 3                 # 동일 (숫자 사용)
+
+# 경고 이상만 보기
+journalctl -p warning
+
+# 특정 서비스의 에러만
+journalctl -u nginx -p err
+```
+
+**출력 형식 변경**
+
+```bash
+# JSON 형식
+journalctl -u nginx -o json
+journalctl -u nginx -o json-pretty
+
+# 짧은 형식 (기본값)
+journalctl -u nginx -o short
+
+# 자세한 형식
+journalctl -u nginx -o verbose
+
+# 커널 메시지만 (dmesg와 유사)
+journalctl -k
+journalctl -k -f    # 실시간
+
+# 특정 부팅 세션
+journalctl --list-boots           # 부팅 목록
+journalctl -b                     # 현재 부팅
+journalctl -b -1                  # 이전 부팅
+journalctl -b 0                   # 현재 부팅
+```
+
+**프로세스/사용자별 로그**
+
+```bash
+# 특정 PID 로그
+journalctl _PID=1234
+
+# 특정 사용자 로그
+journalctl _UID=1000
+journalctl _UID=$(id -u username)
+
+# 특정 실행 파일 로그
+journalctl _COMM=sshd
+journalctl /usr/sbin/nginx
+
+# 특정 디바이스 로그
+journalctl _KERNEL_DEVICE=/dev/sda
+```
+
+**로그 용량 관리**
+
+```bash
+# 디스크 사용량 확인
+journalctl --disk-usage
+# Archived and active journals take up 2.1G in the file system.
+
+# 로그 삭제 (시간 기준)
+journalctl --vacuum-time=7d     # 7일 이상 오래된 로그 삭제
+journalctl --vacuum-time=1month # 1개월 이상 삭제
+
+# 로그 삭제 (크기 기준)
+journalctl --vacuum-size=1G     # 1GB 이하로 줄이기
+journalctl --vacuum-size=500M   # 500MB 이하로
+
+# 로그 삭제 (파일 개수 기준)
+journalctl --vacuum-files=5     # 최근 5개 파일만 유지
+
+# 영구 설정 (/etc/systemd/journald.conf)
+[Journal]
+SystemMaxUse=1G        # 최대 1GB 사용
+SystemMaxFileSize=100M # 파일 하나당 최대 100MB
+MaxRetentionSec=7day   # 7일 이상 보관 안 함
+```
+
+**journald 설정 (/etc/systemd/journald.conf)**
+
+```bash
+[Journal]
+# 저장 위치
+Storage=persistent     # /var/log/journal에 영구 저장 (기본값)
+Storage=volatile       # /run/log/journal에 임시 저장 (재부팅 시 삭제)
+Storage=auto           # /var/log/journal 있으면 persistent
+
+# 용량 제한
+SystemMaxUse=1G        # 전체 로그 최대 크기
+SystemKeepFree=2G      # 디스크 최소 여유 공간
+SystemMaxFileSize=100M # 로그 파일 하나당 최대 크기
+RuntimeMaxUse=512M     # 런타임 로그 최대 크기 (/run)
+
+# 보관 기간
+MaxRetentionSec=7day   # 7일 이상 된 로그 삭제
+MaxFileSec=1day        # 파일 하나당 최대 보관 기간
+
+# 로그 레벨
+MaxLevelStore=info     # 저장할 최대 레벨
+MaxLevelSyslog=warning # syslog로 전달할 최대 레벨
+
+# 압축
+Compress=yes           # 로그 압축 (기본값: yes)
+
+# 변경 후 재시작
+systemctl restart systemd-journald
+```
+
+**전통적 로그 시스템 (/var/log)**
+
+journald와 별도로 전통적인 텍스트 로그도 여전히 사용된다.
+
+```bash
+# 주요 로그 파일 위치
+/var/log/syslog         # 일반 시스템 로그 (Debian/Ubuntu)
+/var/log/messages       # 일반 시스템 로그 (RHEL/CentOS)
+/var/log/auth.log       # 인증 로그 (SSH, sudo 등)
+/var/log/secure         # 인증 로그 (RHEL)
+/var/log/kern.log       # 커널 로그
+/var/log/dmesg          # 부팅 시 커널 메시지
+/var/log/boot.log       # 부팅 로그
+/var/log/cron           # cron 작업 로그
+/var/log/nginx/         # nginx 로그
+/var/log/apache2/       # apache 로그
+/var/log/mysql/         # mysql 로그
+
+# 실시간 로그 보기
+tail -f /var/log/syslog
+tail -f /var/log/auth.log
+
+# 여러 파일 동시에
+tail -f /var/log/syslog /var/log/auth.log
+```
+
+**실전 로그 분석 시나리오**
+
+```bash
+# 시나리오 1: SSH 로그인 시도 확인
+
+# 성공한 로그인
+$ grep "Accepted password" /var/log/auth.log
+Jan 15 10:23:45 server sshd[12345]: Accepted password for admin from 192.168.1.100 port 54321 ssh2
+
+# 실패한 로그인
+$ grep "Failed password" /var/log/auth.log
+Jan 15 10:20:12 server sshd[12340]: Failed password for invalid user hacker from 10.0.0.1 port 12345 ssh2
+
+# 특정 IP의 로그인 시도
+$ grep "192.168.1.100" /var/log/auth.log | grep sshd
+
+# journalctl로 확인
+$ journalctl -u ssh --since today | grep "Accepted\|Failed"
+
+# 시나리오 2: 디스크 가득 참 문제 디버깅
+
+# 디스크 관련 에러 찾기
+$ journalctl -p err --since "1 hour ago" | grep -i "disk\|space\|filesystem"
+Jan 15 10:30:00 server kernel: EXT4-fs warning (device sda1): No space left on device
+
+# 특정 시간대 시스템 로그
+$ journalctl --since "10:25:00" --until "10:35:00"
+
+# 시나리오 3: 서비스 재시작 원인 파악
+
+# nginx가 언제 재시작되었는지
+$ journalctl -u nginx --since today
+Jan 15 09:00:15 server systemd[1]: Starting A high performance web server...
+Jan 15 09:00:15 server systemd[1]: Started A high performance web server.
+Jan 15 10:45:23 server systemd[1]: Stopping A high performance web server...
+Jan 15 10:45:23 server systemd[1]: Stopped A high performance web server.
+
+# OOM Killer가 프로세스를 죽였는지 확인
+$ journalctl -k | grep -i "killed process"
+Jan 15 10:45:20 server kernel: Out of memory: Killed process 12345 (mysqld) total-vm:2048000kB
+
+# 시나리오 4: 보안 감사 - sudo 사용 기록
+
+$ journalctl | grep sudo
+Jan 15 11:00:00 server sudo: admin : TTY=pts/0 ; PWD=/home/admin ; USER=root ; COMMAND=/usr/bin/apt update
+
+# 또는 auth.log에서
+$ grep sudo /var/log/auth.log
+
+# 시나리오 5: 크래시 덤프 찾기
+
+$ journalctl -p crit --since "1 week ago"
+$ coredumpctl list                    # 코어 덤프 목록
+$ coredumpctl info <PID>              # 코어 덤프 정보
+$ coredumpctl debug <PID>             # gdb로 분석
+```
+
+**로그 로테이션 (logrotate)**
+
+journald는 자동으로 관리되지만, 전통적 로그는 logrotate로 관리된다.
+
+```bash
+# logrotate 설정 확인
+cat /etc/logrotate.conf
+cat /etc/logrotate.d/nginx
+
+# nginx 로그 로테이션 예시 (/etc/logrotate.d/nginx)
+/var/log/nginx/*.log {
+    daily                   # 매일 로테이션
+    missingok               # 로그 파일 없어도 오류 안 냄
+    rotate 14               # 14개 백업 유지
+    compress                # 압축 (gzip)
+    delaycompress           # 다음 로테이션 때 압축 (현재는 .log.1)
+    notifempty              # 빈 파일은 로테이션 안 함
+    create 0640 nginx adm   # 새 로그 파일 권한
+    sharedscripts           # prerotate/postrotate 한 번만 실행
+    postrotate
+        # nginx에 USR1 시그널 보내서 로그 파일 재오픈
+        [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+    endscript
+}
+
+# 수동 로테이션 실행 (테스트)
+logrotate -f /etc/logrotate.d/nginx
+
+# 디버그 모드 (실제 실행 안 함)
+logrotate -d /etc/logrotate.d/nginx
+
+# 로테이션 상태 확인
+cat /var/lib/logrotate/status
+```
+
+**고급 로그 분석 도구**
+
+```bash
+# lnav (The Logfile Navigator) - 강력한 로그 뷰어
+sudo apt install lnav
+lnav /var/log/syslog /var/log/auth.log
+
+# 특징:
+# - 자동 색상 구분
+# - 시간순 병합
+# - SQL 쿼리 지원
+# - 정규식 필터
+
+# multitail - 여러 로그 동시 모니터링
+sudo apt install multitail
+multitail /var/log/syslog /var/log/auth.log
+
+# goaccess - 실시간 웹 로그 분석
+sudo apt install goaccess
+goaccess /var/log/nginx/access.log --log-format=COMBINED
+
+# 예제: journalctl + jq로 JSON 분석
+journalctl -u nginx -o json | jq -r 'select(.PRIORITY <= 3) | .MESSAGE'
+```
+
+**로그 중앙화 (프로덕션 환경)**
+
+```bash
+# rsyslog로 중앙 로그 서버에 전송
+
+# 클라이언트 설정 (/etc/rsyslog.d/remote.conf)
+*.* @@logserver.example.com:514    # TCP
+*.* @logserver.example.com:514     # UDP
+
+# 서버 설정 (/etc/rsyslog.conf)
+module(load="imtcp")
+input(type="imtcp" port="514")
+
+# journald → rsyslog 전송
+# /etc/systemd/journald.conf
+[Journal]
+ForwardToSyslog=yes
+
+# ELK Stack (Elasticsearch, Logstash, Kibana)
+# Filebeat로 로그 수집 → Logstash → Elasticsearch → Kibana 시각화
+```
+
+---
+
+### 0.12 프로세스 모니터링 상세
+
+**ps (Process Status) 상세 분석**
+
+```bash
+# 기본 형식
+ps                  # 현재 터미널의 프로세스만
+ps aux              # 모든 프로세스 (BSD 스타일)
+ps -ef              # 모든 프로세스 (UNIX 스타일)
+ps aux --forest     # 트리 구조로 보기
+
+# 출력 항목 설명 (ps aux)
+$ ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.1 168820 12084 ?        Ss   09:00   0:02 /sbin/init
+www-data  1234  2.5  5.2 524800 423072 ?       S    10:00   1:23 nginx: worker
+
+# USER   : 프로세스 소유자
+# PID    : 프로세스 ID
+# %CPU   : CPU 사용률
+# %MEM   : 메모리 사용률
+# VSZ    : 가상 메모리 크기 (KB) - Virtual Set Size
+# RSS    : 물리 메모리 크기 (KB) - Resident Set Size
+# TTY    : 연결된 터미널 (? = 터미널 없음)
+# STAT   : 프로세스 상태 (아래 참조)
+# START  : 시작 시간
+# TIME   : 누적 CPU 시간
+# COMMAND: 실행 명령
+```
+
+**STAT (프로세스 상태) 코드**
+
+```bash
+# 주요 상태 코드
+R  : Running (실행 중 또는 실행 대기)
+S  : Sleeping (인터럽트 가능한 대기)
+D  : Disk Sleep (인터럽트 불가능, 보통 I/O 대기)
+T  : Stopped (정지)
+Z  : Zombie (종료되었지만 부모가 회수 안 함)
+
+# 추가 플래그
+<  : 높은 우선순위 (nice < 0)
+N  : 낮은 우선순위 (nice > 0)
+L  : 메모리에 페이지 잠김
+s  : 세션 리더
+l  : 멀티스레드 프로세스
++  : 포그라운드 프로세스 그룹
+
+# 예시
+Ss  : Sleeping + 세션 리더 (보통 데몬 프로세스)
+R+  : Running + 포그라운드
+D   : Disk Sleep (I/O 대기 중, 끊을 수 없음!)
+Z   : Zombie (문제 상황!)
+```
+
+**ps 커스텀 출력**
+
+```bash
+# 원하는 컬럼만 선택
+ps -eo pid,ppid,user,%cpu,%mem,vsz,rss,comm
+ps -eo pid,cmd --sort=-%mem | head -20    # 메모리 많이 쓰는 순
+
+# 특정 프로세스 검색
+ps aux | grep nginx
+ps -C nginx                # 명령어 이름으로 검색
+ps -u www-data             # 특정 사용자 프로세스
+
+# 프로세스 트리 (계층 구조)
+ps auxf                    # BSD 스타일 트리
+ps -ejH                    # UNIX 스타일 트리
+pstree                     # 전용 트리 명령
+pstree -p                  # PID 포함
+pstree -p 1234             # 특정 PID의 자식 프로세스
+
+# 스레드 보기
+ps -eLf                    # 모든 스레드
+ps -T -p 1234              # 특정 프로세스의 스레드
+```
+
+**실전 ps 활용**
+
+```bash
+# 좀비 프로세스 찾기
+$ ps aux | grep Z
+user     12345  0.0  0.0      0     0 ?        Z    10:00   0:00 [defunct]
+
+# 좀비 프로세스 부모 찾기
+$ ps -o pid,ppid,stat,cmd -p 12345
+  PID  PPID STAT CMD
+12345 12340 Z    [defunct]
+
+$ ps -p 12340
+  PID TTY      TIME CMD
+12340 ?        00:00:01 python app.py
+
+# → 부모 프로세스(12340)를 재시작하면 좀비 해결
+
+# D 상태 (Disk Sleep) 프로세스 찾기 - I/O 문제 의심
+$ ps aux | awk '$8 ~ /D/ {print}'
+root      5678  0.0  0.1  12345  6789 ?        D    11:30   0:00 cp large-file
+
+# CPU 사용률 높은 프로세스 Top 10
+$ ps aux --sort=-%cpu | head -11
+
+# 메모리 사용률 높은 프로세스 Top 10
+$ ps aux --sort=-%mem | head -11
+
+# 특정 프로세스의 환경 변수 확인
+$ ps eww -p 1234
+# 또는
+$ cat /proc/1234/environ | tr '\0' '\n'
+
+# 프로세스 시작 시간 확인
+$ ps -eo pid,lstart,cmd
+  PID                  STARTED CMD
+ 1234 Mon Jan 15 09:00:00 2024 nginx: master process
+```
+
+**top/htop (실시간 모니터링)**
+
+**top 사용법**
+
+```bash
+# top 실행
+$ top
+
+# 출력 예시
+top - 11:30:00 up 5 days,  2:15,  3 users,  load average: 1.23, 1.45, 1.67
+Tasks: 234 total,   2 running, 232 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  5.2 us,  2.1 sy,  0.0 ni, 92.3 id,  0.3 wa,  0.0 hi,  0.1 si,  0.0 st
+MiB Mem :  15960.2 total,   2345.6 free,   8234.5 used,   5380.1 buff/cache
+MiB Swap:   4096.0 total,   4096.0 free,      0.0 used.   6543.2 avail Mem
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 1234 mysql     20   0 1234567 890123  45678 S  25.3  12.5   123:45 mysqld
+ 5678 www-data  20   0  567890 234567  12345 S  15.2   3.2    45:23 nginx
+
+# 첫 줄 해석
+# 11:30:00       : 현재 시간
+# up 5 days      : 시스템 가동 시간
+# 3 users        : 로그인한 사용자 수
+# load average   : 1분, 5분, 15분 평균 부하
+#   - 1.23       : 지난 1분간 평균 실행 대기 프로세스 수
+#   - CPU 코어 수와 비교 (4코어라면 4.0 = 100% 사용)
+#   - 1.0 이하   : 여유 있음
+#   - 1.0~코어수 : 적정
+#   - 코어수 초과 : 과부하
+
+# CPU 라인 해석
+# us (user)      : 사용자 공간 CPU 사용률
+# sy (system)    : 커널 공간 CPU 사용률
+# ni (nice)      : nice 값이 조정된 프로세스 CPU 사용률
+# id (idle)      : 유휴 상태
+# wa (iowait)    : I/O 대기 시간 (높으면 디스크 병목)
+# hi (hardware interrupt)
+# si (software interrupt)
+# st (steal)     : 가상화 환경에서 하이퍼바이저가 가져간 시간
+
+# 메모리 라인 해석
+# total   : 전체 메모리
+# free    : 완전히 사용 안 된 메모리
+# used    : 사용 중인 메모리
+# buff/cache : 버퍼와 캐시 (필요 시 해제 가능)
+# avail Mem  : 실제 사용 가능한 메모리 (free + reclaimable)
+```
+
+**top 인터랙티브 명령**
+
+```bash
+# top 실행 중 키보드 명령
+h 또는 ?  : 도움말
+q         : 종료
+
+# 정렬
+P         : CPU 사용률순 정렬 (기본값)
+M         : 메모리 사용률순 정렬
+T         : 실행 시간순 정렬
+N         : PID순 정렬
+
+# 필터
+u         : 특정 사용자 프로세스만 보기
+k         : 프로세스 종료 (PID 입력)
+r         : 프로세스 우선순위 변경 (renice)
+
+# 표시 옵션
+1         : CPU 코어별로 표시
+t         : CPU 정보 표시 형식 변경
+m         : 메모리 정보 표시 형식 변경
+c         : 명령 전체 경로 표시
+V         : 프로세스 트리 보기
+i         : idle 프로세스 숨기기
+
+# 업데이트 주기 변경
+d         : 업데이트 간격 설정 (초 단위)
+s         : 동일 (startup 시 -d 옵션으로 설정 가능)
+
+# 설정 저장
+W         : 현재 설정 저장 (~/.toprc)
+```
+
+**top 옵션**
+
+```bash
+# 특정 모드로 시작
+top -u nginx          # nginx 사용자 프로세스만
+top -p 1234,5678      # 특정 PID만 모니터링
+top -d 1              # 1초마다 업데이트
+top -b -n 1 > top.txt # 배치 모드 (스크립트용)
+
+# 메모리 순으로 정렬해서 시작
+top -o %MEM
+
+# CPU 코어별로 시작
+top -1
+```
+
+**htop (더 강력한 top)**
+
+```bash
+# htop 설치
+sudo apt install htop
+
+# htop 실행
+htop
+
+# 주요 기능
+F1      : 도움말
+F2      : 설정
+F3      : 검색
+F4      : 필터
+F5      : 트리 보기
+F6      : 정렬 기준 선택
+F9      : 프로세스 종료 (시그널 선택 가능)
+F10     : 종료
+
+/       : 검색
+\       : 필터 해제
+Space   : 프로세스 선택 (태그)
+U       : 특정 사용자만
+t       : 트리 보기 토글
+H       : 스레드 보기 토글
+K       : 선택한 프로세스 숨기기
+
+# htop의 장점
+# - 마우스 사용 가능
+# - 컬러풀한 UI
+# - 수평 스크롤 가능 (긴 명령어)
+# - 트리 보기 편리
+# - 프로세스 시그널 쉽게 보냄
+```
+
+**pgrep/pkill (프로세스 검색 및 종료)**
+
+```bash
+# pgrep: 프로세스 검색
+pgrep nginx           # nginx 이름을 포함한 프로세스 PID
+pgrep -u www-data     # www-data 사용자의 프로세스
+pgrep -l nginx        # PID와 이름 함께 표시
+pgrep -a nginx        # PID와 전체 명령 표시
+pgrep -f "python.*app.py"  # 전체 명령줄에서 검색 (정규식)
+
+# 조합
+pgrep -u www-data nginx    # www-data 사용자의 nginx 프로세스
+
+# 최신/최초 프로세스만
+pgrep -n nginx        # 가장 최근에 시작된 nginx
+pgrep -o nginx        # 가장 오래된 nginx
+
+# pkill: 프로세스 종료
+pkill nginx           # nginx 프로세스 모두 종료 (SIGTERM)
+pkill -9 nginx        # 강제 종료 (SIGKILL)
+pkill -u www-data     # www-data 사용자의 모든 프로세스 종료
+pkill -f "python.*celery"  # 전체 명령줄 매칭
+
+# 특정 시그널 전송
+pkill -USR1 nginx     # nginx에 USR1 시그널 (로그 재오픈)
+pkill -HUP nginx      # nginx에 HUP 시그널 (설정 재로드)
+
+# 안전한 종료 패턴
+if pgrep -x nginx > /dev/null; then
+    echo "Nginx is running, stopping..."
+    pkill -x nginx
+    sleep 2
+    if pgrep -x nginx > /dev/null; then
+        echo "Force killing..."
+        pkill -9 -x nginx
+    fi
+else
+    echo "Nginx is not running"
+fi
+```
+
+**pidof (프로세스 ID 찾기)**
+
+```bash
+# 특정 프로그램의 PID
+pidof nginx
+# 1234 5678
+
+# 하나만
+pidof -s nginx
+# 1234
+
+# 스크립트에서 활용
+PID=$(pidof -s nginx)
+if [ -n "$PID" ]; then
+    kill -HUP $PID
+fi
+```
+
+**실전 시나리오**
+
+```bash
+# 시나리오 1: 메모리 부족 - 메모리 많이 쓰는 프로세스 찾기
+$ ps aux --sort=-%mem | head -10
+$ top -o %MEM
+
+# 시나리오 2: CPU 100% - 원인 프로세스 찾기
+$ top -b -n 1 | head -20
+$ ps aux --sort=-%cpu | head -10
+
+# 시나리오 3: 좀비 프로세스 정리
+$ ps aux | grep Z
+$ ps -o pid,ppid,stat,cmd | awk '$3 ~ /Z/ {print $2}' | sort -u
+# 부모 PID 목록
+$ kill -HUP <부모PID>  # 부모 프로세스 재시작 유도
+
+# 시나리오 4: 특정 포트 사용 프로세스 찾기
+$ ss -tulpn | grep :80
+$ lsof -i :80
+
+# 시나리오 5: 프로세스가 어떤 파일을 열었는지 확인
+$ lsof -p 1234         # PID로
+$ lsof -c nginx        # 프로세스 이름으로
+$ lsof /var/log/nginx/access.log  # 특정 파일 사용 프로세스
+```
+
+---
+
+### 0.13 네트워크 트러블슈팅 기초
+
+**ping (연결 테스트)**
+
+```bash
+# 기본 사용
+$ ping google.com
+PING google.com (142.250.185.46) 56(84) bytes of data.
+64 bytes from kix06s09-in-f14.1e100.net (142.250.185.46): icmp_seq=1 ttl=116 time=10.2 ms
+64 bytes from kix06s09-in-f14.1e100.net (142.250.185.46): icmp_seq=2 ttl=116 time=10.5 ms
+
+# 출력 해석
+# icmp_seq : ICMP 패킷 순서 번호
+# ttl      : Time To Live (라우터 홉 수 제한, 낮으면 먼 거리)
+# time     : 왕복 시간 (RTT - Round Trip Time)
+#   - < 10ms  : 매우 빠름 (로컬 네트워크)
+#   - 10-50ms : 빠름 (국내)
+#   - 50-150ms: 보통 (해외)
+#   - > 200ms : 느림
+
+# 옵션
+ping -c 5 google.com       # 5번만 보내고 종료
+ping -i 0.2 google.com     # 0.2초 간격 (기본 1초)
+ping -s 1000 google.com    # 패킷 크기 1000바이트
+ping -W 2 google.com       # 타임아웃 2초
+ping -q -c 10 google.com   # 조용한 모드 (요약만)
+
+# IPv6 ping
+ping6 google.com
+
+# 특정 인터페이스로
+ping -I eth0 google.com
+
+# 통계 출력
+$ ping -c 10 google.com
+--- google.com ping statistics ---
+10 packets transmitted, 10 received, 0% packet loss, time 9013ms
+rtt min/avg/max/mdev = 10.123/10.456/11.234/0.345 ms
+
+# packet loss : 패킷 손실률 (0%가 이상적)
+# rtt min/avg/max : 최소/평균/최대 응답 시간
+# mdev : 표준 편차 (낮을수록 안정적)
+```
+
+**ping 트러블슈팅 패턴**
+
+```bash
+# 패턴 1: "Destination Host Unreachable"
+$ ping 192.168.1.100
+From 192.168.1.50 icmp_seq=1 Destination Host Unreachable
+# 원인: 라우팅 불가, 대상 호스트 다운, 방화벽 차단
+# 해결: 라우팅 테이블 확인, 호스트 상태 확인
+
+# 패턴 2: "Request timeout"
+$ ping 192.168.1.100
+Request timeout for icmp_seq 1
+# 원인: 패킷이 전송되었지만 응답 없음 (방화벽 차단 가능성)
+# 해결: 방화벽 규칙 확인
+
+# 패턴 3: 높은 패킷 손실
+$ ping -c 100 gateway
+100 packets transmitted, 75 received, 25% packet loss
+# 원인: 네트워크 품질 저하, 케이블 문제, 장비 과부하
+# 해결: 케이블 점검, 네트워크 장비 확인
+
+# 패턴 4: 높은 지연 시간 및 분산
+$ ping google.com
+64 bytes from ...: time=10.2 ms
+64 bytes from ...: time=250.5 ms  # 갑자기 높음
+64 bytes from ...: time=12.1 ms
+# 원인: 네트워크 혼잡, 버퍼 블로트
+# 해결: QoS 설정, 대역폭 확인
+```
+
+**traceroute/tracepath (경로 추적)**
+
+```bash
+# traceroute (경로 상의 모든 라우터 표시)
+$ traceroute google.com
+traceroute to google.com (142.250.185.46), 30 hops max, 60 byte packets
+ 1  router.local (192.168.1.1)  1.234 ms  1.123 ms  1.056 ms
+ 2  10.0.0.1 (10.0.0.1)  5.432 ms  5.321 ms  5.234 ms
+ 3  isp-gw.example.com (203.0.113.1)  10.123 ms  10.234 ms  10.345 ms
+ 4  * * *  # 응답 없음 (방화벽 또는 ICMP 차단)
+ 5  google-router.net (142.250.0.1)  15.234 ms  15.123 ms  15.345 ms
+
+# 각 라인 해석
+# 홉 번호 | 라우터 호스트명(IP) | 3회 측정 시간
+# * * * : 해당 홉이 ICMP 응답 안 함 (정상일 수 있음)
+
+# tracepath (권한 불필요, traceroute 대체)
+$ tracepath google.com
+ 1?: [LOCALHOST]  pmtu 1500
+ 1:  router.local          0.123ms
+ 2:  10.0.0.1              5.432ms
+ 3:  isp-gw.example.com   10.123ms
+ 4:  no reply
+ 5:  google-router.net    15.234ms
+
+# MTU (Maximum Transmission Unit) 확인
+$ tracepath -n google.com
+# -n : 호스트명 해석 안 함 (빠름)
+
+# 트러블슈팅 활용
+# - 어느 홉에서 지연이 발생하는지 확인
+# - 패킷 손실이 어느 구간에서 발생하는지 파악
+# - ISP 문제인지 내부 네트워크 문제인지 구분
+```
+
+**ss/netstat (소켓 통계)**
+
+```bash
+# ss (Socket Statistics) - netstat의 현대적 대체
+
+# 모든 TCP 연결
+$ ss -t
+State    Recv-Q Send-Q Local Address:Port  Peer Address:Port
+ESTAB    0      0      192.168.1.50:22     192.168.1.100:54321
+
+# 모든 UDP 소켓
+$ ss -u
+
+# 리스닝 포트 (LISTEN 상태)
+$ ss -tln
+State   Recv-Q Send-Q Local Address:Port  Peer Address:Port
+LISTEN  0      128    0.0.0.0:22          0.0.0.0:*
+LISTEN  0      128    0.0.0.0:80          0.0.0.0:*
+LISTEN  0      128    [::]:22             [::]:*
+
+# 옵션
+# -t : TCP
+# -u : UDP
+# -l : LISTEN 상태만
+# -n : 포트 번호로 표시 (이름 해석 안 함)
+# -p : 프로세스 정보 포함
+# -a : 모든 소켓 (LISTEN + ESTABLISHED)
+
+# 프로세스 정보 포함 (가장 많이 사용)
+$ sudo ss -tlnp
+State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
+LISTEN 0      128    0.0.0.0:80         0.0.0.0:*         users:(("nginx",pid=1234,fd=6))
+LISTEN 0      128    0.0.0.0:443        0.0.0.0:*         users:(("nginx",pid=1234,fd=7))
+LISTEN 0      128    0.0.0.0:22         0.0.0.0:*         users:(("sshd",pid=890,fd=3))
+
+# 특정 포트 확인
+$ ss -tlnp | grep :80
+$ ss -tlnp 'sport = :80'   # ss 필터 문법 (더 정확)
+
+# 연결 상태 통계
+$ ss -s
+Total: 543
+TCP:   234 (estab 123, closed 45, orphaned 1, timewait 30)
+Transport Total     IP        IPv6
+RAW       0         0         0
+UDP       12        8         4
+TCP       189       150       39
+INET      201       158       43
+FRAG      0         0         0
+
+# ESTABLISHED 연결만
+$ ss -tn state established
+
+# 특정 IP 연결
+$ ss -tn dst 192.168.1.100
+$ ss -tn src 192.168.1.50
+
+# netstat (구형, 하지만 아직 많이 사용됨)
+$ netstat -tulpn   # ss -tulpn과 동일
+$ netstat -an      # 모든 연결
+$ netstat -r       # 라우팅 테이블 (route -n과 동일)
+```
+
+**실전 소켓 트러블슈팅**
+
+```bash
+# 시나리오 1: 포트 80이 이미 사용 중
+$ sudo ss -tlnp | grep :80
+LISTEN 0 128 0.0.0.0:80 0.0.0.0:* users:(("apache2",pid=999,fd=4))
+# → apache2가 80 포트 사용 중
+
+# 시나리오 2: 포트가 열려 있는지 확인
+$ ss -tln | grep :3306
+# 출력 없음 → MySQL 리스닝 안 함
+$ systemctl status mysql
+
+# 시나리오 3: 연결 수 확인
+$ ss -tn state established | wc -l
+523  # 현재 523개 연결
+
+# 특정 포트 연결 수
+$ ss -tn sport = :80 state established | wc -l
+
+# 시나리오 4: TIME_WAIT 많이 쌓임
+$ ss -tn state time-wait | wc -l
+5000  # 너무 많음
+
+# 해결: TCP 파라미터 튜닝
+# /etc/sysctl.conf
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 30
+
+# 시나리오 5: 어떤 프로세스가 네트워크를 많이 쓰는지
+$ ss -tnp | grep ESTAB | awk '{print $6}' | sort | uniq -c | sort -rn
+    150 users:(("nginx",pid=1234,fd=8))
+     50 users:(("mysqld",pid=5678,fd=12))
+```
+
+**nslookup/dig (DNS 조회)**
+
+```bash
+# nslookup (간단한 DNS 조회)
+$ nslookup google.com
+Server:         8.8.8.8
+Address:        8.8.8.8#53
+
+Non-authoritative answer:
+Name:   google.com
+Address: 142.250.185.46
+
+# 특정 DNS 서버 사용
+$ nslookup google.com 1.1.1.1
+
+# 역방향 조회 (IP → 도메인)
+$ nslookup 142.250.185.46
+
+# dig (더 상세한 DNS 조회)
+$ dig google.com
+
+; <<>> DiG 9.18.12 <<>> google.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; QUESTION SECTION:
+;google.com.                    IN      A
+
+;; ANSWER SECTION:
+google.com.             123     IN      A       142.250.185.46
+
+;; Query time: 10 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8)
+;; WHEN: Mon Jan 15 11:30:00 UTC 2024
+;; MSG SIZE  rcvd: 55
+
+# 간결한 출력
+$ dig google.com +short
+142.250.185.46
+
+# 특정 레코드 타입 조회
+$ dig google.com A      # IPv4 주소
+$ dig google.com AAAA   # IPv6 주소
+$ dig google.com MX     # 메일 서버
+$ dig google.com NS     # 네임서버
+$ dig google.com TXT    # TXT 레코드
+
+# 전체 DNS 경로 추적
+$ dig google.com +trace
+
+# 특정 DNS 서버 쿼리
+$ dig @1.1.1.1 google.com
+$ dig @8.8.8.8 google.com
+
+# 역방향 조회
+$ dig -x 142.250.185.46
+
+# 여러 도메인 한 번에
+$ dig google.com cloudflare.com +short
+```
+
+**DNS 트러블슈팅**
+
+```bash
+# 시나리오 1: 도메인 해석 안 됨
+$ dig example.com
+;; ANSWER SECTION:
+# (비어 있음)
+
+# DNS 서버 문제 확인
+$ cat /etc/resolv.conf
+nameserver 8.8.8.8
+
+# 다른 DNS 서버로 테스트
+$ dig @1.1.1.1 example.com
+$ dig @8.8.8.8 example.com
+
+# 시나리오 2: DNS 응답 느림
+$ dig google.com | grep "Query time"
+;; Query time: 500 msec  # 너무 느림
+
+# 여러 DNS 서버 응답 시간 비교
+$ for dns in 8.8.8.8 1.1.1.1 208.67.222.222; do
+    echo -n "$dns: "
+    dig @$dns google.com | grep "Query time"
+done
+
+# 시나리오 3: DNS 캐시 문제
+# systemd-resolved 캐시 확인
+$ resolvectl statistics
+
+# 캐시 플러시
+$ sudo resolvectl flush-caches
+$ sudo systemd-resolve --flush-caches  # 구형
+```
+
+**curl (HTTP 요청 테스트)**
+
+```bash
+# 기본 GET 요청
+$ curl https://api.github.com
+{"current_user_url":"https://api.github.com/user",...}
+
+# 응답 헤더만 보기
+$ curl -I https://google.com
+HTTP/2 200
+content-type: text/html; charset=ISO-8859-1
+date: Mon, 15 Jan 2024 11:30:00 GMT
+server: gws
+
+# 자세한 정보 (요청/응답 헤더 포함)
+$ curl -v https://google.com
+* Trying 142.250.185.46:443...
+* Connected to google.com (142.250.185.46) port 443
+> GET / HTTP/2
+> Host: google.com
+> User-Agent: curl/8.0.1
+< HTTP/2 200
+< content-type: text/html
+
+# POST 요청
+$ curl -X POST https://api.example.com/data \
+  -H "Content-Type: application/json" \
+  -d '{"key":"value"}'
+
+# 파일 다운로드
+$ curl -O https://example.com/file.tar.gz  # 원본 파일명
+$ curl -o myfile.tar.gz https://example.com/file.tar.gz  # 지정 파일명
+
+# 다운로드 진행률 표시
+$ curl -# -O https://example.com/large-file.iso
+
+# 리다이렉트 따라가기
+$ curl -L https://short.url/abc
+
+# 타임아웃 설정
+$ curl --connect-timeout 5 --max-time 10 https://slow-site.com
+
+# 인증
+$ curl -u username:password https://api.example.com
+$ curl -H "Authorization: Bearer TOKEN" https://api.example.com
+
+# 쿠키
+$ curl -b cookies.txt https://example.com  # 쿠키 파일 사용
+$ curl -c cookies.txt https://example.com  # 쿠키 저장
+
+# 프록시 사용
+$ curl -x http://proxy.example.com:8080 https://google.com
+
+# SSL 인증서 무시 (테스트용만)
+$ curl -k https://self-signed-cert.example.com
+
+# 응답 시간 측정
+$ curl -w "\nTime Total: %{time_total}s\nTime Connect: %{time_connect}s\nTime Start Transfer: %{time_starttransfer}s\n" \
+  -o /dev/null -s https://google.com
+Time Total: 0.123s
+Time Connect: 0.050s
+Time Start Transfer: 0.100s
+```
+
+**curl 트러블슈팅**
+
+```bash
+# 시나리오 1: Connection refused
+$ curl http://localhost:8080
+curl: (7) Failed to connect to localhost port 8080: Connection refused
+# → 서비스가 리스닝하지 않음
+$ ss -tln | grep :8080
+
+# 시나리오 2: Timeout
+$ curl --max-time 5 http://slow-server.com
+curl: (28) Operation timed out after 5001 milliseconds
+# → 네트워크 문제, 방화벽, 서버 과부하
+
+# 시나리오 3: SSL 인증서 오류
+$ curl https://expired-cert.example.com
+curl: (60) SSL certificate problem: certificate has expired
+# → 인증서 만료
+$ curl -v https://expired-cert.example.com  # 상세 정보
+$ curl -k https://expired-cert.example.com  # 무시 (위험)
+
+# 시나리오 4: HTTP 상태 코드 확인
+$ curl -w "%{http_code}\n" -o /dev/null -s https://api.example.com
+200  # OK
+404  # Not Found
+500  # Internal Server Error
+
+# 헬스체크 스크립트
+#!/bin/bash
+STATUS=$(curl -w "%{http_code}" -o /dev/null -s http://localhost:8080/health)
+if [ "$STATUS" -eq 200 ]; then
+    echo "Service is healthy"
+else
+    echo "Service is down (HTTP $STATUS)"
+    exit 1
+fi
+```
+
+**종합 네트워크 트러블슈팅 체크리스트**
+
+```bash
+# 1단계: 로컬 네트워크 확인
+ip addr                      # IP 설정 확인
+ip link                      # 인터페이스 상태 확인
+
+# 2단계: 게이트웨이 통신 확인
+ip route                     # 기본 게이트웨이 확인
+ping -c 3 <게이트웨이IP>     # 게이트웨이 ping
+
+# 3단계: DNS 확인
+cat /etc/resolv.conf         # DNS 서버 설정
+dig google.com +short        # DNS 해석 테스트
+
+# 4단계: 외부 통신 확인
+ping -c 3 8.8.8.8           # 구글 DNS ping (IP)
+ping -c 3 google.com        # 도메인 ping
+
+# 5단계: 경로 확인
+tracepath google.com        # 경로 추적
+
+# 6단계: 포트 확인
+ss -tln                     # 리스닝 포트
+curl -I http://localhost:80 # 로컬 웹서버 테스트
+
+# 7단계: 방화벽 확인
+sudo iptables -L -n -v      # iptables 규칙
+sudo ufw status             # ufw 상태 (Ubuntu)
+```
+
+---
+
+### 0.14 시스템 모니터링 기초
+
+**vmstat (Virtual Memory Statistics)**
+
+vmstat은 시스템 전체의 CPU, 메모리, I/O, 프로세스 상태를 한눈에 보여준다.
+
+```bash
+# 기본 사용 (1초 간격으로 업데이트)
+$ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 2  0      0 1234567  12345 567890    0    0   123   456  789 1234 10  5 85  0  0
+ 1  0      0 1234560  12346 567895    0    0     0    50  890 1456 12  6 82  0  0
+
+# 각 컬럼 의미
+
+# procs (프로세스)
+# r : 실행 대기 중인 프로세스 수 (Running queue)
+#     - CPU 코어 수보다 지속적으로 높으면 CPU 병목
+#     - 예: 4코어 시스템에서 r=8 → CPU 과부하
+# b : 인터럽트 불가능한 대기 프로세스 (Blocked, 주로 I/O)
+#     - 높으면 디스크 I/O 병목
+
+# memory (메모리, KB 단위)
+# swpd : 사용 중인 스왑 메모리 (높으면 메모리 부족)
+# free : 사용 가능한 여유 메모리 (낮아도 괜찮음, cache 활용)
+# buff : 버퍼 메모리 (블록 디바이스 I/O)
+# cache: 캐시 메모리 (파일시스템 캐시)
+#        - buff + cache가 높은 건 정상 (성능 향상)
+
+# swap (스왑, KB/s)
+# si : 스왑 인 (디스크 → 메모리) - Swap In
+# so : 스왑 아웃 (메모리 → 디스크) - Swap Out
+#      - si, so가 지속적으로 0이 아니면 메모리 부족
+
+# io (블록 I/O, blocks/s)
+# bi : 블록 디바이스로부터 읽기 (Block In)
+# bo : 블록 디바이스에 쓰기 (Block Out)
+#      - 높으면 디스크 I/O 부하
+
+# system (시스템)
+# in : 초당 인터럽트 수 (Interrupts)
+# cs : 초당 컨텍스트 스위치 수 (Context Switches)
+#      - cs가 매우 높으면 프로세스/스레드가 너무 많음
+
+# cpu (CPU 사용률, %)
+# us : 사용자 공간 CPU 사용률
+# sy : 커널 공간 CPU 사용률
+# id : 유휴 (Idle)
+# wa : I/O 대기 (높으면 디스크 병목)
+# st : Steal time (가상화 환경에서 하이퍼바이저가 가져간 시간)
+
+# 옵션
+vmstat 1 10              # 1초 간격, 10회
+vmstat -S M 1            # 메모리를 MB 단위로
+vmstat -s                # 메모리 통계 요약
+vmstat -d                # 디스크 통계
+vmstat -p /dev/sda1      # 특정 파티션 통계
+```
+
+**vmstat 해석 시나리오**
+
+```bash
+# 시나리오 1: CPU 병목
+$ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+12  0      0 1234567  12345 567890    0    0    10    20  890 1234 85 10  5  0  0
+15  0      0 1234560  12346 567895    0    0     5    15  920 1456 88 12  0  0  0
+
+# 분석:
+# r=12, 15 (실행 대기 프로세스 많음) → CPU 과부하
+# us=85%, 88% (사용자 공간 CPU 높음) → 애플리케이션 부하
+# id=5%, 0% (유휴 매우 낮음)
+# 해결: CPU 추가, 프로세스 최적화, 부하 분산
+
+# 시나리오 2: 메모리 부족 (스왑 발생)
+$ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 2  1 512000  10000   1000  50000  1234 5678   123   456  789 1234 10  5 70 15  0
+ 1  2 520000   8000   1000  48000  2345 6789   150   500  890 1456 12  6 65 17  0
+
+# 분석:
+# swpd=512MB, 520MB (스왑 사용 중)
+# si=1234, 2345 (스왑 인 발생)
+# so=5678, 6789 (스왑 아웃 발생) → 메모리 부족
+# free=10MB, 8MB (여유 메모리 매우 낮음)
+# 해결: 메모리 추가, 메모리 누수 확인, 프로세스 종료
+
+# 시나리오 3: I/O 병목
+$ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 1  5      0 1234567  12345 567890    0    0  5000 10000  890 1234 10  5 45 40  0
+ 2  6      0 1234560  12346 567895    0    0  6000 12000  920 1456 12  6 40 42  0
+
+# 분석:
+# b=5, 6 (I/O 대기 프로세스 많음)
+# bi=5000, 6000 (디스크 읽기 높음)
+# bo=10000, 12000 (디스크 쓰기 높음)
+# wa=40%, 42% (I/O 대기 시간 높음) → 디스크 병목
+# 해결: 디스크 업그레이드 (SSD), I/O 스케줄러 튜닝, 캐시 증가
+```
+
+**iostat (I/O Statistics)**
+
+```bash
+# iostat 설치 (sysstat 패키지)
+sudo apt install sysstat
+
+# 기본 사용
+$ iostat
+Linux 5.15.0 (hostname)     01/15/2024      _x86_64_
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+          10.23    0.00    5.45   2.34    0.00   82.00
+
+Device             tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+sda              15.23       123.45       456.78   12345678   45678901
+sdb               5.67        50.12       100.34    5012345   10034567
+
+# tps        : 초당 I/O 트랜잭션 수 (Transfers Per Second)
+# kB_read/s  : 초당 읽은 KB
+# kB_wrtn/s  : 초당 쓴 KB
+# kB_read    : 총 읽은 KB
+# kB_wrtn    : 총 쓴 KB
+
+# 확장 통계 (가장 유용)
+$ iostat -x 1
+Device  r/s   w/s  rkB/s  wkB/s rrqm/s wrqm/s %rrqm %wrqm r_await w_await aqu-sz rareq-sz wareq-sz svctm %util
+sda    50.0  30.0 2000.0 1500.0   5.0   10.0  10.0  25.0    2.5     5.0   0.15    40.0     50.0   1.2  15.0
+
+# 주요 지표
+# r/s, w/s   : 초당 읽기/쓰기 요청 수
+# rkB/s, wkB/s : 초당 읽기/쓰기 KB
+# await      : 평균 I/O 응답 시간 (ms)
+#              - < 10ms  : 매우 빠름 (SSD)
+#              - 10-20ms : 빠름 (SSD)
+#              - 20-50ms : 보통 (HDD)
+#              - > 100ms : 느림, 병목 의심
+# %util      : 디스크 사용률
+#              - < 60%   : 여유
+#              - 60-80%  : 주의
+#              - > 80%   : 과부하 (병목)
+
+# 옵션
+iostat -x 1 10           # 1초 간격, 10회, 확장 통계
+iostat -d 1              # 디스크만
+iostat -c 1              # CPU만
+iostat -p sda 1          # 특정 디스크만
+iostat -x -m 1           # MB 단위
+```
+
+**iostat 해석**
+
+```bash
+# 시나리오: 디스크 병목
+$ iostat -x 1
+Device  r/s   w/s  rkB/s  wkB/s await %util
+sda    500.0 300.0 20000  15000  45.5  98.5
+
+# 분석:
+# r/s=500, w/s=300 (초당 800개 I/O 요청)
+# await=45.5ms (응답 시간 높음)
+# %util=98.5% (디스크 거의 한계)
+# → 디스크 병목 확실
+
+# 해결 방법:
+# 1. SSD로 업그레이드
+# 2. RAID 구성 (I/O 분산)
+# 3. I/O 스케줄러 변경 (noop, deadline)
+# 4. 애플리케이션 최적화 (쿼리 튜닝, 인덱스)
+```
+
+**sar (System Activity Reporter)**
+
+sar는 과거 시스템 성능 데이터를 수집하고 분석한다.
+
+```bash
+# sar 설치 및 활성화
+sudo apt install sysstat
+sudo systemctl enable sysstat
+sudo systemctl start sysstat
+
+# 데이터 수집 설정 (/etc/default/sysstat)
+ENABLED="true"
+
+# CPU 사용률 (오늘)
+$ sar -u
+Linux 5.15.0 (hostname)     01/15/2024
+
+12:00:01 AM     CPU     %user     %nice   %system   %iowait    %steal     %idle
+12:10:01 AM     all     10.23      0.00      5.45      2.34      0.00     82.00
+12:20:01 AM     all     12.34      0.00      6.23      1.89      0.00     79.54
+
+# 메모리 사용률
+$ sar -r
+12:00:01 AM kbmemfree kbmemused  %memused kbbuffers  kbcached
+12:10:01 AM   1234567   7654321     86.12    123456   5678901
+
+# 스왑 사용률
+$ sar -S
+12:00:01 AM kbswpfree kbswpused  %swpused
+12:10:01 AM   4194304         0      0.00
+
+# 디스크 I/O
+$ sar -d
+12:00:01 AM       DEV       tps  rd_sec/s  wr_sec/s
+12:10:01 AM  dev8-0      50.12    1234.56   5678.90
+
+# 네트워크 통계
+$ sar -n DEV
+12:00:01 AM     IFACE   rxpck/s   txpck/s    rxkB/s    txkB/s
+12:10:01 AM      eth0   1234.56   5678.90    123.45    567.89
+
+# 특정 시간대 조회
+$ sar -u -s 10:00:00 -e 12:00:00  # 10시~12시
+
+# 특정 날짜 조회
+$ sar -u -f /var/log/sysstat/sa15  # 15일 데이터
+
+# 모든 통계 한 번에
+$ sar -A
+```
+
+**sar 활용 시나리오**
+
+```bash
+# 시나리오: 어제 새벽에 서버가 느려졌다고 보고됨
+
+# 1. CPU 확인 (어제, 새벽 2-4시)
+$ sar -u -f /var/log/sysstat/sa$(date -d yesterday +%d) -s 02:00:00 -e 04:00:00
+
+# 2. 메모리 확인
+$ sar -r -f /var/log/sysstat/sa$(date -d yesterday +%d) -s 02:00:00 -e 04:00:00
+
+# 3. 디스크 I/O 확인
+$ sar -d -f /var/log/sysstat/sa$(date -d yesterday +%d) -s 02:00:00 -e 04:00:00
+
+# 4. 네트워크 확인
+$ sar -n DEV -f /var/log/sysstat/sa$(date -d yesterday +%d) -s 02:00:00 -e 04:00:00
+
+# 이를 통해 새벽 2-4시에 어떤 리소스가 병목이었는지 파악
+```
+
+**/proc 파일시스템 활용**
+
+`/proc`는 커널과 프로세스 정보를 제공하는 가상 파일시스템이다.
+
+```bash
+# CPU 정보
+cat /proc/cpuinfo          # CPU 상세 정보
+lscpu                      # 요약 (더 읽기 쉬움)
+
+# 메모리 정보
+cat /proc/meminfo          # 메모리 상세 정보
+free -h                    # 요약
+
+# 시스템 가동 시간
+cat /proc/uptime
+# 12345.67 89012.34
+# 첫 번째 값: 부팅 후 경과 시간 (초)
+# 두 번째 값: 유휴 시간 (초 x CPU 코어 수)
+
+# 평균 부하
+cat /proc/loadavg
+# 1.23 1.45 1.67 2/234 12345
+# 1분, 5분, 15분 평균 부하 / 실행 중 프로세스/전체 프로세스 / 최근 PID
+
+# 네트워크 통계
+cat /proc/net/dev          # 인터페이스별 통계
+cat /proc/net/tcp          # TCP 연결
+cat /proc/net/udp          # UDP 연결
+
+# 특정 프로세스 정보 (/proc/<PID>/)
+ls /proc/1234/
+
+# 프로세스 환경 변수
+cat /proc/1234/environ | tr '\0' '\n'
+
+# 프로세스 명령줄
+cat /proc/1234/cmdline
+
+# 프로세스 상태
+cat /proc/1234/status
+
+# 프로세스 열린 파일 디스크립터
+ls -l /proc/1234/fd/
+
+# 프로세스 메모리 맵
+cat /proc/1234/maps
+
+# 프로세스 스레드
+ls /proc/1234/task/
+
+# 시스템 전체 파일 디스크립터 사용량
+cat /proc/sys/fs/file-nr
+# 1234  0  100000
+# 할당된 FD / 사용 가능 FD / 최대 FD
+
+# 파일 디스크립터 최대값 확인
+cat /proc/sys/fs/file-max
+
+# 디스크 통계
+cat /proc/diskstats
+
+# 파티션 정보
+cat /proc/partitions
+```
+
+**USE Method (Utilization, Saturation, Errors)**
+
+Brendan Gregg가 제안한 시스템 성능 분석 방법론이다.
+
+```bash
+# 모든 리소스에 대해 다음 3가지 확인:
+# 1. Utilization (사용률): 리소스가 얼마나 사용 중인가?
+# 2. Saturation (포화): 리소스가 처리할 수 없는 대기 작업이 있는가?
+# 3. Errors (에러): 에러가 발생하고 있는가?
+
+# CPU
+# Utilization: vmstat의 us + sy
+# Saturation : vmstat의 r (실행 대기 프로세스)
+# Errors     : dmesg | grep -i "cpu\|mce"
+
+$ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 5  0      0 1234567  12345 567890    0    0   123   456  789 1234 80 15  5  0  0
+
+# CPU Utilization = 80% (us) + 15% (sy) = 95%
+# CPU Saturation = r=5 (4코어 시스템이면 약간 대기 중)
+
+# 메모리
+# Utilization: free -h의 used
+# Saturation : vmstat의 si, so (스왑)
+# Errors     : dmesg | grep -i "oom\|out of memory"
+
+$ free -h
+              total        used        free      shared  buff/cache   available
+Mem:           15Gi        8.0Gi       1.2Gi       100Mi        5.8Gi        6.5Gi
+Swap:         4.0Gi          0B        4.0Gi
+
+# Memory Utilization = 8.0GB / 15GB = 53%
+# Memory Saturation = si=0, so=0 (스왑 없음, 정상)
+
+$ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 2  0      0 1234567  12345 567890    0    0   123   456  789 1234 10  5 85  0  0
+
+# 디스크
+# Utilization: iostat -x의 %util
+# Saturation : iostat -x의 await (응답 시간)
+# Errors     : dmesg | grep -i "error\|ata"
+
+$ iostat -x 1
+Device  r/s   w/s  rkB/s  wkB/s await %util
+sda    50.0  30.0 2000.0 1500.0   5.5  45.0
+
+# Disk Utilization = 45%
+# Disk Saturation = await=5.5ms (낮음, 정상)
+
+# 네트워크
+# Utilization: sar -n DEV의 rxkB/s, txkB/s (대역폭 대비)
+# Saturation : ifconfig의 overruns, dropped
+# Errors     : ifconfig의 errors
+
+$ sar -n DEV 1 1
+Average:     IFACE   rxpck/s   txpck/s    rxkB/s    txkB/s
+Average:      eth0   1234.56   5678.90    123.45    567.89
+
+# 1Gbps = 125MB/s
+# Network Utilization = (123.45 + 567.89) KB/s / 125000 KB/s = 0.55%
+
+$ ifconfig eth0
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        RX packets 1234567  bytes 234567890 (234.5 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 567890  bytes 123456789 (123.4 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+# Network Errors = 0 (정상)
+```
+
+**종합 모니터링 스크립트**
+
+```bash
+#!/bin/bash
+# system-health-check.sh
+
+echo "=== System Health Check ==="
+echo "Timestamp: $(date)"
+echo ""
+
+# 1. Load Average
+echo "--- Load Average ---"
+uptime
+
+# 2. CPU
+echo -e "\n--- CPU Top 5 ---"
+ps aux --sort=-%cpu | head -6
+
+# 3. Memory
+echo -e "\n--- Memory ---"
+free -h
+echo -e "\nTop 5 Memory:"
+ps aux --sort=-%mem | head -6
+
+# 4. Disk Usage
+echo -e "\n--- Disk Usage ---"
+df -h | grep -v tmpfs
+
+# 5. Disk I/O
+echo -e "\n--- Disk I/O (iostat) ---"
+iostat -x 1 2 | tail -n +7
+
+# 6. Network
+echo -e "\n--- Network Connections ---"
+ss -s
+
+# 7. Errors
+echo -e "\n--- Recent Errors (dmesg) ---"
+dmesg -T | grep -i error | tail -5
+
+echo -e "\n=== Health Check Complete ==="
+```
 
 ---
 
@@ -2301,6 +4167,433 @@ vgck vg_data
 - 필요한 드라이버만 런타임에 로드하여 메모리 절약
 - 시스템 재부팅 없이 드라이버 업데이트 가능
 - 커널 재컴파일 없이 새로운 기능 추가 가능
+
+## 4.5 리눅스 부팅 프로세스
+
+**부팅 과정 개요**
+
+리눅스 시스템이 전원을 켜고 로그인 화면이 나올 때까지의 과정을 이해하는 것은 트러블슈팅에 필수적이다.
+
+**부팅 단계**
+
+```
+전원 ON
+  ↓
+1. BIOS/UEFI (POST)
+  ↓
+2. Boot Loader (GRUB)
+  ↓
+3. Kernel 로딩
+  ↓
+4. initramfs/initrd
+  ↓
+5. systemd (PID 1)
+  ↓
+6. 서비스 시작
+  ↓
+로그인 화면
+```
+
+### 1단계: BIOS/UEFI (POST)
+
+**역할**: 하드웨어 초기화 및 부트로더 실행
+
+```bash
+BIOS (Basic Input/Output System):
+- 전통적인 펌웨어
+- MBR (Master Boot Record)에서 부트로더 로드
+- 16비트 모드로 시작
+- 파티션 크기 제한 (2TB)
+
+UEFI (Unified Extensible Firmware Interface):
+- 현대적인 펌웨어 (BIOS 대체)
+- GPT (GUID Partition Table) 지원
+- 2TB 이상 파티션 지원
+- Secure Boot 기능
+- 부트로더를 직접 실행 가능 (.efi 파일)
+```
+
+**POST (Power-On Self-Test)**
+- CPU, 메모리, 디스크 등 하드웨어 체크
+- 이상 발견 시 비프음으로 경고
+
+**부팅 모드 확인**
+
+```bash
+# 시스템이 UEFI로 부팅되었는지 확인
+ls /sys/firmware/efi
+# 디렉토리 존재 → UEFI
+# 존재하지 않음 → BIOS (Legacy)
+
+# 파티션 테이블 타입 확인
+fdisk -l /dev/sda | grep "Disklabel type"
+# Disklabel type: gpt → UEFI
+# Disklabel type: dos → BIOS (MBR)
+```
+
+### 2단계: Boot Loader (GRUB)
+
+**GRUB (GRand Unified Bootloader)**
+
+GRUB는 커널을 메모리에 로드하고 실행하는 역할을 한다.
+
+**GRUB 설정 파일**
+
+```bash
+# GRUB 설정 파일 위치
+/boot/grub/grub.cfg              # 실제 설정 파일 (자동 생성, 직접 수정 금지)
+/etc/default/grub                # GRUB 기본 설정
+/etc/grub.d/                     # GRUB 설정 스크립트
+
+# GRUB 설정 보기
+cat /boot/grub/grub.cfg | grep menuentry
+```
+
+**GRUB 설정 수정**
+
+```bash
+# /etc/default/grub 주요 옵션
+
+GRUB_DEFAULT=0                   # 기본 부팅 항목 (0 = 첫 번째)
+GRUB_TIMEOUT=5                   # 선택 대기 시간 (초)
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"  # 커널 부팅 파라미터
+GRUB_CMDLINE_LINUX=""
+
+# 주요 커널 파라미터:
+# quiet           : 부팅 메시지 숨김
+# splash          : 그래픽 부팅 화면
+# nomodeset       : 그래픽 드라이버 비활성화 (트러블슈팅)
+# single          : 싱글 유저 모드 (복구 모드)
+# init=/bin/bash  : 루트 쉘로 직접 부팅 (패스워드 복구)
+
+# 설정 수정 후 GRUB 업데이트
+update-grub              # Debian/Ubuntu
+grub2-mkconfig -o /boot/grub2/grub.cfg  # RHEL/CentOS
+```
+
+**GRUB 복구 모드 진입**
+
+```bash
+# 부팅 시 GRUB 메뉴에서:
+1. Shift 키 누름 (BIOS) 또는 Esc 키 (UEFI)
+2. "Advanced options for Ubuntu" 선택
+3. "recovery mode" 선택
+4. "root - Drop to root shell prompt" 선택
+```
+
+**패스워드 복구 (GRUB 이용)**
+
+```bash
+# GRUB 메뉴에서 'e' 키 눌러 편집 모드
+# linux 라인 끝에 다음 추가:
+init=/bin/bash
+
+# Ctrl+X 또는 F10으로 부팅
+
+# 루트 쉘에서:
+mount -o remount,rw /     # 파일시스템 쓰기 가능으로
+passwd root               # 패스워드 변경
+exec /sbin/init           # 정상 부팅 계속
+```
+
+### 3단계: Kernel 로딩
+
+**커널 이미지 로딩**
+
+```bash
+# GRUB가 커널을 메모리에 로드
+/boot/vmlinuz-5.15.0-91-generic  # 압축된 커널 이미지
+
+# 커널 파라미터 확인
+cat /proc/cmdline
+# BOOT_IMAGE=/boot/vmlinuz-5.15.0-91-generic root=UUID=xxx ro quiet splash
+```
+
+**커널 초기화 과정**
+
+1. **압축 해제**: vmlinuz → 압축 해제
+2. **하드웨어 감지**: CPU, 메모리, PCI 장치 초기화
+3. **드라이버 로딩**: 필수 드라이버 (디스크, 파일시스템)
+4. **루트 파일시스템 마운트**: 초기에는 임시 루트 (initramfs)
+
+### 4단계: initramfs/initrd
+
+**initramfs (initial RAM filesystem)**
+
+initramfs는 커널이 실제 루트 파일시스템을 마운트하기 전에 사용하는 임시 파일시스템이다.
+
+**왜 필요한가?**
+
+```bash
+문제: 루트 파일시스템이 복잡한 구성일 경우
+- LVM 위의 파일시스템
+- 암호화된 디스크
+- 네트워크 파일시스템 (NFS)
+- RAID 위의 파일시스템
+
+→ 이러한 복잡한 구성을 위한 드라이버와 도구가 필요
+→ 그런데 드라이버는 루트 파일시스템에 있음 (Chicken-Egg 문제)
+
+해결: initramfs
+- 메모리에 임시 파일시스템을 만들어 필요한 드라이버와 도구 포함
+- 루트 파일시스템을 마운트한 후 실제 루트로 전환
+```
+
+**initramfs 파일**
+
+```bash
+# initramfs 파일 위치
+ls -lh /boot/initrd.img-*
+lrwxrwxrwx 1 root root   47 Dec 13 10:00 /boot/initrd.img -> initrd.img-5.15.0-91-generic
+
+# initramfs 내용 확인
+lsinitramfs /boot/initrd.img-5.15.0-91-generic | less
+
+# initramfs 압축 해제 (분석용)
+mkdir /tmp/initramfs
+cd /tmp/initramfs
+unmkinitramfs /boot/initrd.img-5.15.0-91-generic .
+```
+
+**initramfs 재생성**
+
+```bash
+# 드라이버나 모듈 변경 후 initramfs 재생성
+update-initramfs -u              # 현재 커널용
+update-initramfs -c -k all       # 모든 커널용
+
+# CentOS/RHEL
+dracut --force
+```
+
+### 5단계: systemd (init 프로세스, PID 1)
+
+**Init 시스템의 역할**
+
+Init 프로세스 (PID 1)는 부팅 후 첫 번째 프로세스로, 모든 프로세스의 부모이다.
+
+**systemd가 하는 일**
+
+```bash
+1. 타겟 (Target) 결정
+   - default.target 확인
+   - multi-user.target 또는 graphical.target
+
+2. 의존성 계산
+   - 각 서비스의 Before, After, Requires, Wants 분석
+   - 부팅 순서 결정
+
+3. 서비스 병렬 시작
+   - 의존성이 없는 서비스는 동시에 시작
+   - 부팅 속도 향상
+
+4. 소켓 기반 활성화
+   - 서비스가 실제로 필요할 때까지 대기
+   - 소켓으로 요청이 오면 그때 서비스 시작
+```
+
+**부팅 타겟 확인**
+
+```bash
+# 기본 타겟 확인
+systemctl get-default
+# graphical.target
+
+# 타겟 의존성 확인
+systemctl list-dependencies graphical.target
+# graphical.target
+# ● ├─display-manager.service
+# ● ├─multi-user.target
+# ● │ ├─docker.service
+# ● │ ├─nginx.service
+# ● │ └─ssh.service
+
+# 현재 활성화된 타겟
+systemctl list-units --type=target
+```
+
+### 6단계: 서비스 시작
+
+**서비스 시작 순서 분석**
+
+```bash
+# 부팅 시간 분석
+systemd-analyze time
+# Startup finished in 2.547s (kernel) + 8.135s (userspace) = 10.682s
+
+# 서비스별 시작 시간
+systemd-analyze blame | head -20
+#          3.234s NetworkManager-wait-online.service
+#          2.123s docker.service
+#          1.456s mysql.service
+
+# Critical Chain (부팅 지연 원인)
+systemd-analyze critical-chain
+# graphical.target @8.091s
+# └─multi-user.target @8.089s
+#   └─docker.service @5.966s +2.123s
+#     └─network.target @5.952s
+```
+
+**부팅 문제 트러블슈팅**
+
+**시나리오 1: 시스템이 부팅 중 멈춤**
+
+```bash
+# 증상: 부팅 중 특정 지점에서 멈춤
+
+# 1. GRUB에서 'quiet splash' 제거하여 상세 메시지 확인
+# GRUB 편집 모드 ('e' 키)
+# linux 라인에서 quiet splash 삭제
+# Ctrl+X로 부팅
+
+# 2. 로그 확인 (다른 시스템에서 디스크 마운트)
+# 또는 복구 모드에서:
+journalctl -xb      # 부팅 로그 상세
+dmesg | less        # 커널 메시지
+
+# 3. 문제 서비스 비활성화
+# 복구 모드에서:
+systemctl disable 문제서비스.service
+```
+
+**시나리오 2: "A start job is running for..." 메시지 후 멈춤**
+
+```bash
+# 증상: 특정 서비스가 시작을 기다리다가 타임아웃
+
+# 원인:
+# - 네트워크를 기다리는 서비스 (NetworkManager-wait-online)
+# - 마운트할 수 없는 파일시스템 (/etc/fstab 오류)
+# - 응답하지 않는 원격 파일시스템 (NFS)
+
+# 해결:
+# 1. /etc/fstab에서 문제 파일시스템에 'nofail' 옵션 추가
+UUID=xxx /mnt/data ext4 defaults,nofail 0 2
+
+# 2. NetworkManager-wait-online.service 비활성화
+systemctl disable NetworkManager-wait-online.service
+
+# 3. 타임아웃 시간 조정
+# /etc/systemd/system.conf
+DefaultTimeoutStartSec=90s  # 기본 90초
+```
+
+**시나리오 3: 부팅 후 로그인 화면이 안 나옴**
+
+```bash
+# 증상: 부팅은 되는데 GUI 로그인 화면이 안 나옴
+
+# 1. Ctrl+Alt+F2로 콘솔 전환
+# 2. 로그인
+
+# 3. 그래픽 타겟 확인
+systemctl status graphical.target
+
+# 4. 디스플레이 매니저 확인
+systemctl status gdm3.service       # Ubuntu/GNOME
+systemctl status lightdm.service    # LightDM
+systemctl status sddm.service       # KDE
+
+# 5. 수동 시작
+systemctl start gdm3
+
+# 6. 실패 시 로그 확인
+journalctl -u gdm3 -b
+```
+
+### 부팅 성능 최적화
+
+**1. 느린 서비스 찾기**
+
+```bash
+# 가장 느린 서비스 Top 10
+systemd-analyze blame | head -10
+
+# 특정 서비스 분석
+systemd-analyze critical-chain docker.service
+```
+
+**2. 불필요한 서비스 비활성화**
+
+```bash
+# 활성화된 서비스 목록
+systemctl list-unit-files --state=enabled
+
+# 불필요한 서비스 비활성화 예시
+systemctl disable bluetooth.service     # 블루투스 미사용 시
+systemctl disable cups.service          # 프린터 미사용 시
+systemctl disable ModemManager.service  # 모뎀 미사용 시
+```
+
+**3. 네트워크 대기 시간 줄이기**
+
+```bash
+# NetworkManager-wait-online은 모든 네트워크가 준비될 때까지 대기
+# 대부분의 경우 불필요
+
+systemctl disable NetworkManager-wait-online.service
+```
+
+**4. 파일시스템 체크 주기 조정**
+
+```bash
+# 파일시스템 체크 상태 확인
+tune2fs -l /dev/sda1 | grep -i "check"
+
+# 30번 마운트마다 체크 → 100번으로 변경
+tune2fs -c 100 /dev/sda1
+
+# 180일마다 체크 → 1년으로 변경
+tune2fs -i 365d /dev/sda1
+
+# 체크 비활성화 (권장하지 않음)
+tune2fs -c 0 -i 0 /dev/sda1
+```
+
+### 부팅 로그 확인
+
+```bash
+# 현재 부팅 로그
+journalctl -b 0
+
+# 이전 부팅 로그
+journalctl -b -1
+journalctl -b -2
+
+# 부팅 로그 목록
+journalctl --list-boots
+
+# 커널 메시지만
+dmesg
+dmesg -T  # 타임스탬프 포함
+
+# 부팅 실패 확인
+journalctl -p err -b     # 에러 이상
+journalctl -p warning -b # 경고 이상
+```
+
+### 주요 부팅 파일
+
+```bash
+# 커널 및 initramfs
+/boot/vmlinuz-*        # 커널 이미지
+/boot/initrd.img-*     # initramfs
+/boot/System.map-*     # 커널 심볼 테이블
+
+# 부트로더 (GRUB)
+/boot/grub/grub.cfg    # GRUB 설정 (자동 생성)
+/etc/default/grub      # GRUB 기본 설정
+/etc/grub.d/           # GRUB 스크립트
+
+# systemd
+/etc/systemd/          # systemd 설정
+/lib/systemd/system/   # 시스템 서비스 파일
+/etc/systemd/system/   # 사용자 정의 서비스 파일
+
+# 파일시스템 마운트
+/etc/fstab             # 파일시스템 테이블
+```
 
 ---
 
