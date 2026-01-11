@@ -1,12 +1,10 @@
 ---
-title: CKA - Lightning Lab
-date: 2025-12-20
-categories: [Kubernetes]
-tags: [Kubernetes, Kubeadm, Upgrade, ETCD, Troubleshooting, Deployment]
-layout: post
+title: "CKA Lightning Lab"
+date: 2026-01-11
+categories: [Kubernetes, CKA]
+tags: [kubernetes, cka, kubeadm, upgrade, etcd, troubleshooting, deployment, persistent-volume, secrets]
+description: "CKA 시험 대비 Lightning Lab 실전 문제 7개 - 클러스터 업그레이드, 트러블슈팅, ETCD 백업, PV/PVC, Secret 관리"
 toc: true
-math: true
-mermaid: true
 ---
 
 ## 개요
