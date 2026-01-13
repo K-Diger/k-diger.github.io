@@ -888,5 +888,5 @@ ETCDCTL_API=3 etcdctl snapshot save <file> --endpoints=<ep> --cacert=<ca> --cert
 
 ---
 
-**이전**: [Part 17: Troubleshooting](./2026-01-18-kubernetes-17-troubleshooting) ←
-**다음**: [Part 19: 아키텍처 심화](./2026-01-20-kubernetes-19-internals) →
+**이전**: [Part 17: Troubleshooting](https://k-diger.github.io/posts//posts/kubernetes-17-troubleshooting) ←
+**다음**: [Part 19: Kubernetes Internals](https://k-diger.github.io/posts//posts/kubernetes-19-internals) →

@@ -9,10 +9,6 @@ math: true
 mermaid: true
 ---
 
-> **Phase 7: 심화** (20/20)
-
----
-
 # Part 20: 확장성
 
 ## Kubernetes 확장성 개요
@@ -1121,5 +1117,5 @@ make test
 
 ---
 
-**이전**: [Part 19: 아키텍처 심화](./2026-01-20-kubernetes-19-internals) ←
-**인덱스로 돌아가기**: [Kubernetes 완벽 가이드 인덱스](./2026-01-01-kubernetes-00-index)
+**이전**: [Part 19: Kubernetes Internals](https://k-diger.github.io/posts//posts/kubernetes-19-internals) ←
+**인덱스로 돌아가기**: [Kubernetes 완벽 가이드](https://k-diger.github.io/posts//posts/kubernetes-00-index)

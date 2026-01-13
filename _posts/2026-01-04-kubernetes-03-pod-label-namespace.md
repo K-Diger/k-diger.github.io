@@ -1,5 +1,5 @@
 ---
-title: "Part 3: Pod, Label, Namespace - Kubernetes 핵심 개념"
+title: "Part 3: Pod, Label, Namespace - Kubernetes 주요 개념"
 date: 2026-01-04
 categories: [Container, Kubernetes]
 tags: [Container, Kubernetes, Pod, Label, Namespace]
@@ -9,7 +9,7 @@ math: true
 mermaid: true
 ---
 
-# Part 3: Kubernetes 핵심 개념
+# Part 3: Kubernetes 주요 개념
 
 ## 7. Pod
 
@@ -276,7 +276,7 @@ containers:
 
 **정의:**
 
-Label은 **키-값 쌍으로 리소스를 분류하고 선택**하기 위한 메타데이터이다. Kubernetes의 핵심 조직화 메커니즘으로, 리소스를 느슨하게 결합(loosely coupled)시킨다.
+Label은 **키-값 쌍으로 리소스를 분류하고 선택**하기 위한 메타데이터이다. Kubernetes의 주요 조직화 메커니즘으로, 리소스를 느슨하게 결합(loosely coupled)시킨다.
 
 **Label의 역할:**
 
@@ -448,7 +448,7 @@ spec:
 
 ## 학습 정리
 
-### 핵심 개념
+### 주요 개념
 
 1. **Pod**는 Kubernetes의 최소 배포 단위로, 하나 이상의 컨테이너를 포함
 2. **Label**과 **Selector**로 리소스를 선택하고 그룹화
@@ -458,10 +458,10 @@ spec:
 
 ### 다음 단계
 
-✅ Pod 개념 및 생명주기 이해
-✅ Multi-container 패턴 학습
-✅ Label과 Namespace 이해
-⬜ Workload 리소스 학습 → **[Part 4로 이동](./2026-01-05-kubernetes-04-deployment-statefulset)**
+- Pod 개념 및 생명주기 이해
+- Multi-container 패턴 학습
+- Label과 Namespace 이해
+- Workload 리소스 학습 → **[Part 4로 이동](https://k-diger.github.io/posts//posts/kubernetes-05-deployment-statefulset)**
 
 ---
 
@@ -518,5 +518,5 @@ spec:
 
 ---
 
-**이전**: [Part 2: Kubernetes 아키텍처](./2026-01-03-kubernetes-02-architecture) ←
-**다음**: [Part 4: Workload 리소스](./2026-01-05-kubernetes-04-deployment-statefulset) →
+**이전**: [Part 2: Kubernetes 아키텍처](https://k-diger.github.io/posts//posts/kubernetes-02-architecture) ←
+**다음**: [Part 4: Deployment, StatefulSet, DaemonSet](https://k-diger.github.io/posts//posts/kubernetes-04-deployment-statefulset) →

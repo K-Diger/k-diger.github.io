@@ -339,4 +339,4 @@ kubectl delete pod <pod-name>
 
 ---
 
-**다음**: [Part 2: Kubernetes 아키텍처](./2026-01-03-kubernetes-02-architecture)
+**다음**: [Part 2: Kubernetes 아키텍처](https://k-diger.github.io/posts//posts/kubernetes-02-architecture) →

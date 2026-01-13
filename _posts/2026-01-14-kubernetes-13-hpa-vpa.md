@@ -691,5 +691,5 @@ kubectl describe vpa hamster-vpa
 
 ---
 
-**이전**: [Part 12: 스케줄링](./2026-01-13-kubernetes-12-taint-affinity)
-**다음**: [Part 14: 배포 자동화](./2026-01-15-kubernetes-14-helm-kustomize)
+**이전**: [Part 12: Taint, Toleration, Affinity](https://k-diger.github.io/posts//posts/kubernetes-12-taint-affinity) ←
+**다음**: [Part 14: Helm과 Kustomize](https://k-diger.github.io/posts//posts/kubernetes-14-helm-kustomize) →

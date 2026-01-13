@@ -9,10 +9,6 @@ math: true
 mermaid: true
 ---
 
-> **Phase 4: 보안** (10/20)
-
----
-
 # Part 10: Pod 보안
 
 ## 25. Pod Security
@@ -112,9 +108,9 @@ metadata:
 
 ### 다음 단계
 
-✅ SecurityContext 이해
-✅ Pod Security Standards 적용
-⬜ Admission Control 학습 → **[Part 11로 이동](./2026-01-12-kubernetes-11-admission-webhook)**
+- SecurityContext 이해
+- Pod Security Standards 적용
+- Admission Control 학습 → **[Part 11로 이동](https://k-diger.github.io/posts//posts/kubernetes-12-admission-webhook)**
 
 ---
 
@@ -180,5 +176,5 @@ metadata:
 
 ---
 
-**이전**: [Part 9: 인증 및 인가](./2026-01-10-kubernetes-09-rbac-serviceaccount) ←
-**다음**: [Part 11: Admission Control 및 정책](./2026-01-12-kubernetes-11-admission-webhook) →
+**이전**: [Part 9: RBAC과 ServiceAccount](/posts/kubernetes-09-rbac-serviceaccount) ←
+**다음**: [Part 11: Admission Webhook](/posts/kubernetes-11-admission-webhook) →

@@ -616,5 +616,5 @@ kubeadm certs check-expiration
 
 ---
 
-**이전**: [Part 15: 모니터링 및 로깅](./2026-01-16-kubernetes-15-prometheus-grafana) ←
-**다음**: [Part 17: Troubleshooting](./2026-01-18-kubernetes-17-troubleshooting) →
+**이전**: [Part 15: Prometheus와 Grafana](https://k-diger.github.io/posts//posts/kubernetes-15-prometheus-grafana) ←
+**다음**: [Part 17: Troubleshooting](https://k-diger.github.io/posts//posts/kubernetes-17-troubleshooting) →

@@ -837,5 +837,5 @@ kubectl apply -f high-pod.yaml
 
 ---
 
-**이전**: [Part 11: Admission Control](./2026-01-12-kubernetes-11-admission-webhook)
-**다음**: [Part 13: Auto-scaling](./2026-01-14-kubernetes-13-hpa-vpa)
+**이전**: [Part 11: Admission Webhook](https://k-diger.github.io/posts//posts/kubernetes-11-admission-webhook) ←
+**다음**: [Part 13: HPA와 VPA](https://k-diger.github.io/posts//posts/kubernetes-13-hpa-vpa) →

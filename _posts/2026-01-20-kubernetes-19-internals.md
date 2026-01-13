@@ -732,5 +732,5 @@ spec:
 
 ---
 
-**이전**: [Part 18: CKA 시험 준비와 베스트 프랙티스](./2026-01-19-kubernetes-18-cka-exam) ←
-**다음**: [Part 20: CRD와 Operator - 확장성](./2026-01-21-kubernetes-20-crd-operator) →
+**이전**: [Part 18: CKA 시험 준비](https://k-diger.github.io/posts//posts/kubernetes-18-cka-exam) ←
+**다음**: [Part 20: CRD와 Operator](https://k-diger.github.io/posts//posts/kubernetes-20-crd-operator) →

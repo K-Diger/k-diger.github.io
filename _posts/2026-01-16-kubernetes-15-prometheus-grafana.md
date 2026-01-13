@@ -9,10 +9,6 @@ math: true
 mermaid: true
 ---
 
-> **Phase 6: 클러스터 운영** (15/20)
-
----
-
 # Part 15: 모니터링 및 로깅
 
 ## 모니터링 개요
@@ -838,5 +834,5 @@ $cluster → $namespace → $deployment → $pod
 
 ---
 
-**이전**: [Part 14: 배포 자동화](./2026-01-15-kubernetes-14-helm-kustomize) ←
-**다음**: [Part 16: 클러스터 유지보수](./2026-01-17-kubernetes-16-drain-upgrade) →
+**이전**: [Part 14: Helm과 Kustomize](https://k-diger.github.io/posts//posts/kubernetes-14-helm-kustomize) ←
+**다음**: [Part 16: Node Drain과 Cluster Upgrade](https://k-diger.github.io/posts//posts/kubernetes-16-drain-upgrade) →

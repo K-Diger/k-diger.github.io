@@ -484,5 +484,5 @@ spec:
 
 ---
 
-**이전**: [Part 5: 설정 및 데이터 관리](./2026-01-06-kubernetes-05-configmap-secret) ←
-**다음**: [Part 7: 네트워킹 기초](./2026-01-08-kubernetes-07-service-endpoint) →
+**이전**: [Part 5: ConfigMap과 Secret](https://k-diger.github.io/posts//posts/kubernetes-05-configmap-secret) ←
+**다음**: [Part 7: Service와 Endpoint](https://k-diger.github.io/posts//posts/kubernetes-07-service-endpoint) →

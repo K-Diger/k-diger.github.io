@@ -458,7 +458,7 @@ kubectl top pods -A
 
 **역할:**
 
-**Pod 간 네트워킹**을 제공한다. 자세한 내용은 [Part 8: 고급 네트워킹](./2026-01-09-kubernetes-08-ingress-networkpolicy) 참고.
+**Pod 간 네트워킹**을 제공한다. 자세한 내용은 [Part 8: 고급 네트워킹](https://k-diger.github.io/posts//posts/kubernetes-09-ingress-networkpolicy) 참고.
 
 ---
 
@@ -541,5 +541,5 @@ graph TB
 
 ---
 
-← **이전**: [Part 1: 컨테이너 오케스트레이션 개요](./2026-01-02-kubernetes-01-container-orchestration)
-**다음**: [Part 3: Kubernetes 핵심 개념](./2026-01-04-kubernetes-03-pod-label-namespace) →
+**이전**: [Part 1: 컨테이너 오케스트레이션과 Kubernetes 소개](https://k-diger.github.io/posts//posts/kubernetes-01-container-orchestration) ←
+**다음**: [Part 3: Pod, Label, Namespace](https://k-diger.github.io/posts//posts/kubernetes-03-pod-label-namespace) →

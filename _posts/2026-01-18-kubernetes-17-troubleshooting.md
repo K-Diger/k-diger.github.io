@@ -1060,5 +1060,5 @@ ls /opt/cni/bin/
 
 ---
 
-**이전**: [Part 16: 클러스터 유지보수](./2026-01-17-kubernetes-16-drain-upgrade) ←
-**다음**: [Part 18: CKA 베스트 프랙티스](./2026-01-19-kubernetes-18-cka-exam) →
+**이전**: [Part 16: Node Drain과 Cluster Upgrade](https://k-diger.github.io/posts//posts/kubernetes-16-drain-upgrade) ←
+**다음**: [Part 18: CKA 시험 준비](https://k-diger.github.io/posts//posts/kubernetes-18-cka-exam) →

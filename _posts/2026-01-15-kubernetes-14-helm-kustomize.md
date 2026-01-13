@@ -9,10 +9,6 @@ math: true
 mermaid: true
 ---
 
-> **Phase 5: 고급 운영** (14/20)
-
----
-
 # Part 14: 배포 자동화
 
 ## 배포 전략
@@ -106,10 +102,10 @@ overlays/
 
 ### 다음 단계
 
-✅ 배포 자동화 이해
-⬜ 모니터링 학습 → **[Part 15로 이동](./2026-01-16-kubernetes-15-prometheus-grafana)**
+- 배포 자동화 이해
+- 모니터링 학습 → **[Part 15로 이동](https://k-diger.github.io/posts//posts/kubernetes-16-prometheus-grafana)**
 
 ---
 
-**이전**: [Part 13: Auto-scaling](./2026-01-14-kubernetes-13-hpa-vpa) ←
-**다음**: [Part 15: 모니터링 및 로깅](./2026-01-16-kubernetes-15-prometheus-grafana) →
+**이전**: [Part 13: HPA와 VPA](https://k-diger.github.io/posts//posts/kubernetes-13-hpa-vpa) ←
+**다음**: [Part 15: Prometheus와 Grafana](https://k-diger.github.io/posts//posts/kubernetes-15-prometheus-grafana) →

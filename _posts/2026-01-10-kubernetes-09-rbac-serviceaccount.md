@@ -9,10 +9,6 @@ math: true
 mermaid: true
 ---
 
-> **Phase 4: 보안** (9/20)
-
----
-
 # Part 9: 인증 및 인가
 
 ## 32. TLS 및 인증서 관리
@@ -369,10 +365,10 @@ roleRef:
 
 ### 다음 단계
 
-✅ TLS 및 인증서 관리 이해
-✅ Certificates API로 인증서 발급
-✅ RBAC로 권한 관리
-⬜ Pod 보안 학습 → **[Part 10으로 이동](./2026-01-11-kubernetes-10-securitycontext)**
+- TLS 및 인증서 관리 이해
+- Certificates API로 인증서 발급
+- RBAC로 권한 관리
+- Pod 보안 학습 → **[Part 10으로 이동](https://k-diger.github.io/posts//posts/kubernetes-11-securitycontext)**
 
 ---
 
@@ -428,5 +424,5 @@ roleRef:
 
 ---
 
-**이전**: [Part 8: 고급 네트워킹](./2026-01-09-kubernetes-08-ingress-networkpolicy) ←
-**다음**: [Part 10: Pod 보안](./2026-01-11-kubernetes-10-securitycontext) →
+**이전**: [Part 8: Ingress와 NetworkPolicy](https://k-diger.github.io/posts//posts/kubernetes-08-ingress-networkpolicy) ←
+**다음**: [Part 10: SecurityContext와 Pod Security](https://k-diger.github.io/posts//posts/kubernetes-10-securitycontext) →

@@ -863,10 +863,10 @@ helm install cilium cilium/cilium --namespace kube-system
 
 ### 다음 단계
 
-✅ Ingress를 이용한 L7 라우팅 이해
-✅ NetworkPolicy로 네트워크 보안 제어
-✅ CNI 플러그인 비교 및 선택 기준 파악
-⬜ 보안 학습 → **[Part 9로 이동](./2026-01-10-kubernetes-09-rbac-serviceaccount)**
+- Ingress를 이용한 L7 라우팅 이해
+- NetworkPolicy로 네트워크 보안 제어
+- CNI 플러그인 비교 및 선택 기준 파악
+- 보안 학습 → **[Part 9로 이동](/posts/kubernetes-10-rbac-serviceaccount)**
 
 ---
 
@@ -915,5 +915,5 @@ helm install cilium cilium/cilium --namespace kube-system
 
 ---
 
-**이전**: [Part 7: 네트워킹 기초](./2026-01-08-kubernetes-07-service-endpoint) ←
-**다음**: [Part 9: 인증 및 인가](./2026-01-10-kubernetes-09-rbac-serviceaccount) →
+**이전**: [Part 7: Service와 Endpoint](https://k-diger.github.io/posts//posts/kubernetes-07-service-endpoint) ←
+**다음**: [Part 9: RBAC과 ServiceAccount](https://k-diger.github.io/posts//posts/kubernetes-09-rbac-serviceaccount) →

@@ -9,10 +9,6 @@ math: true
 mermaid: true
 ---
 
-> **Phase 2: 기본 리소스 관리** (4/20)
-
----
-
 # Part 4: Workload 리소스
 
 ## 10. ReplicaSet
@@ -398,10 +394,10 @@ spec:
 
 ### 다음 단계
 
-✅ Deployment를 이용한 애플리케이션 배포 이해
-✅ StatefulSet과 DaemonSet 차이 파악
-✅ Job과 CronJob 사용법 학습
-⬜ 설정 관리 학습 → **[Part 5로 이동](./2026-01-06-kubernetes-05-configmap-secret)**
+- Deployment를 이용한 애플리케이션 배포 이해
+- StatefulSet과 DaemonSet 차이 파악
+- Job과 CronJob 사용법 학습
+- 설정 관리 학습 → **[Part 5로 이동](https://k-diger.github.io/posts//posts/kubernetes-06-configmap-secret)**
 
 ---
 
@@ -477,5 +473,5 @@ spec:
 
 ---
 
-**이전**: [Part 3: Kubernetes 핵심 개념](./2026-01-04-kubernetes-03-pod-label-namespace) ←
-**다음**: [Part 5: 설정 및 데이터 관리](./2026-01-06-kubernetes-05-configmap-secret) →
+**이전**: [Part 3: Pod, Label, Namespace](https://k-diger.github.io/posts//posts/kubernetes-03-pod-label-namespace) ←
+**다음**: [Part 5: ConfigMap과 Secret](https://k-diger.github.io/posts//posts/kubernetes-05-configmap-secret) →

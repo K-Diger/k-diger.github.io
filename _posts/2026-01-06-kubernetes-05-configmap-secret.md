@@ -9,10 +9,6 @@ math: true
 mermaid: true
 ---
 
-> **Phase 2: 기본 리소스 관리** (5/20)
-
----
-
 # Part 5: 설정 및 데이터 관리
 
 ## 23. ConfigMap과 Secret
@@ -136,10 +132,10 @@ containers:
 
 ### 다음 단계
 
-✅ ConfigMap으로 설정 관리 이해
-✅ Secret으로 민감 정보 관리 이해
-✅ Volume과 환경 변수 주입 방법 학습
-⬜ 스토리지 학습 → **[Part 6으로 이동](./2026-01-07-kubernetes-06-volume-pv-pvc)**
+- ConfigMap으로 설정 관리 이해
+- Secret으로 민감 정보 관리 이해
+- Volume과 환경 변수 주입 방법 학습
+- 스토리지 학습 → **[Part 6으로 이동](/posts/kubernetes-07-volume-pv-pvc)**
 
 ---
 
@@ -211,5 +207,5 @@ containers:
 
 ---
 
-**이전**: [Part 4: Workload 리소스](./2026-01-05-kubernetes-04-deployment-statefulset) ←
-**다음**: [Part 6: 스토리지](./2026-01-07-kubernetes-06-volume-pv-pvc) →
+**이전**: [Part 4: Deployment, StatefulSet, DaemonSet](https://k-diger.github.io/posts//posts/kubernetes-04-deployment-statefulset) ←
+**다음**: [Part 6: Volume, PV, PVC](https://k-diger.github.io/posts//posts/kubernetes-06-volume-pv-pvc) →

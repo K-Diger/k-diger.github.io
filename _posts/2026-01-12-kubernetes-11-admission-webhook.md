@@ -9,10 +9,6 @@ math: true
 mermaid: true
 ---
 
-> **Phase 4: 보안** (11/20)
-
----
-
 # Part 11: Admission Control 및 정책
 
 ## 33. Admission Controllers
@@ -218,9 +214,9 @@ spec:
 
 ### 다음 단계
 
-✅ Admission Controllers 이해
-✅ OPA/Gatekeeper 사용법 학습
-⬜ 스케줄링 학습 → **[Part 12로 이동](./2026-01-13-kubernetes-12-taint-affinity)**
+- Admission Controllers 이해
+- OPA/Gatekeeper 사용법 학습
+- 스케줄링 학습 → **[Part 12로 이동](/posts/kubernetes-13-taint-affinity)**
 
 ---
 
@@ -255,5 +251,5 @@ spec:
 
 ---
 
-**이전**: [Part 10: Pod 보안](./2026-01-11-kubernetes-10-securitycontext) ←
-**다음**: [Part 12: 스케줄링](./2026-01-13-kubernetes-12-taint-affinity) →
+**이전**: [Part 10: SecurityContext와 Pod Security](https://k-diger.github.io/posts//posts/kubernetes-10-securitycontext) ←
+**다음**: [Part 12: Taint, Toleration, Affinity](https://k-diger.github.io/posts//posts/kubernetes-12-taint-affinity) →
