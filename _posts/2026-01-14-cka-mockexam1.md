@@ -13,8 +13,8 @@ mermaid: true
 
 **Task:** Create a Pod `mc-pod` in the `mc-namespace` namespace with three containers. `mc-pod-1` (nginx:1-alpine) with `NODE_NAME` env. `mc-pod-2` (busybox:1) logging `date` to `/var/log/shared/date.log`. `mc-pod-3` (busybox:1) tailing `date.log`. Use a shared `emptyDir` volume.
 
-**공식문서 링크:** [Configure a Pod to Use a Volume for Storage](https://kubernetes.io/docs/tasks/configure-pod-container/configure-volume-storage/) / [Environment variables from fieldRef](https://www.google.com/search?q=https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/%23use-pod-fields-as-values-for-environment-variables)
-**검색 키워드:** `emptyDir`, `fieldRef`
+- **공식문서 링크:** [Configure a Pod to Use a Volume for Storage](https://kubernetes.io/docs/tasks/configure-pod-container/configure-volume-storage/) / [Environment variables from fieldRef](https://www.google.com/search?q=https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/%23use-pod-fields-as-values-for-environment-variables)
+- **검색 키워드:** `emptyDir`, `fieldRef`
 
 ```yaml
 apiVersion: v1
@@ -55,8 +55,8 @@ spec:
 
 **Task:** On `node01`, install `cri-docker_0.3.16.3-0.debian.deb`. Ensure the service is running and enabled on boot.
 
-**공식문서 링크:** [Container Runtimes (cri-dockerd)](https://www.google.com/search?q=https://kubernetes.io/docs/setup/production-environment/container-runtimes/%23docker-engine)
-**검색 키워드:** `container runtimes`
+- **공식문서 링크:** [Container Runtimes (cri-dockerd)](https://www.google.com/search?q=https://kubernetes.io/docs/setup/production-environment/container-runtimes/%23docker-engine)
+- **검색 키워드:** `container runtimes`
 
 ```bash
 # node01 SSH 접속
@@ -83,8 +83,8 @@ systemctl is-enabled cri-docker
 
 **Task:** On `controlplane`, identify all CRDs related to `VerticalPodAutoscaler` and save their names into `/root/vpa-crds.txt`.
 
-**공식문서 링크:** [Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
-**검색 키워드:** `kubectl get crd`
+- **공식문서 링크:** [Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
+- **검색 키워드:** `kubectl get crd`
 
 ```bash
 # CRD 목록 조회 및 필터링 후 파일 저장
@@ -101,8 +101,8 @@ cat /root/vpa-crds.txt
 
 **Task:** Create a service named `messaging-service` to expose the `messaging` pod within the cluster on port `6379`. (default namespace)
 
-**공식문서 링크:** [Service (kubectl expose)](https://kubernetes.io/docs/concepts/services-networking/service/)
-**검색 키워드:** `kubectl expose`
+- **공식문서 링크:** [Service (kubectl expose)](https://kubernetes.io/docs/concepts/services-networking/service/)
+- **검색 키워드:** `kubectl expose`
 
 ```bash
 # 명령형 커맨드로 서비스 생성
@@ -116,8 +116,8 @@ kubectl expose pod messaging --port=6379 --name messaging-service
 
 **Task:** Create a deployment named `hr-web-app` using the image `kodekloud/webapp-color` with 2 replicas.
 
-**공식문서 링크:** [Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
-**검색 키워드:** `kubectl create deployment`
+- **공식문서 링크:** [Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+- **검색 키워드:** `kubectl create deployment`
 
 ```bash
 # 명령형 커맨드로 Deployment 생성
@@ -131,8 +131,8 @@ kubectl create deployment hr-web-app --image=kodekloud/webapp-color --replicas=2
 
 **Task:** Identify and fix the issue in the `orange` pod. (InitContainer command has a typo `sleeeep`).
 
-**공식문서 링크:** [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
-**검색 키워드:** `init containers`
+- **공식문서 링크:** [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
+- **검색 키워드:** `init containers`
 
 ```bash
 # Pod 정보 확인
@@ -154,8 +154,8 @@ kubectl replace -f orange.yaml --force
 
 **Task:** Expose `hr-web-app` as `hr-web-app-service` on port `30082`. App listens on `8080`.
 
-**공식문서 링크:** [Service NodePort](https://www.google.com/search?q=https://kubernetes.io/docs/concepts/services-networking/service/%23type-nodeport)
-**검색 키워드:** `Service NodePort`
+- **공식문서 링크:** [Service NodePort](https://www.google.com/search?q=https://kubernetes.io/docs/concepts/services-networking/service/%23type-nodeport)
+- **검색 키워드:** `Service NodePort`
 
 ```bash
 # YAML 생성
@@ -176,8 +176,8 @@ kubectl apply -f hr-web-app-service.yaml
 
 **Task:** Create a PV named `pv-analytics` with 100Mi, ReadWriteMany, and hostPath `/pv/data-analytics`.
 
-**공식문서 링크:** [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
-**검색 키워드:** `PersistentVolume hostPath`
+- **공식문서 링크:** [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+- **검색 키워드:** `PersistentVolume hostPath`
 
 ```yaml
 apiVersion: v1
@@ -201,8 +201,8 @@ spec:
 
 **Task:** Create HPA `webapp-hpa` for `kkapp-deploy`. CPU 50% target. Stabilization window 300s for scale down.
 
-**공식문서 링크:** [HPA Behavior](https://www.google.com/search?q=https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/%23configurable-scaling-behavior)
-**검색 키워드:** `stabilizationWindowSeconds`
+- **공식문서 링크:** [HPA Behavior](https://www.google.com/search?q=https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/%23configurable-scaling-behavior)
+- **검색 키워드:** `stabilizationWindowSeconds`
 
 ```yaml
 apiVersion: autoscaling/v2
@@ -235,8 +235,8 @@ spec:
 
 **Task:** Deploy VPA `analytics-vpa` for `analytics-deployment` in `Recreate` mode.
 
-**공식문서 링크:** [VPA (External Repo)](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler)
-**검색 키워드:** `VerticalPodAutoscaler` (보통 시험 환경에서 제공되는 예제 문서나 `kubectl explain vpa` 활용)
+- **공식문서 링크:** [VPA (External Repo)](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler)
+- **검색 키워드:** `VerticalPodAutoscaler` (보통 시험 환경에서 제공되는 예제 문서나 `kubectl explain vpa` 활용)
 
 ```yaml
 apiVersion: autoscaling.k8s.io/v1
@@ -259,8 +259,8 @@ spec:
 
 **Task:** Create Gateway `web-gateway` in namespace `nginx-gateway` with `GatewayClass` nginx, HTTP, port 80.
 
-**공식문서 링크:** [Gateway API](https://gateway-api.sigs.k8s.io/api-types/gateway/)
-**검색 키워드:** `Gateway API spec`
+- **공식문서 링크:** [Gateway API](https://gateway-api.sigs.k8s.io/api-types/gateway/)
+- **검색 키워드:** `Gateway API spec`
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -283,8 +283,8 @@ spec:
 
 **Task:** Update helm repo `kk-mock1`. Upgrade chart version to `18.1.15` and replicas to 2 in namespace `kk-ns`.
 
-**공식문서 링크:** [Helm Upgrade](https://helm.sh/docs/helm/helm_upgrade/)
-**검색 키워드:** `helm upgrade`, `helm repo update`
+- **공식문서 링크:** [Helm Upgrade](https://helm.sh/docs/helm/helm_upgrade/)
+- **검색 키워드:** `helm upgrade`, `helm repo update`
 
 ```bash
 # 리포지토리 목록 확인 및 업데이트
