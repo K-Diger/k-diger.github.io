@@ -1,6 +1,6 @@
 ---
 title: "CKA Lightning Lab"
-date: 2026-01-11
+date: 2026-01-13
 categories: [Kubernetes, CKA]
 tags: [kubernetes, cka, kubeadm, upgrade, etcd, troubleshooting, deployment, persistent-volume, secrets]
 description: "CKA 시험 대비 Lightning Lab 실전 문제 7개 - 클러스터 업그레이드, 트러블슈팅, ETCD 백업, PV/PVC, Secret 관리"
@@ -9,7 +9,7 @@ toc: true
 
 ## 개요
 
-CKA(Certified Kubernetes Administrator) 시험에서 자주 출제되는 필수 Kubernetes 관리 작업들을 다룹니다. 클러스터 업그레이드, 트러블슈팅, 배포, 시크릿, ETCD 백업 등의 실전 문제와 해결방법을 포함합니다.
+CKA(Certified Kubernetes Administrator) 시험에서 자주 출제되는 필수 Kubernetes 관리 작업들을 다룬다. 클러스터 업그레이드, 트러블슈팅, 배포, 시크릿, ETCD 백업 등의 실전 문제와 해결방법을 포함한다.
 
 ---
 
@@ -251,7 +251,7 @@ kubectl annotate deployment nginx-deploy \
   kubernetes.io/change-cause="Updated nginx image to 1.17"
 ```
 
-> **참고:** 이 어노테이션은 더 이상 사용되지 않는(deprecated) `--record` 플래그의 기능을 대체하며, 명확한 변경 이력을 제공합니다.
+> **참고:** 이 어노테이션은 더 이상 사용되지 않는(deprecated) `--record` 플래그의 기능을 대체하며, 명확한 변경 이력을 제공한다.
 
 #### 검증
 
@@ -522,7 +522,7 @@ kubectl -n admin1401 exec secret-1401 -- ls -la /etc/secret-volume
 
 ## 요약
 
-이 Lightning Lab 연습 문제들은 CKA 시험의 핵심 주제를 다룹니다:
+이 Lightning Lab 연습 문제들은 CKA 시험의 핵심 주제를 다룬다:
 
 | 번호 | 주제 | 핵심 내용 |
 |------|------|-----------|
@@ -534,4 +534,4 @@ kubectl -n admin1401 exec secret-1401 -- ls -la /etc/secret-volume
 | 6 | **ETCD 운영** | 클러스터 백업 절차 |
 | 7 | **보안** | 파드에서 Secret 사용 |
 
-> **팁**: 시험 환경에서 근육 기억(muscle memory)을 구축하기 위해 이러한 시나리오를 반복적으로 연습하세요.
+> **팁**: 시험 환경에서 근육 기억(muscle memory)을 구축하기 위해 이러한 시나리오를 반복적으로 연습한다.
