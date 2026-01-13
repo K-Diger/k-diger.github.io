@@ -38,7 +38,7 @@ kubectl drain node01 --ignore-daemonsets --delete-emptydir-data
 # Pod 삭제 대기 시간 설정
 kubectl drain node01 --ignore-daemonsets --timeout=60s
 
-# 강제 삭제 (주의!)
+# 강제 삭제
 kubectl drain node01 --ignore-daemonsets --force
 ```
 

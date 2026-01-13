@@ -26,7 +26,7 @@ Admission Controller는 **API 요청이 인증/인가를 통과한 후, etcd에 
    ↓
 2. Authorization (인가: RBAC)
    ↓
-3. Admission Control ← 여기!
+3. Admission Control
    ├─ Mutating Admission: 요청 수정
    └─ Validating Admission: 요청 검증
    ↓

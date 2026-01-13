@@ -213,7 +213,7 @@ kubectl logs app-xxx -c init-container-name
 kubectl get svc
 kubectl describe svc my-service
 
-# 2. Endpoints 확인 (가장 중요!)
+# 2. Endpoints 확인 (가장 중요)
 kubectl get endpoints my-service
 
 # 정상:
@@ -231,7 +231,7 @@ kubectl get pods --show-labels
 
 kubectl get svc my-service -o yaml | grep -A 5 selector
 # selector:
-#   app: wrong-label  # 불일치!
+#   app: wrong-label  # 불일치
 
 # 해결
 kubectl edit svc my-service
@@ -569,7 +569,7 @@ openssl x509 -in /var/lib/kubelet/pki/kubelet-client-current.pem -text -noout | 
 
 # Validity
 #   Not Before: Dec 13 11:00:00 2022 GMT
-#   Not After : Dec 13 11:00:00 2023 GMT  # 만료됨!
+#   Not After : Dec 13 11:00:00 2023 GMT  # 만료됨
 
 # 해결
 # 1. 인증서 자동 갱신 설정 확인
@@ -759,7 +759,7 @@ kubectl delete pod <pod-name>
 kubectl get svc my-service
 kubectl describe svc my-service
 
-# 2. Endpoints 확인 (핵심!)
+# 2. Endpoints 확인 (핵심)
 kubectl get endpoints my-service
 
 # 문제: Endpoints가 없음
@@ -777,7 +777,7 @@ kubectl get svc my-service -o yaml | grep targetPort
 # targetPort: 8080
 
 kubectl get pod <pod-name> -o yaml | grep containerPort
-# containerPort: 80  # 불일치!
+# containerPort: 80  # 불일치
 
 # 해결
 kubectl edit svc my-service
