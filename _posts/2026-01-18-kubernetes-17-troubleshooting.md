@@ -1059,6 +1059,3 @@ ls /opt/cni/bin/
 ```
 
 ---
-
-**이전**: [Part 16: Node Drain과 Cluster Upgrade](https://k-diger.github.io/posts//posts/kubernetes-16-drain-upgrade) ←
-**다음**: [Part 18: CKA 시험 준비](https://k-diger.github.io/posts//posts/kubernetes-18-cka-exam) →

@@ -423,6 +423,3 @@ roleRef:
 - [ServiceAccount 공식 문서](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
 
 ---
-
-**이전**: [Part 8: Ingress와 NetworkPolicy](https://k-diger.github.io/posts//posts/kubernetes-08-ingress-networkpolicy) ←
-**다음**: [Part 10: SecurityContext와 Pod Security](https://k-diger.github.io/posts//posts/kubernetes-10-securitycontext) →

@@ -731,6 +731,3 @@ spec:
 - [Kubernetes Storage](https://kubernetes.io/docs/concepts/storage/)
 
 ---
-
-**이전**: [Part 18: CKA 시험 준비](https://k-diger.github.io/posts//posts/kubernetes-18-cka-exam) ←
-**다음**: [Part 20: CRD와 Operator](https://k-diger.github.io/posts//posts/kubernetes-20-crd-operator) →

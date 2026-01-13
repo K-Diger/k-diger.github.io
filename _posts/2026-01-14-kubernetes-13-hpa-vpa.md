@@ -690,6 +690,3 @@ kubectl describe vpa hamster-vpa
 - [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
 
 ---
-
-**이전**: [Part 12: Taint, Toleration, Affinity](https://k-diger.github.io/posts//posts/kubernetes-12-taint-affinity) ←
-**다음**: [Part 14: Helm과 Kustomize](https://k-diger.github.io/posts//posts/kubernetes-14-helm-kustomize) →

@@ -483,6 +483,3 @@ spec:
 - [Dynamic Volume Provisioning](https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/)
 
 ---
-
-**이전**: [Part 5: ConfigMap과 Secret](https://k-diger.github.io/posts//posts/kubernetes-05-configmap-secret) ←
-**다음**: [Part 7: Service와 Endpoint](https://k-diger.github.io/posts//posts/kubernetes-07-service-endpoint) →

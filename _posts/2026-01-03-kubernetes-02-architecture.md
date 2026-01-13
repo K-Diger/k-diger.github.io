@@ -540,6 +540,3 @@ graph TB
 - [Kubernetes 아키텍처 심화](https://kubernetes.io/docs/concepts/architecture/)
 
 ---
-
-**이전**: [Part 1: 컨테이너 오케스트레이션과 Kubernetes 소개](https://k-diger.github.io/posts//posts/kubernetes-01-container-orchestration) ←
-**다음**: [Part 3: Pod, Label, Namespace](https://k-diger.github.io/posts//posts/kubernetes-03-pod-label-namespace) →

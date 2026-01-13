@@ -472,6 +472,3 @@ spec:
 - [Job과 CronJob 공식 문서](https://kubernetes.io/docs/concepts/workloads/controllers/job/)
 
 ---
-
-**이전**: [Part 3: Pod, Label, Namespace](https://k-diger.github.io/posts//posts/kubernetes-03-pod-label-namespace) ←
-**다음**: [Part 5: ConfigMap과 Secret](https://k-diger.github.io/posts//posts/kubernetes-05-configmap-secret) →

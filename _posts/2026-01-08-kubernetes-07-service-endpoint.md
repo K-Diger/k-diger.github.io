@@ -258,6 +258,3 @@ spec:
 - [Connecting Applications with Services](https://kubernetes.io/docs/tutorials/services/connect-applications-service/)
 
 ---
-
-**이전**: [Part 6: Volume, PV, PVC](https://k-diger.github.io/posts//posts/kubernetes-06-volume-pv-pvc) ←
-**다음**: [Part 8: Ingress와 NetworkPolicy](https://k-diger.github.io/posts//posts/kubernetes-08-ingress-networkpolicy) →

@@ -887,6 +887,3 @@ ETCDCTL_API=3 etcdctl snapshot save <file> --endpoints=<ep> --cacert=<ca> --cert
 7. **Mock Exam 반복**: Killer.sh를 최소 3회 이상 풀어보기
 
 ---
-
-**이전**: [Part 17: Troubleshooting](https://k-diger.github.io/posts//posts/kubernetes-17-troubleshooting) ←
-**다음**: [Part 19: Kubernetes Internals](https://k-diger.github.io/posts//posts/kubernetes-19-internals) →

@@ -833,6 +833,3 @@ $cluster → $namespace → $deployment → $pod
 - [Grafana Dashboards](https://grafana.com/grafana/dashboards/)
 
 ---
-
-**이전**: [Part 14: Helm과 Kustomize](https://k-diger.github.io/posts//posts/kubernetes-14-helm-kustomize) ←
-**다음**: [Part 16: Node Drain과 Cluster Upgrade](https://k-diger.github.io/posts//posts/kubernetes-16-drain-upgrade) →

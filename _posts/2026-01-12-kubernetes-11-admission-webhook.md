@@ -250,6 +250,3 @@ spec:
 - [Gatekeeper 공식 문서](https://open-policy-agent.github.io/gatekeeper/website/docs/)
 
 ---
-
-**이전**: [Part 10: SecurityContext와 Pod Security](https://k-diger.github.io/posts//posts/kubernetes-10-securitycontext) ←
-**다음**: [Part 12: Taint, Toleration, Affinity](https://k-diger.github.io/posts//posts/kubernetes-12-taint-affinity) →

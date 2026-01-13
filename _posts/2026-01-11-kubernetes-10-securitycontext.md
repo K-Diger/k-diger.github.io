@@ -175,6 +175,3 @@ metadata:
 - [Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/)
 
 ---
-
-**이전**: [Part 9: RBAC과 ServiceAccount](/posts/kubernetes-09-rbac-serviceaccount) ←
-**다음**: [Part 11: Admission Webhook](/posts/kubernetes-11-admission-webhook) →

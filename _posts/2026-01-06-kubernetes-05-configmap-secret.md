@@ -206,6 +206,3 @@ containers:
 - [ConfigMap과 Secret 사용 패턴](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/)
 
 ---
-
-**이전**: [Part 4: Deployment, StatefulSet, DaemonSet](https://k-diger.github.io/posts//posts/kubernetes-04-deployment-statefulset) ←
-**다음**: [Part 6: Volume, PV, PVC](https://k-diger.github.io/posts//posts/kubernetes-06-volume-pv-pvc) →

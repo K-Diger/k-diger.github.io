@@ -615,6 +615,3 @@ kubeadm certs check-expiration
 4. 백업 자동화 스크립트 작성
 
 ---
-
-**이전**: [Part 15: Prometheus와 Grafana](https://k-diger.github.io/posts//posts/kubernetes-15-prometheus-grafana) ←
-**다음**: [Part 17: Troubleshooting](https://k-diger.github.io/posts//posts/kubernetes-17-troubleshooting) →

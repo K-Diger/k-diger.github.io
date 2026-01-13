@@ -338,5 +338,3 @@ kubectl delete pod <pod-name>
 - [Borg, Omega, and Kubernetes - Google 논문](https://research.google/pubs/pub44843/)
 
 ---
-
-**다음**: [Part 2: Kubernetes 아키텍처](https://k-diger.github.io/posts//posts/kubernetes-02-architecture) →

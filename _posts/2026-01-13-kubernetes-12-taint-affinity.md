@@ -836,6 +836,3 @@ kubectl apply -f high-pod.yaml
 - [Pod Priority and Preemption](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/)
 
 ---
-
-**이전**: [Part 11: Admission Webhook](https://k-diger.github.io/posts//posts/kubernetes-11-admission-webhook) ←
-**다음**: [Part 13: HPA와 VPA](https://k-diger.github.io/posts//posts/kubernetes-13-hpa-vpa) →

@@ -914,6 +914,3 @@ helm install cilium cilium/cilium --namespace kube-system
 - [Cert-Manager 문서](https://cert-manager.io/docs/)
 
 ---
-
-**이전**: [Part 7: Service와 Endpoint](https://k-diger.github.io/posts//posts/kubernetes-07-service-endpoint) ←
-**다음**: [Part 9: RBAC과 ServiceAccount](https://k-diger.github.io/posts//posts/kubernetes-09-rbac-serviceaccount) →

@@ -106,6 +106,3 @@ overlays/
 - 모니터링 학습 → **[Part 15로 이동](https://k-diger.github.io/posts//posts/kubernetes-16-prometheus-grafana)**
 
 ---
-
-**이전**: [Part 13: HPA와 VPA](https://k-diger.github.io/posts//posts/kubernetes-13-hpa-vpa) ←
-**다음**: [Part 15: Prometheus와 Grafana](https://k-diger.github.io/posts//posts/kubernetes-15-prometheus-grafana) →

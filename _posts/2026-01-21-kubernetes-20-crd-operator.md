@@ -1116,6 +1116,3 @@ make test
 - [Awesome Operators](https://github.com/operator-framework/awesome-operators)
 
 ---
-
-**이전**: [Part 19: Kubernetes Internals](https://k-diger.github.io/posts//posts/kubernetes-19-internals) ←
-**인덱스로 돌아가기**: [Kubernetes 완벽 가이드](https://k-diger.github.io/posts//posts/kubernetes-00-index)

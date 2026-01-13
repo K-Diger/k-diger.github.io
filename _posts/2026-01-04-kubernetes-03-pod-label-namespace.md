@@ -517,6 +517,3 @@ spec:
 - [Namespace](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
 
 ---
-
-**이전**: [Part 2: Kubernetes 아키텍처](https://k-diger.github.io/posts//posts/kubernetes-02-architecture) ←
-**다음**: [Part 4: Deployment, StatefulSet, DaemonSet](https://k-diger.github.io/posts//posts/kubernetes-04-deployment-statefulset) →
