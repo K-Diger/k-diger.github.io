@@ -45,286 +45,6 @@ header {
   }
 }
 
-/* 제목 스타일 */
-.content {
-  h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-top: 2.5rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--main-border-color);
-    color: var(--heading-color);
-  }
-
-  h2 {
-    font-size: 1.75rem;
-    font-weight: 600;
-    margin-top: 2.25rem;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--main-border-color);
-    color: var(--heading-color);
-  }
-
-  h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    color: var(--heading-color);
-  }
-
-  h4 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-top: 1.75rem;
-    margin-bottom: 0.875rem;
-    color: var(--text-muted-highlight-color);
-  }
-
-  h5 {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
-    color: var(--text-muted-highlight-color);
-  }
-
-  /* 단락 간격 */
-  p {
-    margin-bottom: 1.25rem;
-    line-height: 1.8;
-  }
-
-  /* 인용문 스타일 */
-  blockquote {
-    margin: 1.5rem 0;
-    padding: 1rem 1.25rem;
-    border-left: 4px solid var(--blockquote-border-color);
-    background-color: rgba(110, 118, 129, 0.08);
-    border-radius: 0 6px 6px 0;
-
-    p {
-      margin-bottom: 0.75rem;
-      color: var(--blockquote-text-color);
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-
-    code {
-      background-color: rgba(110, 118, 129, 0.2);
-    }
-  }
-
-  /* 코드 블록 스타일 */
-  .highlight {
-    margin: 1.75rem 0;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
-    0 2px 4px -1px rgba(0, 0, 0, 0.3);
-
-    pre {
-      margin: 0;
-      padding: 1rem 1.25rem;
-      line-height: 1.7;
-      font-size: 0.875rem;
-      font-family: v.$font-family-code;
-    }
-  }
-
-  /* 인라인 코드 */
-  code:not(.highlight code) {
-    padding: 0.25em 0.5em;
-    margin: 0 0.15em;
-    font-size: 0.875em;
-    background-color: var(--inline-code-bg);
-    border-radius: 4px;
-    font-family: v.$font-family-code;
-    color: var(--code-color);
-    border: 1px solid rgba(110, 118, 129, 0.15);
-    font-weight: 500;
-  }
-
-  /* 리스트 스타일 */
-  ul, ol {
-    margin: 1.25rem 0;
-    padding-left: 2rem;
-
-    li {
-      margin-bottom: 0.5rem;
-      line-height: 1.75;
-
-      > p {
-        margin-bottom: 0.5rem;
-      }
-    }
-
-    ul, ol {
-      margin: 0.5rem 0;
-    }
-  }
-
-  ul li {
-    list-style-type: disc;
-  }
-
-  ul li ul li {
-    list-style-type: circle;
-  }
-
-  ul li ul li ul li {
-    list-style-type: square;
-  }
-
-  /* 테이블 스타일 */
-  table {
-    margin: 1.5rem 0;
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
-
-    thead {
-      tr {
-        background-color: var(--card-header-bg);
-
-        th {
-          padding: 0.875rem 1rem;
-          font-weight: 600;
-          text-align: left;
-          border-bottom: 2px solid var(--main-border-color);
-          color: var(--heading-color);
-        }
-      }
-    }
-
-    tbody {
-      tr {
-        background-color: var(--tb-even-bg);
-
-        &:nth-child(odd) {
-          background-color: var(--tb-odd-bg);
-        }
-
-        &:hover {
-          background-color: var(--card-hover-bg);
-        }
-
-        td {
-          padding: 0.75rem 1rem;
-          border-bottom: 1px solid var(--main-border-color);
-
-          code {
-            font-size: 0.85em;
-          }
-        }
-      }
-
-      tr:last-child td {
-        border-bottom: none;
-      }
-    }
-  }
-
-  /* 수평선 스타일 */
-  hr {
-    margin: 2.5rem 0;
-    border: none;
-    height: 2px;
-    background: linear-gradient(
-        to right,
-        transparent,
-        var(--main-border-color) 20%,
-        var(--main-border-color) 80%,
-        transparent
-    );
-  }
-
-  /* Prompt/Alert 박스 */
-  .prompt-tip,
-  .prompt-info,
-  .prompt-warning,
-  .prompt-danger {
-    margin: 1.5rem 0;
-    padding: 1rem 1.25rem;
-    border-left: 4px solid;
-    border-radius: 0 6px 6px 0;
-    line-height: 1.7;
-
-    &::before {
-      margin-right: 0.75rem;
-      font-size: 1.1em;
-    }
-  }
-
-  .prompt-tip {
-    background-color: var(--prompt-tip-bg);
-    border-left-color: var(--prompt-tip-icon-color);
-    border: 1px solid var(--prompt-tip-border-color);
-    border-left-width: 4px;
-
-    &::before {
-      color: var(--prompt-tip-icon-color);
-    }
-  }
-
-  .prompt-info {
-    background-color: var(--prompt-info-bg);
-    border-left-color: var(--prompt-info-icon-color);
-    border: 1px solid var(--prompt-info-border-color);
-    border-left-width: 4px;
-
-    &::before {
-      color: var(--prompt-info-icon-color);
-    }
-  }
-
-  .prompt-warning {
-    background-color: var(--prompt-warning-bg);
-    border-left-color: var(--prompt-warning-icon-color);
-    border: 1px solid var(--prompt-warning-border-color);
-    border-left-width: 4px;
-
-    &::before {
-      color: var(--prompt-warning-icon-color);
-    }
-  }
-
-  .prompt-danger {
-    background-color: var(--prompt-danger-bg);
-    border-left-color: var(--prompt-danger-icon-color);
-    border: 1px solid var(--prompt-danger-border-color);
-    border-left-width: 4px;
-
-    &::before {
-      color: var(--prompt-danger-icon-color);
-    }
-  }
-
-  /* 이미지 스타일 */
-  img {
-    margin: 1.5rem auto;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  }
-
-  /* 강조 텍스트 */
-  strong {
-    font-weight: 600;
-    color: var(--heading-color);
-  }
-
-  em {
-    font-style: italic;
-  }
-}
-
 .post-tail-wrapper {
   @extend %text-sm;
 
@@ -345,7 +65,7 @@ header {
     span:last-child {
       @extend %text-sm;
     }
-  }
+  } /* .license-wrapper */
 
   .post-meta a:not(:hover) {
     @extend %link-underline;
@@ -390,8 +110,8 @@ header {
 
         @extend %cursor-pointer;
       }
-    }
-  }
+    } /* .share-icons */
+  } /* .share-wrapper */
 }
 
 .post-tail-bottom {
@@ -406,6 +126,7 @@ header {
 }
 
 .share-mastodon {
+  /* See: https://github.com/justinribeiro/share-to-mastodon#properties */
   --wc-stm-font-family: v.$font-family-base;
   --wc-stm-dialog-background-color: var(--card-bg);
   --wc-stm-form-button-border: 1px solid var(--btn-border-color);
@@ -483,7 +204,7 @@ header {
     margin-top: 0.3rem;
     white-space: normal;
   }
-}
+} /* .post-navigation */
 
 @media (hover: hover) {
   .post-navigation {
@@ -516,7 +237,7 @@ header {
   }
 }
 
-/* TOC panel - 스타일 */
+/* TOC panel */
 
 %top-cover {
   content: '';
@@ -534,26 +255,8 @@ header {
   transition: top 0.2s ease-in-out;
   overflow-y: auto;
   max-height: 100vh;
-  scrollbar-width: thin;
-  scrollbar-color: var(--main-border-color) transparent;
+  scrollbar-width: none;
   margin-top: 2rem;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: var(--main-border-color);
-    border-radius: 3px;
-
-    &:hover {
-      background: var(--text-muted-color);
-    }
-  }
 
   &:not(.invisible) {
     -webkit-animation: fade-up 0.8s;
@@ -562,16 +265,17 @@ header {
 
   ul {
     list-style: none;
-    font-size: 0.875rem;
-    line-height: 1.4;
+    font-size: 0.85rem;
+    line-height: 1.25;
     padding-left: 0;
 
     li {
       a {
-        padding: 0.5rem 0 0.5rem 1.25rem;
-        transition: all 0.2s ease;
+        padding: 0.4rem 0 0.4rem 1.25rem;
       }
     }
+
+    /* Overwrite TOC plugin style */
 
     .toc-link {
       display: block;
@@ -581,7 +285,6 @@ header {
       &:hover {
         color: var(--toc-highlight);
         text-decoration: none;
-        background-color: rgba(110, 118, 129, 0.08);
       }
 
       &::before {
@@ -592,13 +295,11 @@ header {
     .is-active-link {
       color: var(--toc-highlight) !important;
       font-weight: 600;
-      background-color: rgba(88, 166, 255, 0.1);
 
       &::before {
         display: inline-block;
-        width: 2px;
-        height: 1.4rem;
-        margin-right: 0.5rem;
+        width: 1px;
+        height: 1.25rem;
         background-color: var(--toc-highlight) !important;
       }
     }
@@ -632,6 +333,8 @@ header {
     @extend %panel-border;
   }
 }
+
+/* --- TOC button, bar and popup in mobile/tablet --- */
 
 #toc-bar {
   position: -webkit-sticky;
@@ -724,7 +427,7 @@ header {
   @include slide-out;
 }
 
-/* Related Posts */
+/* --- Related Posts --- */
 
 #related-posts {
   > h3 {

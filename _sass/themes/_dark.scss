@@ -1,62 +1,294 @@
 @mixin styles {
-  --main-bg: #22272e;
-  --main-border-color: #444c56;
-  --text-color: #adbac7;
-  --text-muted-color: #768390;
-  --heading-color: #cdd9e5;
-  --link-color: #539bf5;
-  --link-underline-color: #539bf520;
-  --card-bg: #2d333b;
-  --card-hovor-bg: #373e47;
-  --card-border-color: #444c56;
-  --sidebar-bg: #22272e;
-  --sidebar-border-color: #444c56;
-  --sidebar-muted-color: #768390;
-  --sidebar-active-color: #adbac7;
-  --sidebar-hover-bg: #2d333b;
-  --sidebar-btn-bg: #373e47;
-  --topbar-bg: #22272e;
-  --topbar-text-color: #adbac7;
-  --search-bg: #2d333b;
-  --search-border-color: #444c56;
-  --post-list-text-color: #adbac7;
-  --btn-border-color: #539bf5;
-  --btn-backtotop-color: #768390;
-  --btn-backtotop-border-color: #444c56;
-  --blockquote-border-color: #539bf5;
-  --blockquote-text-color: #768390;
-  --kbd-bg-color: #2d333b;
-  --kbd-border-color: #444c56;
-  --footnote-target-bg: #539bf520;
-  --tag-bg: #2d333b;
-  --tag-hover: #373e47;
-  --code-snippet-bg: #1a1f26;
-  --code-color: #ff9f5f;
-  --inline-code-bg: #2d333b;
-  --highlighter-rouge-color: #ff9f5f;
-  --code-header-text-color: #cdd9e5;
-  --code-header-muted-color: #8b949e;
-  --code-header-icon-color: #8b949e;
-  --highlight-bg-color: #1a1f26;
-  --highlight-lineno-color: #6e7681;
-  --tb-odd-bg: #2d333b;
-  --tb-border-color: #444c56;
-  --prompt-tip-icon-color: #57ab5a;
-  --prompt-tip-bg: #57ab5a20;
-  --prompt-tip-border: #57ab5a40;
-  --prompt-info-icon-color: #539bf5;
-  --prompt-info-bg: #539bf520;
-  --prompt-info-border: #539bf540;
-  --prompt-warning-icon-color: #c69026;
-  --prompt-warning-bg: #c6902620;
-  --prompt-warning-border: #c6902640;
-  --prompt-danger-icon-color: #e5534b;
-  --prompt-danger-bg: #e5534b20;
-  --prompt-danger-border: #e5534b40;
-  --scrollbar-track-bg: #22272e;
-  --scrollbar-thumb-bg: #444c56;
-  --avatar-border-color: #444c56;
-  --label-color: #adbac7;
-  --img-bg: #2d333b;
-  --shimmer-bg: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.02) 50%, rgba(255, 255, 255, 0) 100%);
+  color-scheme: dark;
+
+  /* Framework color - 더 깊고 편안한 배경 */
+  --main-bg: rgb(16 20 24);
+  --mask-bg: rgb(45 52 59);
+  --main-border-color: rgb(55 65 75);
+
+  /* Common color */
+  --text-color: rgb(230 237 243);
+  --text-muted-color: #a0a9b8;
+  --text-muted-highlight-color: #c1c9d2;
+  --heading-color: #e1e8ed;
+  --label-color: #b8c5d1;
+  --blockquote-border-color: rgb(88 110 117);
+  --blockquote-text-color: #a0a9b8;
+  --link-color: rgb(100 181 246);
+  --link-underline-color: rgb(66 150 214);
+  --button-bg: #1e2328;
+  --btn-border-color: #3a434d;
+  --btn-backtotop-color: var(--text-color);
+  --btn-backtotop-border-color: #2a3138;
+  --card-header-bg: #252b32;
+  --checkbox-color: rgb(130 142 155);
+  --checkbox-checked-color: var(--link-color);
+  --img-bg: radial-gradient(circle, rgb(20 24 28) 0%, rgb(35 40 46) 100%);
+  --shimmer-bg: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0%) 0%,
+    rgb(150 160 170 / 25%) 50%,
+    rgb(255 255 255 / 0%) 100%
+  );
+
+  /* Sidebar - 더 차분하고 세련된 사이드바 */
+  --site-title-color: #d4dae0;
+  --site-subtitle-color: #a0a9b8;
+  --sidebar-bg: #1a1f24;
+  --sidebar-border-color: #2a3138;
+  --sidebar-muted-color: #8a95a3;
+  --sidebar-active-color: rgb(230 237 243 / 95%);
+  --sidebar-hover-bg: #242a31;
+  --sidebar-btn-bg: #202529;
+  --sidebar-btn-color: #9aa5b1;
+  --avatar-border-color: rgb(180 190 200 / 80%);
+
+  /* Topbar - 깔끔하고 현대적인 상단바 */
+  --topbar-bg: rgb(16 20 24 / 85%);
+  --topbar-text-color: var(--text-color);
+  --search-border-color: rgb(70 80 90);
+  --search-icon-color: rgb(130 142 155);
+  --input-focus-border-color: rgb(100 181 246);
+
+  /* Home page - 편안한 읽기 환경 */
+  --post-list-text-color: rgb(190 200 210);
+  --btn-patinator-text-color: var(--text-color);
+  --btn-paginator-hover-color: #2a3138;
+
+  /* Posts - 높은 가독성을 위한 색상 */
+  --toc-highlight: rgb(100 181 246);
+  --toc-popup-border-color: #3a434d;
+  --tag-hover: rgb(60 80 100);
+  --tb-odd-bg: #1e2328;
+  --tb-even-bg: rgb(24 28 33);
+  --tb-border-color: var(--tb-odd-bg);
+  --footnote-target-bg: rgb(100 181 246);
+  --btn-share-color: #8a95a3;
+  --btn-share-hover-color: #c1c9d2;
+  --card-bg: #1a1f24;
+  --card-hover-bg: #252b32;
+  --card-shadow: rgb(8 12 16 / 80%) 0 8px 24px 0,
+    rgb(55 65 75 / 30%) 0 0 0 1px;
+  --kbd-wrap-color: #8a95a3;
+  --kbd-text-color: #e1e8ed;
+  --kbd-bg-color: #252b32;
+  --prompt-text-color: rgb(230 237 243 / 80%);
+  --prompt-tip-bg: rgb(27 94 32 / 70%);
+  --prompt-tip-icon-color: rgb(102 187 106);
+  --prompt-info-bg: rgb(25 118 210 / 70%);
+  --prompt-info-icon-color: rgb(100 181 246);
+  --prompt-warning-bg: rgb(245 124 0 / 70%);
+  --prompt-warning-icon-color: rgb(255 183 77);
+  --prompt-danger-bg: rgb(211 47 47 / 70%);
+  --prompt-danger-icon-color: rgb(244 143 177);
+
+  /* Tags - 더 명확한 태그 시스템 */
+  --tag-border: rgb(70 90 110);
+  --tag-shadow: rgb(20 24 28);
+  --dash-color: rgb(80 95 110);
+  --search-tag-bg: #252b32;
+
+  /* Categories - 세련된 카테고리 디자인 */
+  --categories-border: rgb(70 80 90 / 60%);
+  --categories-hover-bg: rgb(45 52 59);
+  --categories-icon-hover-color: #e1e8ed;
+
+  /* Archive - 깔끔한 아카이브 */
+  --timeline-node-bg: rgb(130 142 155);
+  --timeline-color: rgb(80 95 110);
+  --timeline-year-dot-color: var(--timeline-color);
+
+  /* Code highlight colors - 개선된 코드 가독성 */
+  --language-border-color: #3a434d;
+  --highlight-bg-color: #0d1117;
+  --highlighter-rouge-color: #e1e8ed;
+  --highlight-lineno-color: #8a95a3;
+  --inline-code-bg: rgb(255 255 255 / 8%);
+  --code-color: #c9d1d9;
+  --code-header-text-color: #8a95a3;
+  --code-header-muted-color: #3a434d;
+  --code-header-icon-color: #6e7681;
+  --clipboard-checked-color: #2ea043;
+  --filepath-text-color: #e1e8ed;
+
+  .light {
+    display: none;
+  }
+
+  /* Categories */
+  .categories.card,
+  .list-group-item {
+    background-color: var(--card-bg);
+  }
+
+  .categories {
+    .card-header {
+      background-color: var(--card-header-bg);
+    }
+
+    .list-group-item {
+      border-left: none;
+      border-right: none;
+      padding-left: 2rem;
+      border-color: var(--categories-border);
+
+      &:last-child {
+        border-bottom-color: var(--card-bg);
+      }
+    }
+  }
+
+  #archives li:nth-child(odd) {
+    background-image: linear-gradient(
+      to left,
+      rgb(16 20 24),
+      rgb(35 40 46),
+      rgb(35 40 46),
+      rgb(35 40 46),
+      rgb(16 20 24)
+    );
+  }
+
+  /* stylelint-disable-next-line selector-id-pattern */
+  #disqus_thread {
+    color-scheme: none;
+  }
+
+  /* --- 개선된 구문 하이라이트 테마 (GitHub Dark 기반) --- */
+
+  .highlight .gp {
+    color: #8b949e;
+  }
+
+  .highlight table td {
+    padding: 5px;
+  }
+
+  .highlight table pre {
+    margin: 0;
+  }
+
+  .highlight,
+  .highlight .w {
+    color: #c9d1d9;
+    background-color: #0d1117;
+  }
+
+  .highlight .err {
+    color: #f85149;
+    background-color: rgb(248 81 73 / 10%);
+  }
+
+  .highlight .c,
+  .highlight .ch,
+  .highlight .cd,
+  .highlight .cm,
+  .highlight .cpf,
+  .highlight .c1,
+  .highlight .cs {
+    color: #8b949e;
+    font-style: italic;
+  }
+
+  .highlight .cp {
+    color: #ff7b72;
+    font-weight: bold;
+  }
+
+  .highlight .nt {
+    color: #7ee787;
+  }
+
+  .highlight .o,
+  .highlight .ow {
+    color: #ff7b72;
+    font-weight: bold;
+  }
+
+  .highlight .p,
+  .highlight .pi {
+    color: #c9d1d9;
+  }
+
+  .highlight .gi {
+    color: #aff5b4;
+    background-color: rgb(46 160 67 / 15%);
+  }
+
+  .highlight .gd {
+    color: #ffdcd7;
+    background-color: rgb(248 81 73 / 15%);
+  }
+
+  .highlight .gh {
+    color: #1f6feb;
+    background-color: transparent;
+    font-weight: bold;
+  }
+
+  .highlight .k,
+  .highlight .kn,
+  .highlight .kp,
+  .highlight .kr,
+  .highlight .kv {
+    color: #ff7b72;
+    font-weight: bold;
+  }
+
+  .highlight .kc,
+  .highlight .kt,
+  .highlight .kd {
+    color: #79c0ff;
+    font-weight: bold;
+  }
+
+  .highlight .s,
+  .highlight .sb,
+  .highlight .sc,
+  .highlight .dl,
+  .highlight .sd,
+  .highlight .s2,
+  .highlight .sh,
+  .highlight .sx,
+  .highlight .s1 {
+    color: #a5d6ff;
+  }
+
+  .highlight .sa {
+    color: #ff7b72;
+  }
+
+  .highlight .sr {
+    color: #7ee787;
+  }
+
+  .highlight .si,
+  .highlight .se {
+    color: #79c0ff;
+  }
+
+  .highlight .nn,
+  .highlight .nc,
+  .highlight .no {
+    color: #ffa657;
+  }
+
+  .highlight .na {
+    color: #79c0ff;
+  }
+
+  .highlight .m,
+  .highlight .mb,
+  .highlight .mf,
+  .highlight .mh,
+  .highlight .mi,
+  .highlight .il,
+  .highlight .mo,
+  .highlight .mx {
+    color: #79c0ff;
+  }
+
+  .highlight .ss {
+    color: #a5d6ff;
+  }
 }
