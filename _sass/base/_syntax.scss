@@ -15,7 +15,8 @@
 
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 0.25rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 
   @at-root figure#{&} {
     @extend %code-snippet-bg;
@@ -24,15 +25,16 @@
   pre {
     margin-bottom: 0;
     font-size: v.$code-font-size;
-    line-height: 1.4rem;
+    line-height: 1.6;
+    font-family: v.$font-family-code;
   }
 
   table {
     td {
       &:first-child {
         display: inline-block;
-        margin-left: 0.75rem;
-        margin-right: 0.3rem;
+        margin-left: 0.5rem;
+        margin-right: 0.75rem;
       }
 
       &:last-child {
@@ -54,6 +56,9 @@
     -o-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    padding-right: 0.75rem;
+    min-width: 2.5rem;
+    display: inline-block;
   }
 } /* .highlight */
 
@@ -62,10 +67,11 @@ code {
   -ms-hyphens: none;
   hyphens: none;
   color: var(--code-color);
+  font-family: v.$font-family-code;
 
   &.highlighter-rouge {
     font-size: v.$code-font-size;
-    padding: 2px 4px;
+    padding: 3px 6px;
     overflow-wrap: break-word;
     border-radius: v.$radius-sm;
     background-color: var(--inline-code-bg);

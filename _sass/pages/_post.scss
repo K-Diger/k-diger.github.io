@@ -121,30 +121,32 @@ header {
 
   /* 코드 블록 스타일 */
   .highlight {
-    margin: 1.5rem 0;
+    margin: 1.75rem 0;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
-    0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
+    0 2px 4px -1px rgba(0, 0, 0, 0.3);
 
     pre {
       margin: 0;
-      padding: 1.25rem;
-      line-height: 1.6;
-      font-size: 0.9rem;
+      padding: 1rem 1.25rem;
+      line-height: 1.7;
+      font-size: 0.875rem;
+      font-family: v.$font-family-code;
     }
   }
 
   /* 인라인 코드 */
   code:not(.highlight code) {
-    padding: 0.2em 0.4em;
-    margin: 0 0.1em;
-    font-size: 0.88em;
+    padding: 0.25em 0.5em;
+    margin: 0 0.15em;
+    font-size: 0.875em;
     background-color: var(--inline-code-bg);
     border-radius: 4px;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-family: v.$font-family-code;
     color: var(--code-color);
-    border: 1px solid rgba(110, 118, 129, 0.2);
+    border: 1px solid rgba(110, 118, 129, 0.15);
+    font-weight: 500;
   }
 
   /* 리스트 스타일 */
