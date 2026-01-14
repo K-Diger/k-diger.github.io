@@ -14,7 +14,7 @@
   @extend %code-snippet-bg;
 
   overflow: auto;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
 
   @at-root figure#{&} {
     @extend %code-snippet-bg;
@@ -30,12 +30,12 @@
     td {
       &:first-child {
         display: inline-block;
-        margin-left: 1rem;
-        margin-right: 0.75rem;
+        margin-left: 0.75rem;
+        margin-right: 0.5rem;
       }
 
       &:last-child {
-        padding-right: 2rem !important;
+        padding-right: 1rem !important;
       }
 
       pre {
@@ -64,7 +64,7 @@ code {
 
   &.highlighter-rouge {
     font-size: v.$code-font-size;
-    padding: 3px 5px;
+    padding: 2px 4px;
     overflow-wrap: break-word;
     border-radius: v.$radius-sm;
     background-color: var(--inline-code-bg);
