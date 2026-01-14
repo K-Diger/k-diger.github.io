@@ -1,5 +1,5 @@
 ---
-title: "CKA Mock Exam 1"
+title: "CKA Mock Exam - 1"
 date: 2026-01-14
 categories: [CKA, Container, Kubernetes]
 tags: [CKA, Container, Kubernetes, CRD, Operator, Extensibility]
