@@ -59,7 +59,7 @@ h1.dynamic-title {
 main {
   &.col-12 {
     @include bp.xxxl {
-      padding-right: 4.5rem !important;
+      padding-right: 2.5rem !important;
     }
   }
 }
@@ -130,12 +130,14 @@ main {
 }
 
 .content {
-  font-size: 1.08rem;
+  font-size: 1.0625rem;
   margin-top: 2rem;
   overflow-wrap: break-word;
+  line-height: 1.8;
+  letter-spacing: -0.003em;
 
   @include bp.xl {
-    font-size: 1.03rem;
+    font-size: 1.0625rem;
   }
 
   a {
@@ -459,7 +461,7 @@ mjx-container {
     @include bp.xxxl {
       max-width: v.$main-content-max-width;
 
-      @include mx.pl-pr(1.75rem, true);
+      @include mx.pl-pr(2.5rem, true);
     }
   }
 }
@@ -474,7 +476,7 @@ mjx-container {
 
 #tail-wrapper {
   @include bp.xxxl {
-    padding-right: 4.5rem !important;
+    padding-right: 2.5rem !important;
   }
 
   > :not(script) {

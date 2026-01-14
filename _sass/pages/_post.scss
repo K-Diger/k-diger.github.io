@@ -255,8 +255,26 @@ header {
   transition: top 0.2s ease-in-out;
   overflow-y: auto;
   max-height: 100vh;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--main-border-color) transparent;
   margin-top: 2rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--main-border-color);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--text-muted-color);
+    }
+  }
 
   &:not(.invisible) {
     -webkit-animation: fade-up 0.8s;
@@ -265,13 +283,14 @@ header {
 
   ul {
     list-style: none;
-    font-size: 0.85rem;
-    line-height: 1.25;
+    font-size: 0.875rem;
+    line-height: 1.5;
     padding-left: 0;
 
     li {
       a {
-        padding: 0.4rem 0 0.4rem 1.25rem;
+        padding: 0.5rem 0 0.5rem 1rem;
+        transition: all 0.2s ease;
       }
     }
 
@@ -285,6 +304,7 @@ header {
       &:hover {
         color: var(--toc-highlight);
         text-decoration: none;
+        background-color: rgba(110, 118, 129, 0.08);
       }
 
       &::before {
@@ -295,11 +315,13 @@ header {
     .is-active-link {
       color: var(--toc-highlight) !important;
       font-weight: 600;
+      background-color: rgba(100, 181, 246, 0.1);
 
       &::before {
         display: inline-block;
-        width: 1px;
-        height: 1.25rem;
+        width: 3px;
+        height: 1.4rem;
+        margin-right: 0.5rem;
         background-color: var(--toc-highlight) !important;
       }
     }

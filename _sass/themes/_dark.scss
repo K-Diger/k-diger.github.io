@@ -101,15 +101,15 @@
   /* Code highlight colors - 개선된 코드 가독성 */
   --language-border-color: #3a434d;
   --highlight-bg-color: #0d1117;
-  --highlighter-rouge-color: #e1e8ed;
-  --highlight-lineno-color: #8a95a3;
-  --inline-code-bg: rgb(255 255 255 / 8%);
-  --code-color: #c9d1d9;
-  --code-header-text-color: #8a95a3;
+  --highlighter-rouge-color: #e6edf3;
+  --highlight-lineno-color: #6e7681;
+  --inline-code-bg: rgb(255 255 255 / 10%);
+  --code-color: #e6edf3;
+  --code-header-text-color: #9198a1;
   --code-header-muted-color: #3a434d;
-  --code-header-icon-color: #6e7681;
+  --code-header-icon-color: #7d8590;
   --clipboard-checked-color: #2ea043;
-  --filepath-text-color: #e1e8ed;
+  --filepath-text-color: #e6edf3;
 
   .light {
     display: none;
