@@ -292,81 +292,162 @@
     color: #a5d6ff;
   }
 
-  /* --- YAML 특화 스타일 (IntelliJ Darcula) --- */
+  /* --- YAML 특화 스타일--- */
 
-  /* YAML 키 (property names) */
+  /* YAML 키 (property names)*/
   .language-yaml .highlight .na,
   .language-yml .highlight .na {
-    color: #c792ea; /* 밝은 보라색 for keys */
+    color: #e8a45c; /* for keys */
     font-weight: 500;
   }
 
-  /* YAML 문자열 값 */
+  /* YAML 문자열 값 - 초록색 */
   .language-yaml .highlight .s,
   .language-yaml .highlight .s1,
   .language-yaml .highlight .s2,
   .language-yml .highlight .s,
   .language-yml .highlight .s1,
   .language-yml .highlight .s2 {
-    color: #98c379; /* 밝은 초록색 for strings */
+    color: #6aab73; /* IntelliJ 초록색 for strings */
     font-weight: 400;
   }
 
-  /* YAML 숫자 */
+  /* YAML 숫자 - 밝은 파란색 */
   .language-yaml .highlight .m,
   .language-yaml .highlight .mi,
   .language-yaml .highlight .mf,
   .language-yml .highlight .m,
   .language-yml .highlight .mi,
   .language-yml .highlight .mf {
-    color: #82aaff; /* 밝은 파란색 for numbers */
+    color: #6897bb; /* IntelliJ 파란색 for numbers */
   }
 
-  /* YAML 불린값 (true/false) */
+  /* YAML 불린값 (true/false) - 주황색 키워드 */
   .language-yaml .highlight .kc,
   .language-yml .highlight .kc {
-    color: #f78c6c; /* 밝은 주황색 for keywords */
+    color: #cc7832; /* IntelliJ 주황색 for keywords */
     font-weight: 600;
   }
 
-  /* YAML null */
+  /* YAML null - 주황색 키워드 */
   .language-yaml .highlight .no,
   .language-yml .highlight .no {
-    color: #f78c6c; /* 밝은 주황색 */
+    color: #cc7832; /* IntelliJ 주황색 */
     font-weight: 600;
   }
 
-  /* YAML 주석 */
+  /* YAML 주석 - 회색 */
   .language-yaml .highlight .c,
   .language-yaml .highlight .c1,
   .language-yml .highlight .c,
   .language-yml .highlight .c1 {
-    color: #9ca3af; /* 밝은 회색 for comments */
+    color: #808080; /* IntelliJ 회색 for comments */
     font-style: italic;
   }
 
-  /* YAML 특수 문자 (콜론, 대시 등) */
+  /* YAML 특수 문자 (콜론, 대시 등) - 밝은 회색 */
   .language-yaml .highlight .p,
   .language-yaml .highlight .pi,
   .language-yml .highlight .p,
   .language-yml .highlight .pi {
-    color: #c9d1d9; /* 밝은 회백색 */
+    color: #a9b7c6; /* IntelliJ 밝은 회색 */
   }
 
-  /* YAML 앵커와 별칭 (&, *) */
+  /* YAML 앵커와 별칭 (&, *) - 노란색 */
   .language-yaml .highlight .na,
   .language-yml .highlight .na {
     &[class*="anchor"],
     &[class*="alias"] {
-      color: #ffcb6b; /* 밝은 노란색 for anchors */
+      color: #ffc66d; /* IntelliJ 노란색 for anchors */
       font-weight: 600;
     }
   }
 
-  /* YAML 타입 태그 (!!) */
+  /* YAML 타입 태그 (!!) - 금색 */
   .language-yaml .highlight .nt,
   .language-yml .highlight .nt {
-    color: #ffd580; /* 밝은 금색 for tags */
+    color: #e8bf6a; /* IntelliJ 금색 for tags */
+    font-weight: 500;
+  }
+
+  /* --- Bash/Shell 특화 스타일 --- */
+
+  /* Bash 명령어 (built-in commands) */
+  .language-bash .highlight .nb,
+  .language-shell .highlight .nb,
+  .language-sh .highlight .nb {
+    color: #79c0ff; /* 밝은 파란색 for built-in commands */
+    font-weight: 500;
+  }
+
+  /* Bash 문자열 */
+  .language-bash .highlight .s,
+  .language-bash .highlight .s1,
+  .language-bash .highlight .s2,
+  .language-shell .highlight .s,
+  .language-shell .highlight .s1,
+  .language-shell .highlight .s2,
+  .language-sh .highlight .s,
+  .language-sh .highlight .s1,
+  .language-sh .highlight .s2 {
+    color: #a5d6ff; /* 밝은 하늘색 for strings */
+  }
+
+  /* Bash 변수 ($variable) */
+  .language-bash .highlight .nv,
+  .language-bash .highlight .vg,
+  .language-shell .highlight .nv,
+  .language-shell .highlight .vg,
+  .language-sh .highlight .nv,
+  .language-sh .highlight .vg {
+    color: #ffa657; /* 주황색 for variables */
+    font-weight: 500;
+  }
+
+  /* Bash 옵션 (-flag, --option) */
+  .language-bash .highlight .na,
+  .language-bash .highlight .nt,
+  .language-shell .highlight .na,
+  .language-shell .highlight .nt,
+  .language-sh .highlight .na,
+  .language-sh .highlight .nt {
+    color: #ff7b72; /* 밝은 빨간색 for options */
+  }
+
+  /* Bash 경로 및 파일명 */
+  .language-bash .highlight .s2,
+  .language-shell .highlight .s2,
+  .language-sh .highlight .s2 {
+    color: #a5d6ff; /* 하늘색 for paths */
+  }
+
+  /* Bash 주석 */
+  .language-bash .highlight .c,
+  .language-bash .highlight .c1,
+  .language-shell .highlight .c,
+  .language-shell .highlight .c1,
+  .language-sh .highlight .c,
+  .language-sh .highlight .c1 {
+    color: #8b949e; /* 회색 for comments */
+    font-style: italic;
+  }
+
+  /* Bash 연산자 (|, >, <, &&, ||) */
+  .language-bash .highlight .o,
+  .language-bash .highlight .p,
+  .language-shell .highlight .o,
+  .language-shell .highlight .p,
+  .language-sh .highlight .o,
+  .language-sh .highlight .p {
+    color: #ff7b72; /* 빨간색 for operators */
+    font-weight: 600;
+  }
+
+  /* Bash 함수명 */
+  .language-bash .highlight .nf,
+  .language-shell .highlight .nf,
+  .language-sh .highlight .nf {
+    color: #d2a8ff; /* 보라색 for functions */
     font-weight: 500;
   }
 }
