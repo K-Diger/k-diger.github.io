@@ -1,7 +1,9 @@
+/* _sass/abstracts/_variables.scss */
+
 /* sidebar */
 
-$sidebar-width: 240px !default; /* the basic width */
-$sidebar-width-large: 280px !default; /* screen width: >= 1650px */
+$sidebar-width: 240px !default; /* 260px → 240px */
+$sidebar-width-large: 280px !default; /* 300px → 280px */
 $sb-btn-gap: 0.8rem !default;
 $sb-btn-gap-lg: 1rem !default;
 
@@ -11,7 +13,7 @@ $topbar-height: 3rem !default;
 $search-max-width: 200px !default;
 $footer-height: 5rem !default;
 $footer-height-large: 6rem !default; /* screen width: < 850px */
-$main-content-max-width: 1350px !default;
+$main-content-max-width: 1350px !default; /* 1250px → 1350px */
 $radius-sm: 6px !default;
 $radius-lg: 10px !default;
 $back2top-size: 2.75rem !default;
@@ -19,7 +21,7 @@ $back2top-size: 2.75rem !default;
 /* syntax highlight */
 
 $code-font-size: 0.85rem !default;
-$code-header-height: 1.75rem !default;
+$code-header-height: 2.25rem !default;
 $code-dot-size: 0.75rem !default;
 $code-dot-gap: 0.5rem !default;
 $code-icon-width: 1.75rem !default;

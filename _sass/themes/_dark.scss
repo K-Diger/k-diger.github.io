@@ -1,338 +1,95 @@
-@mixin styles {
-  color-scheme: dark;
+/* _sass/themes/_dark.scss */
 
-  /* Framework color */
-  --main-bg: #0d1117;
-  --mask-bg: #161b22;
-  --main-border-color: #30363d;
+@mixin dark-scheme {
+  /* GitHub Dark Dimmed 기반 색상 */
+  --main-bg: #22272e;
+  --main-border-color: #444c56;
+  --text-color: #adbac7;
+  --text-muted-color: #768390;
+  --heading-color: #cdd9e5;
+  --link-color: #539bf5;
+  --link-underline-color: #539bf520;
 
-  /* Common color */
-  --text-color: #e6edf3;
-  --text-muted-color: #8b949e;
-  --text-muted-highlight-color: #c9d1d9;
-  --heading-color: #f0f6fc;
-  --label-color: #c9d1d9;
-  --blockquote-border-color: #1f6feb;
-  --blockquote-text-color: #8b949e;
-  --link-color: #58a6ff;
-  --link-underline-color: #4184e4;
-  --button-bg: #21262d;
-  --btn-border-color: #30363d;
-  --btn-backtotop-color: var(--text-color);
-  --btn-backtotop-border-color: #30363d;
-  --card-header-bg: #161b22;
-  --checkbox-color: #8b949e;
-  --checkbox-checked-color: var(--link-color);
-  --img-bg: radial-gradient(circle, #0d1117 0%, #161b22 100%);
+  /* 카드 배경 */
+  --card-bg: #2d333b;
+  --card-hovor-bg: #373e47;
+  --card-border-color: #444c56;
+
+  /* 사이드바 */
+  --sidebar-bg: #22272e;
+  --sidebar-border-color: #444c56;
+  --sidebar-muted-color: #768390;
+  --sidebar-active-color: #adbac7;
+  --sidebar-hover-bg: #2d333b;
+  --sidebar-btn-bg: #373e47;
+
+  /* 탑바 */
+  --topbar-bg: #22272e;
+  --topbar-text-color: #adbac7;
+  --search-bg: #2d333b;
+  --search-border-color: #444c56;
+
+  /* 홈 페이지 */
+  --post-list-text-color: #adbac7;
+  --btn-border-color: #539bf5;
+  --btn-backtotop-color: #768390;
+  --btn-backtotop-border-color: #444c56;
+
+  /* 포스트 */
+  --blockquote-border-color: #539bf5;
+  --blockquote-text-color: #768390;
+  --kbd-bg-color: #2d333b;
+  --kbd-border-color: #444c56;
+  --footnote-target-bg: #539bf520;
+  --tag-bg: #2d333b;
+  --tag-hover: #373e47;
+
+  /* 코드 */
+  --code-snippet-bg: #2d333b;
+  --code-color: #f69d50;
+  --inline-code-bg: #373e47;
+  --highlighter-rouge-color: #f69d50;
+  --code-header-text-color: #adbac7;
+  --code-header-muted-color: #768390;
+  --code-header-icon-color: #768390;
+
+  /* 신택스 하이라이팅 */
+  --highlight-bg-color: #2d333b;
+  --highlight-lineno-color: #768390;
+
+  /* 테이블 */
+  --tb-odd-bg: #2d333b;
+  --tb-border-color: #444c56;
+
+  /* 프롬프트 박스 */
+  --prompt-tip-icon-color: #57ab5a;
+  --prompt-tip-bg: #57ab5a20;
+  --prompt-tip-border: #57ab5a40;
+
+  --prompt-info-icon-color: #539bf5;
+  --prompt-info-bg: #539bf520;
+  --prompt-info-border: #539bf540;
+
+  --prompt-warning-icon-color: #c69026;
+  --prompt-warning-bg: #c6902620;
+  --prompt-warning-border: #c6902640;
+
+  --prompt-danger-icon-color: #e5534b;
+  --prompt-danger-bg: #e5534b20;
+  --prompt-danger-border: #e5534b40;
+
+  /* 스크롤바 */
+  --scrollbar-track-bg: #22272e;
+  --scrollbar-thumb-bg: #444c56;
+
+  /* 기타 */
+  --avatar-border-color: #444c56;
+  --label-color: #adbac7;
+  --img-bg: #2d333b;
   --shimmer-bg: linear-gradient(
       90deg,
       rgba(255, 255, 255, 0) 0%,
-      rgba(150, 160, 170, 0.25) 50%,
+      rgba(255, 255, 255, 0.02) 50%,
       rgba(255, 255, 255, 0) 100%
   );
-
-  /* Sidebar - 사이드바 */
-  --site-title-color: #f0f6fc;
-  --site-subtitle-color: #8b949e;
-  --sidebar-bg: #0d1117;
-  --sidebar-border-color: #21262d;
-  --sidebar-muted-color: #7d8590;
-  --sidebar-active-color: #e6edf3;
-  --sidebar-hover-bg: #161b22;
-  --sidebar-btn-bg: #21262d;
-  --sidebar-btn-color: #8b949e;
-  --avatar-border-color: rgba(180, 190, 200, 0.8);
-
-  /* Topbar - 상단바 */
-  --topbar-bg: rgba(13, 17, 23, 0.9);
-  --topbar-text-color: var(--text-color);
-  --search-border-color: #30363d;
-  --search-icon-color: #8b949e;
-  --input-focus-border-color: #58a6ff;
-
-  /* Home page */
-  --post-list-text-color: #c9d1d9;
-  --btn-patinator-text-color: var(--text-color);
-  --btn-paginator-hover-color: #21262d;
-
-  /* Posts */
-  --toc-highlight: #58a6ff;
-  --toc-popup-border-color: #30363d;
-  --tag-hover: #30363d;
-  --tb-odd-bg: #161b22;
-  --tb-even-bg: #0d1117;
-  --tb-border-color: #30363d;
-  --footnote-target-bg: #58a6ff;
-  --btn-share-color: #8b949e;
-  --btn-share-hover-color: #c9d1d9;
-  --card-bg: #0d1117;
-  --card-hover-bg: #161b22;
-  --card-shadow: rgba(1, 4, 9, 0.85) 0 8px 24px 0,
-  rgba(48, 54, 61, 0.4) 0 0 0 1px;
-  --kbd-wrap-color: #7d8590;
-  --kbd-text-color: #f0f6fc;
-  --kbd-bg-color: #161b22;
-
-  /* Prompt colors */
-  --prompt-text-color: rgba(230, 237, 243, 0.9);
-  --prompt-tip-bg: rgba(46, 160, 67, 0.15);
-  --prompt-tip-icon-color: #3fb950;
-  --prompt-tip-border-color: rgba(46, 160, 67, 0.4);
-  --prompt-info-bg: rgba(31, 111, 235, 0.15);
-  --prompt-info-icon-color: #58a6ff;
-  --prompt-info-border-color: rgba(31, 111, 235, 0.4);
-  --prompt-warning-bg: rgba(187, 128, 9, 0.15);
-  --prompt-warning-icon-color: #d29922;
-  --prompt-warning-border-color: rgba(187, 128, 9, 0.4);
-  --prompt-danger-bg: rgba(248, 81, 73, 0.15);
-  --prompt-danger-icon-color: #f85149;
-  --prompt-danger-border-color: rgba(248, 81, 73, 0.4);
-
-  /* Tags */
-  --tag-border: #30363d;
-  --tag-shadow: #010409;
-  --dash-color: #6e7681;
-  --search-tag-bg: #161b22;
-
-  /* Categories */
-  --categories-border: rgba(48, 54, 61, 0.6);
-  --categories-hover-bg: #161b22;
-  --categories-icon-hover-color: #f0f6fc;
-
-  /* Archive */
-  --timeline-node-bg: #8b949e;
-  --timeline-color: #6e7681;
-  --timeline-year-dot-color: var(--timeline-color);
-
-  /* Code highlight colors */
-  --language-border-color: #30363d;
-  --highlight-bg-color: #161b22;
-  --highlighter-rouge-color: #e6edf3;
-  --highlight-lineno-color: #6e7681;
-  --inline-code-bg: rgba(110, 118, 129, 0.15);
-  --code-color: #e6edf3;
-  --code-header-text-color: #8b949e;
-  --code-header-muted-color: #30363d;
-  --code-header-icon-color: #6e7681;
-  --clipboard-checked-color: #3fb950;
-  --filepath-text-color: #e6edf3;
-
-  .light {
-    display: none;
-  }
-
-  /* Categories */
-  .categories.card,
-  .list-group-item {
-    background-color: var(--card-bg);
-  }
-
-  .categories {
-    .card-header {
-      background-color: var(--card-header-bg);
-    }
-
-    .list-group-item {
-      border-left: none;
-      border-right: none;
-      padding-left: 2rem;
-      border-color: var(--categories-border);
-
-      &:last-child {
-        border-bottom-color: var(--card-bg);
-      }
-    }
-  }
-
-  #archives li:nth-child(odd) {
-    background-image: linear-gradient(
-        to left,
-        #0d1117,
-        #161b22,
-        #161b22,
-        #161b22,
-        #0d1117
-    );
-  }
-
-  /* stylelint-disable-next-line selector-id-pattern */
-  #disqus_thread {
-    color-scheme: none;
-  }
-
-  /* --- GitHub Dark Dimmed 구문 하이라이트 --- */
-
-  .highlight .gp {
-    color: #7d8590;
-  }
-
-  .highlight table td {
-    padding: 5px;
-  }
-
-  .highlight table pre {
-    margin: 0;
-  }
-
-  .highlight,
-  .highlight .w {
-    color: #e6edf3;
-    background-color: #161b22;
-  }
-
-  .highlight .err {
-    color: #ff7b72;
-    background-color: rgba(248, 81, 73, 0.12);
-  }
-
-  /* Comments */
-  .highlight .c,
-  .highlight .ch,
-  .highlight .cd,
-  .highlight .cm,
-  .highlight .cpf,
-  .highlight .c1,
-  .highlight .cs {
-    color: #8b949e;
-    font-style: italic;
-  }
-
-  /* Preprocessor */
-  .highlight .cp {
-    color: #ff7b72;
-    font-weight: bold;
-  }
-
-  /* Tags */
-  .highlight .nt {
-    color: #7ee787;
-  }
-
-  /* Operators */
-  .highlight .o,
-  .highlight .ow {
-    color: #ff7b72;
-    font-weight: bold;
-  }
-
-  /* Punctuation */
-  .highlight .p,
-  .highlight .pi {
-    color: #e6edf3;
-  }
-
-  /* Insertions (diff) */
-  .highlight .gi {
-    color: #aff5b4;
-    background-color: rgba(46, 160, 67, 0.15);
-  }
-
-  /* Deletions (diff) */
-  .highlight .gd {
-    color: #ffdcd7;
-    background-color: rgba(248, 81, 73, 0.15);
-  }
-
-  /* Diff header */
-  .highlight .gh {
-    color: #58a6ff;
-    background-color: transparent;
-    font-weight: bold;
-  }
-
-  /* Keywords */
-  .highlight .k,
-  .highlight .kn,
-  .highlight .kp,
-  .highlight .kr,
-  .highlight .kv {
-    color: #ff7b72;
-    font-weight: bold;
-  }
-
-  /* Keyword constants, declarations */
-  .highlight .kc,
-  .highlight .kt,
-  .highlight .kd {
-    color: #79c0ff;
-    font-weight: bold;
-  }
-
-  /* Strings */
-  .highlight .s,
-  .highlight .sb,
-  .highlight .sc,
-  .highlight .dl,
-  .highlight .sd,
-  .highlight .s2,
-  .highlight .sh,
-  .highlight .sx,
-  .highlight .s1 {
-    color: #a5d6ff;
-  }
-
-  /* String attribute */
-  .highlight .sa {
-    color: #ff7b72;
-  }
-
-  /* Regex */
-  .highlight .sr {
-    color: #7ee787;
-  }
-
-  /* String interpolation */
-  .highlight .si,
-  .highlight .se {
-    color: #79c0ff;
-  }
-
-  /* Classes, functions */
-  .highlight .nn,
-  .highlight .nc,
-  .highlight .no {
-    color: #ffa657;
-  }
-
-  /* Attributes */
-  .highlight .na {
-    color: #79c0ff;
-  }
-
-  /* Numbers */
-  .highlight .m,
-  .highlight .mb,
-  .highlight .mf,
-  .highlight .mh,
-  .highlight .mi,
-  .highlight .il,
-  .highlight .mo,
-  .highlight .mx {
-    color: #79c0ff;
-  }
-
-  /* Symbols */
-  .highlight .ss {
-    color: #a5d6ff;
-  }
-
-  /* Variables */
-  .highlight .nv,
-  .highlight .vc,
-  .highlight .vg,
-  .highlight .vi {
-    color: #ffa657;
-  }
-
-  /* Built-ins */
-  .highlight .nb,
-  .highlight .bp {
-    color: #d2a8ff;
-  }
-
-  /* Functions */
-  .highlight .nf,
-  .highlight .fm {
-    color: #d2a8ff;
-  }
 }
