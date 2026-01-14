@@ -2,114 +2,120 @@
   color-scheme: dark;
 
   /* Framework color - 더 깊고 편안한 배경 */
-  --main-bg: rgb(16 20 24);
-  --mask-bg: rgb(45 52 59);
-  --main-border-color: rgb(55 65 75);
+  --main-bg: #0d1117;
+  --mask-bg: #161b22;
+  --main-border-color: #30363d;
 
-  /* Common color */
-  --text-color: rgb(230 237 243);
-  --text-muted-color: #a0a9b8;
-  --text-muted-highlight-color: #c1c9d2;
-  --heading-color: #e1e8ed;
-  --label-color: #b8c5d1;
-  --blockquote-border-color: rgb(88 110 117);
-  --blockquote-text-color: #a0a9b8;
-  --link-color: rgb(100 181 246);
-  --link-underline-color: rgb(66 150 214);
-  --button-bg: #1e2328;
-  --btn-border-color: #3a434d;
+  /* Common color - 향상된 가독성 */
+  --text-color: #e6edf3;
+  --text-muted-color: #8b949e;
+  --text-muted-highlight-color: #c9d1d9;
+  --heading-color: #f0f6fc;
+  --label-color: #c9d1d9;
+  --blockquote-border-color: #1f6feb;
+  --blockquote-text-color: #8b949e;
+  --link-color: #58a6ff;
+  --link-underline-color: #4184e4;
+  --button-bg: #21262d;
+  --btn-border-color: #30363d;
   --btn-backtotop-color: var(--text-color);
-  --btn-backtotop-border-color: #2a3138;
-  --card-header-bg: #252b32;
-  --checkbox-color: rgb(130 142 155);
+  --btn-backtotop-border-color: #30363d;
+  --card-header-bg: #161b22;
+  --checkbox-color: #8b949e;
   --checkbox-checked-color: var(--link-color);
-  --img-bg: radial-gradient(circle, rgb(20 24 28) 0%, rgb(35 40 46) 100%);
+  --img-bg: radial-gradient(circle, #0d1117 0%, #161b22 100%);
   --shimmer-bg: linear-gradient(
-    90deg,
-    rgb(255 255 255 / 0%) 0%,
-    rgb(150 160 170 / 25%) 50%,
-    rgb(255 255 255 / 0%) 100%
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(150, 160, 170, 0.25) 50%,
+      rgba(255, 255, 255, 0) 100%
   );
 
   /* Sidebar - 더 차분하고 세련된 사이드바 */
-  --site-title-color: #d4dae0;
-  --site-subtitle-color: #a0a9b8;
-  --sidebar-bg: #1a1f24;
-  --sidebar-border-color: #2a3138;
-  --sidebar-muted-color: #8a95a3;
-  --sidebar-active-color: rgb(230 237 243 / 95%);
-  --sidebar-hover-bg: #242a31;
-  --sidebar-btn-bg: #202529;
-  --sidebar-btn-color: #9aa5b1;
-  --avatar-border-color: rgb(180 190 200 / 80%);
+  --site-title-color: #f0f6fc;
+  --site-subtitle-color: #8b949e;
+  --sidebar-bg: #0d1117;
+  --sidebar-border-color: #21262d;
+  --sidebar-muted-color: #7d8590;
+  --sidebar-active-color: #e6edf3;
+  --sidebar-hover-bg: #161b22;
+  --sidebar-btn-bg: #21262d;
+  --sidebar-btn-color: #8b949e;
+  --avatar-border-color: rgba(180, 190, 200, 0.8);
 
   /* Topbar - 깔끔하고 현대적인 상단바 */
-  --topbar-bg: rgb(16 20 24 / 85%);
+  --topbar-bg: rgba(13, 17, 23, 0.9);
   --topbar-text-color: var(--text-color);
-  --search-border-color: rgb(70 80 90);
-  --search-icon-color: rgb(130 142 155);
-  --input-focus-border-color: rgb(100 181 246);
+  --search-border-color: #30363d;
+  --search-icon-color: #8b949e;
+  --input-focus-border-color: #58a6ff;
 
   /* Home page - 편안한 읽기 환경 */
-  --post-list-text-color: rgb(190 200 210);
+  --post-list-text-color: #c9d1d9;
   --btn-patinator-text-color: var(--text-color);
-  --btn-paginator-hover-color: #2a3138;
+  --btn-paginator-hover-color: #21262d;
 
-  /* Posts - 높은 가독성을 위한 색상 */
-  --toc-highlight: rgb(100 181 246);
-  --toc-popup-border-color: #3a434d;
-  --tag-hover: rgb(60 80 100);
-  --tb-odd-bg: #1e2328;
-  --tb-even-bg: rgb(24 28 33);
-  --tb-border-color: var(--tb-odd-bg);
-  --footnote-target-bg: rgb(100 181 246);
-  --btn-share-color: #8a95a3;
-  --btn-share-hover-color: #c1c9d2;
-  --card-bg: #1a1f24;
-  --card-hover-bg: #252b32;
-  --card-shadow: rgb(8 12 16 / 80%) 0 8px 24px 0,
-    rgb(55 65 75 / 30%) 0 0 0 1px;
-  --kbd-wrap-color: #8a95a3;
-  --kbd-text-color: #e1e8ed;
-  --kbd-bg-color: #252b32;
-  --prompt-text-color: rgb(230 237 243 / 80%);
-  --prompt-tip-bg: rgb(27 94 32 / 70%);
-  --prompt-tip-icon-color: rgb(102 187 106);
-  --prompt-info-bg: rgb(25 118 210 / 70%);
-  --prompt-info-icon-color: rgb(100 181 246);
-  --prompt-warning-bg: rgb(245 124 0 / 70%);
-  --prompt-warning-icon-color: rgb(255 183 77);
-  --prompt-danger-bg: rgb(211 47 47 / 70%);
-  --prompt-danger-icon-color: rgb(244 143 177);
+  /* Posts - 높은 가독성을 위한 색상 개선 */
+  --toc-highlight: #58a6ff;
+  --toc-popup-border-color: #30363d;
+  --tag-hover: #30363d;
+  --tb-odd-bg: #161b22;
+  --tb-even-bg: #0d1117;
+  --tb-border-color: #30363d;
+  --footnote-target-bg: #58a6ff;
+  --btn-share-color: #8b949e;
+  --btn-share-hover-color: #c9d1d9;
+  --card-bg: #0d1117;
+  --card-hover-bg: #161b22;
+  --card-shadow: rgba(1, 4, 9, 0.85) 0 8px 24px 0,
+  rgba(48, 54, 61, 0.4) 0 0 0 1px;
+  --kbd-wrap-color: #7d8590;
+  --kbd-text-color: #f0f6fc;
+  --kbd-bg-color: #161b22;
+
+  /* Prompt colors - 더 선명하고 명확한 색상 */
+  --prompt-text-color: rgba(230, 237, 243, 0.9);
+  --prompt-tip-bg: rgba(46, 160, 67, 0.15);
+  --prompt-tip-icon-color: #3fb950;
+  --prompt-tip-border-color: rgba(46, 160, 67, 0.4);
+  --prompt-info-bg: rgba(31, 111, 235, 0.15);
+  --prompt-info-icon-color: #58a6ff;
+  --prompt-info-border-color: rgba(31, 111, 235, 0.4);
+  --prompt-warning-bg: rgba(187, 128, 9, 0.15);
+  --prompt-warning-icon-color: #d29922;
+  --prompt-warning-border-color: rgba(187, 128, 9, 0.4);
+  --prompt-danger-bg: rgba(248, 81, 73, 0.15);
+  --prompt-danger-icon-color: #f85149;
+  --prompt-danger-border-color: rgba(248, 81, 73, 0.4);
 
   /* Tags - 더 명확한 태그 시스템 */
-  --tag-border: rgb(70 90 110);
-  --tag-shadow: rgb(20 24 28);
-  --dash-color: rgb(80 95 110);
-  --search-tag-bg: #252b32;
+  --tag-border: #30363d;
+  --tag-shadow: #010409;
+  --dash-color: #6e7681;
+  --search-tag-bg: #161b22;
 
   /* Categories - 세련된 카테고리 디자인 */
-  --categories-border: rgb(70 80 90 / 60%);
-  --categories-hover-bg: rgb(45 52 59);
-  --categories-icon-hover-color: #e1e8ed;
+  --categories-border: rgba(48, 54, 61, 0.6);
+  --categories-hover-bg: #161b22;
+  --categories-icon-hover-color: #f0f6fc;
 
   /* Archive - 깔끔한 아카이브 */
-  --timeline-node-bg: rgb(130 142 155);
-  --timeline-color: rgb(80 95 110);
+  --timeline-node-bg: #8b949e;
+  --timeline-color: #6e7681;
   --timeline-year-dot-color: var(--timeline-color);
 
-  /* Code highlight colors - 개선된 코드 가독성 */
-  --language-border-color: #3a434d;
-  --highlight-bg-color: #0d1117;
-  --highlighter-rouge-color: #e1e8ed;
-  --highlight-lineno-color: #8a95a3;
-  --inline-code-bg: rgb(255 255 255 / 8%);
-  --code-color: #c9d1d9;
-  --code-header-text-color: #8a95a3;
-  --code-header-muted-color: #3a434d;
+  /* Code highlight colors - GitHub Dark Dimmed 기반 개선 */
+  --language-border-color: #30363d;
+  --highlight-bg-color: #161b22;
+  --highlighter-rouge-color: #e6edf3;
+  --highlight-lineno-color: #6e7681;
+  --inline-code-bg: rgba(110, 118, 129, 0.15);
+  --code-color: #e6edf3;
+  --code-header-text-color: #8b949e;
+  --code-header-muted-color: #30363d;
   --code-header-icon-color: #6e7681;
-  --clipboard-checked-color: #2ea043;
-  --filepath-text-color: #e1e8ed;
+  --clipboard-checked-color: #3fb950;
+  --filepath-text-color: #e6edf3;
 
   .light {
     display: none;
@@ -140,12 +146,12 @@
 
   #archives li:nth-child(odd) {
     background-image: linear-gradient(
-      to left,
-      rgb(16 20 24),
-      rgb(35 40 46),
-      rgb(35 40 46),
-      rgb(35 40 46),
-      rgb(16 20 24)
+        to left,
+        #0d1117,
+        #161b22,
+        #161b22,
+        #161b22,
+        #0d1117
     );
   }
 
@@ -154,10 +160,10 @@
     color-scheme: none;
   }
 
-  /* --- 개선된 구문 하이라이트 테마 (GitHub Dark 기반) --- */
+  /* --- GitHub Dark Dimmed 구문 하이라이트 --- */
 
   .highlight .gp {
-    color: #8b949e;
+    color: #7d8590;
   }
 
   .highlight table td {
@@ -170,15 +176,16 @@
 
   .highlight,
   .highlight .w {
-    color: #c9d1d9;
-    background-color: #0d1117;
+    color: #e6edf3;
+    background-color: #161b22;
   }
 
   .highlight .err {
-    color: #f85149;
-    background-color: rgb(248 81 73 / 10%);
+    color: #ff7b72;
+    background-color: rgba(248, 81, 73, 0.12);
   }
 
+  /* Comments */
   .highlight .c,
   .highlight .ch,
   .highlight .cd,
@@ -190,42 +197,50 @@
     font-style: italic;
   }
 
+  /* Preprocessor */
   .highlight .cp {
     color: #ff7b72;
     font-weight: bold;
   }
 
+  /* Tags */
   .highlight .nt {
     color: #7ee787;
   }
 
+  /* Operators */
   .highlight .o,
   .highlight .ow {
     color: #ff7b72;
     font-weight: bold;
   }
 
+  /* Punctuation */
   .highlight .p,
   .highlight .pi {
-    color: #c9d1d9;
+    color: #e6edf3;
   }
 
+  /* Insertions (diff) */
   .highlight .gi {
     color: #aff5b4;
-    background-color: rgb(46 160 67 / 15%);
+    background-color: rgba(46, 160, 67, 0.15);
   }
 
+  /* Deletions (diff) */
   .highlight .gd {
     color: #ffdcd7;
-    background-color: rgb(248 81 73 / 15%);
+    background-color: rgba(248, 81, 73, 0.15);
   }
 
+  /* Diff header */
   .highlight .gh {
-    color: #1f6feb;
+    color: #58a6ff;
     background-color: transparent;
     font-weight: bold;
   }
 
+  /* Keywords */
   .highlight .k,
   .highlight .kn,
   .highlight .kp,
@@ -235,6 +250,7 @@
     font-weight: bold;
   }
 
+  /* Keyword constants, declarations */
   .highlight .kc,
   .highlight .kt,
   .highlight .kd {
@@ -242,6 +258,7 @@
     font-weight: bold;
   }
 
+  /* Strings */
   .highlight .s,
   .highlight .sb,
   .highlight .sc,
@@ -254,29 +271,35 @@
     color: #a5d6ff;
   }
 
+  /* String attribute */
   .highlight .sa {
     color: #ff7b72;
   }
 
+  /* Regex */
   .highlight .sr {
     color: #7ee787;
   }
 
+  /* String interpolation */
   .highlight .si,
   .highlight .se {
     color: #79c0ff;
   }
 
+  /* Classes, functions */
   .highlight .nn,
   .highlight .nc,
   .highlight .no {
     color: #ffa657;
   }
 
+  /* Attributes */
   .highlight .na {
     color: #79c0ff;
   }
 
+  /* Numbers */
   .highlight .m,
   .highlight .mb,
   .highlight .mf,
@@ -288,7 +311,28 @@
     color: #79c0ff;
   }
 
+  /* Symbols */
   .highlight .ss {
     color: #a5d6ff;
+  }
+
+  /* Variables */
+  .highlight .nv,
+  .highlight .vc,
+  .highlight .vg,
+  .highlight .vi {
+    color: #ffa657;
+  }
+
+  /* Built-ins */
+  .highlight .nb,
+  .highlight .bp {
+    color: #d2a8ff;
+  }
+
+  /* Functions */
+  .highlight .nf,
+  .highlight .fm {
+    color: #d2a8ff;
   }
 }

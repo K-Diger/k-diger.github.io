@@ -15,7 +15,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  actions: write  # cleanup을 위한 추가 권한
+  actions: write
 
 concurrency:
   group: "pages"
@@ -31,14 +31,12 @@ jobs:
         run: |
           echo "Fetching all deployments..."
 
-          # GitHub REST API로 직접 배포 목록 가져오기
           DEPLOYMENTS=$(curl -s -H "Authorization: token $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/pages/deployments")
 
           echo "Deployments response: $DEPLOYMENTS"
 
-          # 각 배포 ID 추출 및 삭제
           echo "$DEPLOYMENTS" | jq -r '.[].id' | while read -r deployment_id; do
             if [ -n "$deployment_id" ]; then
               echo "Attempting to delete deployment: $deployment_id"
@@ -73,10 +71,30 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: true
 
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
+
+      # Node.js 설정 추가 (Chirpy assets 빌드)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Chirpy assets 빌드
+      - name: Build Chirpy assets
+        run: |
+          if [ -f "package.json" ]; then
+            echo "Found package.json, building assets..."
+            npm ci
+            npm run build
+            echo "✓ Assets built successfully"
+            ls -la assets/js/dist/ || echo "Warning: assets/js/dist not found"
+          else
+            echo "No package.json found, skipping asset build"
+          fi
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -88,6 +106,21 @@ jobs:
         run: bundle exec jekyll b -d "_site${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: "production"
+
+      # 빌드 결과 확인
+      - name: Verify build output
+        run: |
+          echo "Checking _site directory..."
+          ls -la "_site${{ steps.pages.outputs.base_path }}" | head -20
+          echo ""
+          echo "Checking for assets..."
+          find "_site${{ steps.pages.outputs.base_path }}" -type f -name "*.css" | head -5
+          find "_site${{ steps.pages.outputs.base_path }}" -type f -name "*.js" | head -5
+          echo ""
+          echo "Checking index.html..."
+          if [ -f "_site${{ steps.pages.outputs.base_path }}/index.html" ]; then
+            head -30 "_site${{ steps.pages.outputs.base_path }}/index.html"
+          fi
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
