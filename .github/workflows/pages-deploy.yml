@@ -18,54 +18,12 @@ permissions:
   actions: write
 
 concurrency:
-  group: "pages"
+  group: "pages-deployment"
   cancel-in-progress: true
 
 jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Delete all existing deployments
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Fetching all deployments..."
-
-          DEPLOYMENTS=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/pages/deployments")
-
-          echo "Deployments response: $DEPLOYMENTS"
-
-          echo "$DEPLOYMENTS" | jq -r '.[].id' | while read -r deployment_id; do
-            if [ -n "$deployment_id" ]; then
-              echo "Attempting to delete deployment: $deployment_id"
-
-              DELETE_RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-                -H "Authorization: token $GH_TOKEN" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/${{ github.repository }}/pages/deployments/$deployment_id")
-
-              HTTP_CODE=$(echo "$DELETE_RESPONSE" | tail -n1)
-
-              if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
-                echo "✓ Successfully deleted deployment $deployment_id"
-              else
-                echo "✗ Failed to delete deployment $deployment_id (HTTP $HTTP_CODE)"
-                echo "$DELETE_RESPONSE"
-              fi
-            fi
-          done
-
-          echo "Cleanup completed"
-
-      - name: Wait for cleanup to propagate
-        run: sleep 10
-
   build:
     runs-on: ubuntu-latest
-    needs: cleanup
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
