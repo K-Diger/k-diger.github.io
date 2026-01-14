@@ -291,4 +291,82 @@
   .highlight .ss {
     color: #a5d6ff;
   }
+
+  /* --- YAML 특화 스타일 (IntelliJ Darcula 기반) --- */
+
+  /* YAML 키 (property names) */
+  .language-yaml .highlight .na,
+  .language-yml .highlight .na {
+    color: #9876aa; /* IntelliJ purple for keys */
+    font-weight: 500;
+  }
+
+  /* YAML 문자열 값 */
+  .language-yaml .highlight .s,
+  .language-yaml .highlight .s1,
+  .language-yaml .highlight .s2,
+  .language-yml .highlight .s,
+  .language-yml .highlight .s1,
+  .language-yml .highlight .s2 {
+    color: #6a8759; /* IntelliJ green for strings */
+    font-weight: 400;
+  }
+
+  /* YAML 숫자 */
+  .language-yaml .highlight .m,
+  .language-yaml .highlight .mi,
+  .language-yaml .highlight .mf,
+  .language-yml .highlight .m,
+  .language-yml .highlight .mi,
+  .language-yml .highlight .mf {
+    color: #6897bb; /* IntelliJ blue for numbers */
+  }
+
+  /* YAML 불린값 (true/false) */
+  .language-yaml .highlight .kc,
+  .language-yml .highlight .kc {
+    color: #cc7832; /* IntelliJ orange for keywords */
+    font-weight: 600;
+  }
+
+  /* YAML null */
+  .language-yaml .highlight .no,
+  .language-yml .highlight .no {
+    color: #cc7832; /* IntelliJ orange */
+    font-weight: 600;
+  }
+
+  /* YAML 주석 */
+  .language-yaml .highlight .c,
+  .language-yaml .highlight .c1,
+  .language-yml .highlight .c,
+  .language-yml .highlight .c1 {
+    color: #808080; /* IntelliJ gray for comments */
+    font-style: italic;
+  }
+
+  /* YAML 특수 문자 (콜론, 대시 등) */
+  .language-yaml .highlight .p,
+  .language-yaml .highlight .pi,
+  .language-yml .highlight .p,
+  .language-yml .highlight .pi {
+    color: #a9b7c6; /* IntelliJ light gray */
+  }
+
+  /* YAML 앵커와 별칭 (&, *) */
+  .language-yaml .highlight .na,
+  .language-yml .highlight .na {
+    &[class*="anchor"],
+    &[class*="alias"] {
+      color: #ffc66d; /* IntelliJ yellow for anchors */
+      font-weight: 600;
+    }
+  }
+
+  /* YAML 타입 태그 (!!) */
+  .language-yaml .highlight .nt,
+  .language-yml .highlight .nt {
+    color: #e8bf6a; /* IntelliJ gold for tags */
+    font-weight: 500;
+  }
 }
