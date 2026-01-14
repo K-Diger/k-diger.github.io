@@ -77,18 +77,18 @@ jobs:
         id: pages
         uses: actions/configure-pages@v4
 
-      # Node.js 설정 추가 (Chirpy assets 빌드)
+      # Node.js 설정
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Chirpy assets 빌드
+      # 수정된 부분: npm ci 대신 npm install 사용
       - name: Build Chirpy assets
         run: |
           if [ -f "package.json" ]; then
             echo "Found package.json, building assets..."
-            npm ci
+            npm install  # npm ci 대신 npm install 사용
             npm run build
             echo "✓ Assets built successfully"
             ls -la assets/js/dist/ || echo "Warning: assets/js/dist not found"
@@ -107,7 +107,6 @@ jobs:
         env:
           JEKYLL_ENV: "production"
 
-      # 빌드 결과 확인
       - name: Verify build output
         run: |
           echo "Checking _site directory..."
