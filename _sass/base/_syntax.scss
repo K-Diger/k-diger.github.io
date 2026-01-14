@@ -13,8 +13,9 @@
   @extend %rounded;
   @extend %code-snippet-bg;
 
-  overflow: auto;
-  padding-bottom: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.25rem;
 
   @at-root figure#{&} {
     @extend %code-snippet-bg;
@@ -31,11 +32,11 @@
       &:first-child {
         display: inline-block;
         margin-left: 0.75rem;
-        margin-right: 0.5rem;
+        margin-right: 0.3rem;
       }
 
       &:last-child {
-        padding-right: 1rem !important;
+        padding-right: 0.5rem !important;
       }
 
       pre {
