@@ -11,9 +11,9 @@ mermaid: true
 
 # Part 9: 인증 및 인가
 
-## 32. TLS 및 인증서 관리
+## 24. TLS 및 인증서 관리
 
-### 32.1 TLS 기초
+### 24.1 TLS 기초
 
 **TLS (Transport Layer Security)의 필요성:**
 
@@ -55,7 +55,7 @@ CA (Certificate Authority):
   - CA 인증서: ca.crt
 ```
 
-### 32.2 Kubernetes에서의 TLS
+### 24.2 Kubernetes에서의 TLS
 
 **Kubernetes 클러스터의 인증서:**
 
@@ -98,7 +98,7 @@ API Server → kubelet:
   - /etc/kubernetes/pki/apiserver-kubelet-client.key
 ```
 
-### 32.3 인증서 생성 및 관리
+### 24.3 인증서 생성 및 관리
 
 **수동 인증서 생성 (OpenSSL):**
 
@@ -148,7 +148,7 @@ kubectl config set-context kubernetes-admin@kubernetes \
 kubectl config use-context kubernetes-admin@kubernetes
 ```
 
-### 32.4 Certificates API
+### 24.4 Certificates API
 
 **Kubernetes 내장 인증서 관리:**
 
@@ -225,7 +225,7 @@ kubectl create role developer --verb=get,list,create --resource=pods
 kubectl create rolebinding john-developer --role=developer --user=john
 ```
 
-### 32.5 인증서 문제 해결
+### 24.5 인증서 문제 해결
 
 **인증서 정보 확인:**
 
@@ -255,9 +255,9 @@ kubeadm certs renew apiserver
 
 ---
 
-## 24. RBAC (Role-Based Access Control)
+## 25. RBAC (Role-Based Access Control)
 
-### 24.1 ServiceAccount
+### 25.1 ServiceAccount
 
 **정의:**
 
@@ -280,7 +280,7 @@ kubectl describe serviceaccount myapp-sa
 kubectl get secret
 ```
 
-### 24.2 Role과 ClusterRole
+### 25.2 Role과 ClusterRole
 
 **Role (Namespace 범위):**
 
@@ -312,7 +312,7 @@ rules:
     verbs: [ "*" ]
 ```
 
-### 24.3 RoleBinding과 ClusterRoleBinding
+### 25.3 RoleBinding과 ClusterRoleBinding
 
 **RoleBinding:**
 

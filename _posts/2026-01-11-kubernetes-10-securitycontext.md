@@ -11,9 +11,9 @@ mermaid: true
 
 # Part 10: Pod 보안
 
-## 25. Pod Security
+## 26. Pod Security
 
-### 25.1 SecurityContext
+### 26.1 SecurityContext
 
 **Pod 수준:**
 
@@ -51,11 +51,11 @@ spec:
 - **capabilities**: Linux capabilities 추가/제거
 - **readOnlyRootFilesystem**: 읽기 전용 루트 파일 시스템
 
-### 25.2 PodSecurityPolicy (deprecated)
+### 26.2 PodSecurityPolicy (deprecated)
 
 K8s 1.25부터 제거됨. Pod Security Standards 사용 권장.
 
-### 25.3 Pod Security Standards
+### 26.3 Pod Security Standards
 
 **3가지 정책 수준:**
 

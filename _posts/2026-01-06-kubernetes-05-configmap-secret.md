@@ -11,9 +11,9 @@ mermaid: true
 
 # Part 5: 설정 및 데이터 관리
 
-## 23. ConfigMap과 Secret
+## 15. ConfigMap과 Secret
 
-### 23.1 ConfigMap (설정 관리)
+### 15.1 ConfigMap (설정 관리)
 
 **용도:**
 
@@ -41,7 +41,7 @@ data:
       port: 5432
 ```
 
-### 23.2 Secret (민감 정보 관리)
+### 15.2 Secret (민감 정보 관리)
 
 **종류:**
 
@@ -64,7 +64,7 @@ stringData: # base64 인코딩 자동
   password: securepassword
 ```
 
-### 23.3 Volume으로 마운트
+### 15.3 Volume으로 마운트
 
 **ConfigMap:**
 
@@ -91,7 +91,7 @@ volumes:
       secretName: db-secret
 ```
 
-### 23.4 환경 변수로 주입
+### 15.4 환경 변수로 주입
 
 **ConfigMap에서:**
 

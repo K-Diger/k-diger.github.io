@@ -11,9 +11,9 @@ mermaid: true
 
 # Part 7: 네트워킹 기초
 
-## 15. Service
+## 19. Service
 
-### 15.1 Service 개념 (안정적인 엔드포인트)
+### 19.1 Service 개념 (안정적인 엔드포인트)
 
 **정의:**
 
@@ -37,7 +37,7 @@ Service는 **Pod 집합에 대한 안정적인 네트워크 엔드포인트**를
       └────→ Pod-C: 172.17.0.4
 ```
 
-### 15.2 ClusterIP (기본값)
+### 19.2 ClusterIP (기본값)
 
 **특징:**
 
@@ -64,7 +64,7 @@ spec:
 kubectl run -it --image=busybox --restart=Never -- wget http://myapp
 ```
 
-### 15.3 NodePort
+### 19.3 NodePort
 
 **특징:**
 
@@ -92,7 +92,7 @@ spec:
 curl http://<node-ip>:30080
 ```
 
-### 15.4 LoadBalancer
+### 19.4 LoadBalancer
 
 **특징:**
 
@@ -114,7 +114,7 @@ spec:
       targetPort: 8080
 ```
 
-### 15.5 ExternalName
+### 19.5 ExternalName
 
 **특징:**
 
@@ -133,7 +133,7 @@ spec:
     - port: 3306
 ```
 
-### 15.6 Headless Service
+### 19.6 Headless Service
 
 **특징:**
 
@@ -156,7 +156,7 @@ spec:
 
 DNS: `mysql-0.mysql-headless.default.svc.cluster.local`
 
-### 15.7 Session Affinity
+### 19.7 Session Affinity
 
 ```yaml
 spec:
@@ -168,9 +168,9 @@ spec:
 
 ---
 
-## 16. Endpoints
+## 20. Endpoints
 
-### 16.1 Endpoints 자동 생성
+### 20.1 Endpoints 자동 생성
 
 Service가 생성되면 Endpoint 컨트롤러가 자동으로 Endpoint를 생성/관리한다.
 
@@ -180,7 +180,7 @@ kubectl get endpoints
 kubectl describe endpoints myapp
 ```
 
-### 16.2 수동 Endpoints 관리
+### 20.2 수동 Endpoints 관리
 
 Service 없이 Endpoint를 수동 생성할 수 있다:
 

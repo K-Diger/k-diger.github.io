@@ -11,13 +11,13 @@ mermaid: true
 
 # Part 6: 스토리지
 
-## 20. Volume
+## 16. Volume
 
-### 20.1 Volume 종류
+### 16.1 Volume 종류
 
 Volume은 Pod의 생명주기와 관계없이 데이터를 유지한다.
 
-### 20.2 emptyDir
+### 16.2 emptyDir
 
 **특징:**
 
@@ -49,7 +49,7 @@ spec:
       emptyDir: { }
 ```
 
-### 20.3 hostPath
+### 16.3 hostPath
 
 **특징:**
 
@@ -83,7 +83,7 @@ spec:
         type: Directory
 ```
 
-### 20.4 configMap/secret
+### 16.4 configMap/secret
 
 **configMap 사용:**
 
@@ -143,15 +143,15 @@ spec:
         secretName: db-credentials
 ```
 
-### 20.5 PV/PVC
+### 16.5 PV/PVC
 
 Persistent Volume과 Persistent Volume Claim의 조합으로 영구 스토리지 제공.
 
 ---
 
-## 21. PersistentVolume (PV)
+## 17. PersistentVolume (PV)
 
-### 21.1 PV 개념
+### 17.1 PV 개념
 
 **정의:**
 
@@ -186,7 +186,7 @@ spec:
 - **Delete**: PVC 삭제 시 PV도 삭제
 - **Recycle**: PVC 삭제 시 데이터 삭제 후 PV 재사용 (deprecated)
 
-### 21.2 Storage Class
+### 17.2 Storage Class
 
 **정의:**
 
@@ -272,7 +272,7 @@ parameters:
 
 PVC에서 `storageClassName`을 지정하지 않으면 기본 StorageClass가 사용된다.
 
-### 21.3 Dynamic Provisioning
+### 17.3 Dynamic Provisioning
 
 **정의:**
 
@@ -367,9 +367,9 @@ spec:
 
 ---
 
-## 22. PersistentVolumeClaim (PVC)
+## 18. PersistentVolumeClaim (PVC)
 
-### 22.1 PVC 개념
+### 18.1 PVC 개념
 
 **정의:**
 
@@ -389,7 +389,7 @@ spec:
   storageClassName: fast-ssd
 ```
 
-### 22.2 PV와 바인딩
+### 18.2 PV와 바인딩
 
 **바인딩 프로세스:**
 

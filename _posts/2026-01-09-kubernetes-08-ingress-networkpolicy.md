@@ -11,9 +11,9 @@ mermaid: true
 
 # Part 8: 고급 네트워킹
 
-## 17. Ingress
+## 21. Ingress
 
-### 17.1 Ingress 개념
+### 21.1 Ingress 개념
 
 **정의:**
 
@@ -40,7 +40,7 @@ Internet
 └──────────────────────────────────────────────┘
 ```
 
-### 17.2 Ingress Controller (Nginx, Traefik, HAProxy)
+### 21.2 Ingress Controller (Nginx, Traefik, HAProxy)
 
 **Ingress Controller의 역할:**
 
@@ -149,7 +149,7 @@ kubectl get svc -n ingress-nginx
 - 강력한 보안 기능 (mTLS)
 - 분산 추적 및 관찰성
 
-### 17.3 경로 기반 라우팅
+### 21.3 경로 기반 라우팅
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -178,7 +178,7 @@ spec:
                   number: 80
 ```
 
-### 17.4 호스트 기반 라우팅
+### 21.4 호스트 기반 라우팅
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -210,7 +210,7 @@ spec:
                   number: 80
 ```
 
-### 17.5 TLS/SSL 설정
+### 21.5 TLS/SSL 설정
 
 **Secret 생성:**
 
@@ -245,7 +245,7 @@ spec:
                   number: 80
 ```
 
-### 17.6 Cert-Manager (자동 인증서 발급)
+### 21.6 Cert-Manager (자동 인증서 발급)
 
 **설치:**
 
@@ -297,9 +297,9 @@ spec:
 
 ---
 
-## 18. NetworkPolicy
+## 22. NetworkPolicy
 
-### 18.1 NetworkPolicy 개념
+### 22.1 NetworkPolicy 개념
 
 **정의:**
 
@@ -334,7 +334,7 @@ NetworkPolicy는 **Pod 간의 네트워크 트래픽을 제어**하는 방화벽
 - 정책 적용 시 기존 연결은 유지될 수 있음 (stateful)
 - DNS 트래픽도 명시적으로 허용해야 함
 
-### 18.2 Ingress 제어
+### 22.2 Ingress 제어
 
 **Ingress 규칙**은 Pod로 들어오는 트래픽을 제어한다.
 
@@ -450,7 +450,7 @@ spec:
           port: 443
 ```
 
-### 18.3 Egress 제어
+### 22.3 Egress 제어
 
 **Egress 규칙**은 Pod에서 나가는 트래픽을 제어한다.
 
@@ -532,7 +532,7 @@ spec:
           port: 443
 ```
 
-### 18.4 정책 예제
+### 22.4 정책 예제
 
 **1. 모든 트래픽 차단 (기본 거부 정책):**
 
@@ -717,9 +717,9 @@ spec:
 
 ---
 
-## 19. CNI (Container Network Interface)
+## 23. CNI (Container Network Interface)
 
-### 19.1 CNI 플러그인 역할
+### 23.1 CNI 플러그인 역할
 
 **정의:**
 
@@ -731,7 +731,7 @@ CNI는 **Pod 간 네트워킹을 제공하는 플러그인 아키텍처**이다.
 - Pod 간 통신 제공
 - 네트워크 정책 구현
 
-### 19.2 Calico
+### 23.2 Calico
 
 **개요:**
 
@@ -766,7 +766,7 @@ Pod1 → [IP in IP 터널] → Pod2
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/tigera-operator.yaml
 ```
 
-### 19.3 Flannel
+### 23.3 Flannel
 
 **개요:**
 
@@ -800,7 +800,7 @@ Pod1 → 호스트 라우팅 → Pod2
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
 
-### 19.4 Cilium
+### 23.4 Cilium
 
 **개요:**
 
@@ -829,7 +829,7 @@ helm repo add cilium https://helm.cilium.io
 helm install cilium cilium/cilium --namespace kube-system
 ```
 
-### 19.5 Weave
+### 23.5 Weave
 
 **개요:**
 
@@ -837,7 +837,7 @@ helm install cilium cilium/cilium --namespace kube-system
 - **특징**: 자동 발견, 암호화 지원
 - **용도**: 간단한 배포, 보안 요구 환경
 
-### 19.6 CNI 비교
+### 23.6 CNI 비교
 
 | 특성                | Calico | Flannel | Cilium | Weave |
 |-------------------|--------|---------|--------|-------|

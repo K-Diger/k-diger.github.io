@@ -11,9 +11,9 @@ mermaid: true
 
 # Part 11: Admission Control 및 정책
 
-## 33. Admission Controllers
+## 27. Admission Controllers
 
-### 33.1 Admission Controller 개념
+### 27.1 Admission Controller 개념
 
 **Admission Controller란?**
 
@@ -59,7 +59,7 @@ NodeRestriction:
   - kubelet이 자기 노드의 Pod만 수정 가능하도록 제한
 ```
 
-### 33.2 Validating Admission
+### 27.2 Validating Admission
 
 **Validating Admission은 요청을 검증하고 승인/거부한다 (수정 불가).**
 
@@ -87,7 +87,7 @@ webhooks:
   failurePolicy: Fail
 ```
 
-### 33.3 Mutating Admission
+### 27.3 Mutating Admission
 
 **Mutating Admission은 요청을 수정한 후 다음 단계로 전달한다.**
 
@@ -115,9 +115,9 @@ webhooks:
 
 ---
 
-## 34. OPA (Open Policy Agent)
+## 28. OPA (Open Policy Agent)
 
-### 34.1 OPA 개념
+### 28.1 OPA 개념
 
 **OPA (Open Policy Agent)란?**
 
@@ -129,7 +129,7 @@ OPA는 **정책을 코드로 작성하여 다양한 시스템에서 정책 기�
 - Kubernetes 외 다양한 시스템 지원
 - 정책과 애플리케이션 분리
 
-### 34.2 Gatekeeper
+### 28.2 Gatekeeper
 
 **Gatekeeper = OPA + Kubernetes:**
 
@@ -144,7 +144,7 @@ kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/
 kubectl get pods -n gatekeeper-system
 ```
 
-### 34.3 정책 작성 (Rego)
+### 28.3 정책 작성 (Rego)
 
 **ConstraintTemplate 작성:**
 
