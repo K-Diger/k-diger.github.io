@@ -14,21 +14,25 @@ mermaid: true
 ## 배포 전략
 
 **Rolling Update**:
+
 - 점진적 교체
 - 무중단 배포
 - Deployment의 기본 전략
 
 **Blue-Green**:
+
 - 두 환경 유지
 - 즉시 전환
 - 롤백 용이
 
 **Canary**:
+
 - 일부 트래픽만 신버전
 - 점진적 확대
 - 위험 최소화
 
 **A/B Testing**:
+
 - 사용자 그룹별 다른 버전
 - 기능 검증
 
@@ -73,6 +77,7 @@ helm repo remove bitnami
 ```
 
 **CKA Mock Exam 예시:**
+
 ```bash
 # Mock Exam 1 - Q.12: Helm Repository 업데이트 후 특정 버전으로 업그레이드
 helm list -n kk-ns
@@ -117,6 +122,7 @@ helm get hooks <RELEASE_NAME>              # Helm hook 정보
 ```
 
 **CKA Mock Exam 예시:**
+
 ```bash
 # Practice Question - Q.1: ArgoCD Helm Chart 템플릿 생성
 helm repo add argo https://argoproj.github.io/argo-helm
@@ -156,6 +162,7 @@ helm uninstall my-nginx -n web --keep-history  # 히스토리 유지
 ```
 
 **CKA Mock Exam 예시:**
+
 ```bash
 # Mock Exam 2 - Q.10: 취약한 이미지를 사용하는 Helm Release 찾아 제거
 # 모든 Helm Release 확인
@@ -230,6 +237,7 @@ myapp-chart/
 ```
 
 **Chart.yaml 예시:**
+
 ```yaml
 apiVersion: v2
 name: myapp
@@ -255,6 +263,7 @@ keywords:
 ```
 
 **values.yaml 예시:**
+
 ```yaml
 # 기본 설정값
 replicaCount: 2
@@ -364,6 +373,7 @@ spec:
 ```
 
 **주요 템플릿 함수:**
+
 ```yaml
 # 조건문
 {{ if .Values.enabled }}...{{ end }}
@@ -396,6 +406,7 @@ spec:
 ```
 
 **_helpers.tpl 예시:**
+
 ```yaml
 {{/*
 공통 레이블
@@ -443,6 +454,7 @@ spec:
 ```
 
 **Hook 종류:**
+
 - `pre-install`: Chart 설치 전
 - `post-install`: Chart 설치 후
 - `pre-delete`: Chart 삭제 전
@@ -467,6 +479,7 @@ helm dependency list ./mychart
 ```
 
 **Chart.yaml에서 의존성 정의:**
+
 ```yaml
 dependencies:
   - name: mysql
@@ -564,6 +577,7 @@ kubectl kustomize overlays/production/ | grep -A 10 "kind: Deployment"
 ### Base 구성
 
 **base/kustomization.yaml:**
+
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -593,6 +607,7 @@ configMapGenerator:
 ```
 
 **base/deployment.yaml:**
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -626,6 +641,7 @@ spec:
 ```
 
 **base/service.yaml:**
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -645,6 +661,7 @@ spec:
 ### Overlay 구성 (환경별 커스터마이징)
 
 **overlays/production/kustomization.yaml:**
+
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -716,6 +733,7 @@ resources:
 ```
 
 **overlays/production/deployment-patch.yaml (Strategic Merge):**
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -751,6 +769,7 @@ spec:
 ```
 
 **overlays/production/hpa.yaml:**
+
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -889,6 +908,7 @@ replacements:
 ### Kustomize 주요 기능
 
 **1. namePrefix / nameSuffix**
+
 ```yaml
 namePrefix: prod-
 nameSuffix: -stable
@@ -898,6 +918,7 @@ nameSuffix: -stable
 ```
 
 **2. commonLabels / commonAnnotations**
+
 ```yaml
 commonLabels:
   app: myapp
@@ -908,6 +929,7 @@ commonLabels:
 ```
 
 **3. images (이미지 변경)**
+
 ```yaml
 images:
   - name: nginx              # 기존 이미지 이름
@@ -919,6 +941,7 @@ images:
 ```
 
 **4. replicas (복제본 수 조정)**
+
 ```yaml
 replicas:
   - name: backend
@@ -928,6 +951,7 @@ replicas:
 ```
 
 **5. configMapGenerator**
+
 ```yaml
 configMapGenerator:
   - name: app-config
@@ -945,6 +969,7 @@ configMapGenerator:
 ```
 
 생성된 ConfigMap:
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -958,6 +983,7 @@ data:
 ```
 
 **6. secretGenerator**
+
 ```yaml
 secretGenerator:
   - name: db-secret
@@ -1027,6 +1053,7 @@ patchesJson6902:
 ```
 
 **JSON Patch 연산:**
+
 - `add`: 필드 추가
 - `remove`: 필드 삭제
 - `replace`: 필드 값 변경
@@ -1039,6 +1066,7 @@ patchesJson6902:
 ### 실전 예시: Multi-Environment Setup
 
 **디렉토리 구조:**
+
 ```
 k8s/
 ├── base/
@@ -1061,6 +1089,7 @@ k8s/
 ```
 
 **Dev 환경:**
+
 ```yaml
 # overlays/dev/kustomization.yaml
 bases:
@@ -1088,6 +1117,7 @@ configMapGenerator:
 ```
 
 **Production 환경:**
+
 ```yaml
 # overlays/production/kustomization.yaml
 bases:
@@ -1122,6 +1152,7 @@ resources:
 ```
 
 **배포:**
+
 ```bash
 # Dev 환경 배포
 kubectl apply -k overlays/dev/
@@ -1152,26 +1183,28 @@ kubectl kustomize overlays/production/ | less
 
 ## Helm vs Kustomize 비교
 
-| 특징 | Helm | Kustomize |
-|------|------|-----------|
-| **접근 방식** | 템플릿 기반 (Go Template) | 선언적 오버레이 |
-| **학습 곡선** | 높음 (템플릿 문법 학습 필요) | 낮음 (YAML만 알면 됨) |
-| **패키징** | Chart로 패키징 및 배포 | 디렉토리 구조로 관리 |
-| **버전 관리** | Chart 버전, Release 관리 | Git 기반 버전 관리 |
-| **재사용성** | 높음 (Chart 공유 가능) | 보통 (Base 재사용) |
-| **커스터마이징** | values.yaml로 동적 설정 | Overlay와 Patch로 정적 변경 |
-| **복잡도** | 복잡한 애플리케이션에 적합 | 단순한 커스터마이징에 적합 |
-| **롤백** | helm rollback으로 쉬운 롤백 | kubectl rollout으로 롤백 |
-| **생태계** | 풍부한 public chart repository | kubectl 내장, 별도 설치 불필요 |
-| **의존성 관리** | Chart 의존성 관리 가능 | 직접 관리 필요 |
+| 특징         | Helm                        | Kustomize             |
+|------------|-----------------------------|-----------------------|
+| **접근 방식**  | 템플릿 기반 (Go Template)        | 선언적 오버레이              |
+| **학습 곡선**  | 높음 (템플릿 문법 학습 필요)           | 낮음 (YAML만 알면 됨)       |
+| **패키징**    | Chart로 패키징 및 배포             | 디렉토리 구조로 관리           |
+| **버전 관리**  | Chart 버전, Release 관리        | Git 기반 버전 관리          |
+| **재사용성**   | 높음 (Chart 공유 가능)            | 보통 (Base 재사용)         |
+| **커스터마이징** | values.yaml로 동적 설정          | Overlay와 Patch로 정적 변경 |
+| **복잡도**    | 복잡한 애플리케이션에 적합              | 단순한 커스터마이징에 적합        |
+| **롤백**     | helm rollback으로 쉬운 롤백       | kubectl rollout으로 롤백  |
+| **생태계**    | 풍부한 public chart repository | kubectl 내장, 별도 설치 불필요 |
+| **의존성 관리** | Chart 의존성 관리 가능             | 직접 관리 필요              |
 
 **언제 Helm을 사용하나?**
+
 - 복잡한 애플리케이션 배포 (DB, 모니터링 등)
 - 재사용 가능한 패키지 필요
 - 버전 관리와 롤백이 중요한 경우
 - Public chart 활용 (nginx, mysql, prometheus 등)
 
 **언제 Kustomize를 사용하나?**
+
 - 환경별 설정 차이만 있는 경우
 - 템플릿 없이 순수 YAML 선호
 - 간단한 커스터마이징 (replicas, image tag 등)
@@ -1242,16 +1275,16 @@ kubectl apply -k <DIR>
 
 1. **배포 전략**: Rolling Update, Blue-Green, Canary, A/B Testing
 2. **Helm**: Kubernetes 패키지 매니저
-   - Chart, Release, Repository, Values 개념
-   - 모든 주요 명령어 (install, upgrade, rollback, uninstall, list, search)
-   - Chart 구조 (Chart.yaml, values.yaml, templates/)
-   - Go Template 문법
-   - Hooks 및 의존성 관리
+  - Chart, Release, Repository, Values 개념
+  - 모든 주요 명령어 (install, upgrade, rollback, uninstall, list, search)
+  - Chart 구조 (Chart.yaml, values.yaml, templates/)
+  - Go Template 문법
+  - Hooks 및 의존성 관리
 3. **Kustomize**: 템플릿 없는 YAML 커스터마이징
-   - Base와 Overlay 구조
-   - kustomization.yaml 주요 필드
-   - Strategic Merge Patch vs JSON Patch
-   - 환경별 배포 전략
+  - Base와 Overlay 구조
+  - kustomization.yaml 주요 필드
+  - Strategic Merge Patch vs JSON Patch
+  - 환경별 배포 전략
 
 ### CKA 시험 관련 문제 유형
 
@@ -1264,12 +1297,14 @@ kubectl apply -k <DIR>
 ### 실무 활용
 
 **Helm 활용 시나리오:**
+
 - 복잡한 애플리케이션 배포 (Prometheus, Grafana, ArgoCD)
 - 팀 간 Chart 공유 및 재사용
 - 버전 관리 및 쉬운 롤백
 - 동적 설정 변경
 
 **Kustomize 활용 시나리오:**
+
 - Dev, Staging, Production 환경 분리
 - GitOps 워크플로우 (ArgoCD, Flux와 통합)
 - 간단한 환경별 설정 차이 관리

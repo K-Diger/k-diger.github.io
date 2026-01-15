@@ -18,25 +18,30 @@ Kubernetes는 확장 가능한 아키텍처로 설계되어 사용자가 자신�
 ### 확장 방법
 
 **1. Custom Resource Definitions (CRD)**
+
 - 새로운 리소스 타입 정의
 - Kubernetes API 확장
 - Declarative API 활용
 
 **2. Custom Controllers**
+
 - CRD의 동작 구현
 - Reconciliation Loop
 - 원하는 상태 유지
 
 **3. Operators**
+
 - CRD + Custom Controller
 - 애플리케이션별 운영 지식 자동화
 - 복잡한 stateful 애플리케이션 관리
 
 **4. Admission Webhooks**
+
 - 리소스 생성/수정 시 커스텀 검증
 - 자동 변경 적용
 
 **5. Aggregated API Server**
+
 - 완전히 새로운 API 추가
 - 고급 확장
 
@@ -450,23 +455,24 @@ func init() {
 package controllers
 
 import (
-	"context"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+  "context"
 
-	appsv1alpha1 "github.com/example/database-operator/api/v1"
+  appsv1 "k8s.io/api/apps/v1"
+  corev1 "k8s.io/api/core/v1"
+  "k8s.io/apimachinery/pkg/api/errors"
+  metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+  "k8s.io/apimachinery/pkg/runtime"
+  ctrl "sigs.k8s.io/controller-runtime"
+  "sigs.k8s.io/controller-runtime/pkg/client"
+  "sigs.k8s.io/controller-runtime/pkg/log"
+
+  appsv1alpha1 "github.com/example/database-operator/api/v1"
 )
 
 // DatabaseReconciler는 Database 리소스를 조정한다
 type DatabaseReconciler struct {
-	client.Client
-	Scheme *runtime.Scheme
+  client.Client
+  Scheme *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=apps.example.com,resources=databases,verbs=get;list;watch;create;update;patch;delete
@@ -477,155 +483,155 @@ type DatabaseReconciler struct {
 
 // Reconcile은 Database 리소스를 조정하는 메인 로직이다
 func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+  log := log.FromContext(ctx)
 
-	// 1. Database CR 조회
-	var database appsv1alpha1.Database
-	if err := r.Get(ctx, req.NamespacedName, &database); err != nil {
-		if errors.IsNotFound(err) {
-			// CR이 삭제됨 - 정상
-			return ctrl.Result{}, nil
-		}
-		log.Error(err, "unable to fetch Database")
-		return ctrl.Result{}, err
-	}
+  // 1. Database CR 조회
+  var database appsv1alpha1.Database
+  if err := r.Get(ctx, req.NamespacedName, &database); err != nil {
+    if errors.IsNotFound(err) {
+      // CR이 삭제됨 - 정상
+      return ctrl.Result{}, nil
+    }
+    log.Error(err, "unable to fetch Database")
+    return ctrl.Result{}, err
+  }
 
-	// 2. StatefulSet 생성 또는 업데이트
-	statefulSet := r.constructStatefulSet(&database)
-	if err := ctrl.SetControllerReference(&database, statefulSet, r.Scheme); err != nil {
-		return ctrl.Result{}, err
-	}
+  // 2. StatefulSet 생성 또는 업데이트
+  statefulSet := r.constructStatefulSet(&database)
+  if err := ctrl.SetControllerReference(&database, statefulSet, r.Scheme); err != nil {
+    return ctrl.Result{}, err
+  }
 
-	foundStatefulSet := &appsv1.StatefulSet{}
-	err := r.Get(ctx, client.ObjectKey{Name: statefulSet.Name, Namespace: statefulSet.Namespace}, foundStatefulSet)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new StatefulSet", "Namespace", statefulSet.Namespace, "Name", statefulSet.Name)
-		err = r.Create(ctx, statefulSet)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else if err != nil {
-		return ctrl.Result{}, err
-	} else {
-		// StatefulSet이 존재하면 업데이트
-		log.Info("Updating StatefulSet", "Namespace", foundStatefulSet.Namespace, "Name", foundStatefulSet.Name)
-		foundStatefulSet.Spec = statefulSet.Spec
-		err = r.Update(ctx, foundStatefulSet)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
+  foundStatefulSet := &appsv1.StatefulSet{}
+  err := r.Get(ctx, client.ObjectKey{Name: statefulSet.Name, Namespace: statefulSet.Namespace}, foundStatefulSet)
+  if err != nil && errors.IsNotFound(err) {
+    log.Info("Creating a new StatefulSet", "Namespace", statefulSet.Namespace, "Name", statefulSet.Name)
+    err = r.Create(ctx, statefulSet)
+    if err != nil {
+      return ctrl.Result{}, err
+    }
+  } else if err != nil {
+    return ctrl.Result{}, err
+  } else {
+    // StatefulSet이 존재하면 업데이트
+    log.Info("Updating StatefulSet", "Namespace", foundStatefulSet.Namespace, "Name", foundStatefulSet.Name)
+    foundStatefulSet.Spec = statefulSet.Spec
+    err = r.Update(ctx, foundStatefulSet)
+    if err != nil {
+      return ctrl.Result{}, err
+    }
+  }
 
-	// 3. Service 생성 (Headless Service)
-	service := r.constructService(&database)
-	if err := ctrl.SetControllerReference(&database, service, r.Scheme); err != nil {
-		return ctrl.Result{}, err
-	}
+  // 3. Service 생성 (Headless Service)
+  service := r.constructService(&database)
+  if err := ctrl.SetControllerReference(&database, service, r.Scheme); err != nil {
+    return ctrl.Result{}, err
+  }
 
-	foundService := &corev1.Service{}
-	err = r.Get(ctx, client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, foundService)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new Service", "Namespace", service.Namespace, "Name", service.Name)
-		err = r.Create(ctx, service)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
+  foundService := &corev1.Service{}
+  err = r.Get(ctx, client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, foundService)
+  if err != nil && errors.IsNotFound(err) {
+    log.Info("Creating a new Service", "Namespace", service.Namespace, "Name", service.Name)
+    err = r.Create(ctx, service)
+    if err != nil {
+      return ctrl.Result{}, err
+    }
+  }
 
-	// 4. Status 업데이트
-	database.Status.Ready = foundStatefulSet.Status.ReadyReplicas == database.Spec.Replicas
-	if database.Status.Ready {
-		database.Status.Phase = "Running"
-	} else {
-		database.Status.Phase = "Pending"
-	}
+  // 4. Status 업데이트
+  database.Status.Ready = foundStatefulSet.Status.ReadyReplicas == database.Spec.Replicas
+  if database.Status.Ready {
+    database.Status.Phase = "Running"
+  } else {
+    database.Status.Phase = "Pending"
+  }
 
-	if err := r.Status().Update(ctx, &database); err != nil {
-		log.Error(err, "unable to update Database status")
-		return ctrl.Result{}, err
-	}
+  if err := r.Status().Update(ctx, &database); err != nil {
+    log.Error(err, "unable to update Database status")
+    return ctrl.Result{}, err
+  }
 
-	return ctrl.Result{}, nil
+  return ctrl.Result{}, nil
 }
 
 // constructStatefulSet은 Database CR을 기반으로 StatefulSet을 생성한다
 func (r *DatabaseReconciler) constructStatefulSet(db *appsv1alpha1.Database) *appsv1.StatefulSet {
-	replicas := db.Spec.Replicas
+  replicas := db.Spec.Replicas
 
-	statefulSet := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      db.Name,
-			Namespace: db.Namespace,
-		},
-		Spec: appsv1.StatefulSetSpec{
-			Replicas: &replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app":      "database",
-					"database": db.Name,
-				},
-			},
-			ServiceName: db.Name + "-headless",
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app":      "database",
-						"database": db.Name,
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "database",
-							Image: db.Spec.Engine + ":" + db.Spec.Version,
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: 5432,
-									Name:          "db",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+  statefulSet := &appsv1.StatefulSet{
+    ObjectMeta: metav1.ObjectMeta{
+      Name:      db.Name,
+      Namespace: db.Namespace,
+    },
+    Spec: appsv1.StatefulSetSpec{
+      Replicas: &replicas,
+      Selector: &metav1.LabelSelector{
+        MatchLabels: map[string]string{
+          "app":      "database",
+          "database": db.Name,
+        },
+      },
+      ServiceName: db.Name + "-headless",
+      Template: corev1.PodTemplateSpec{
+        ObjectMeta: metav1.ObjectMeta{
+          Labels: map[string]string{
+            "app":      "database",
+            "database": db.Name,
+          },
+        },
+        Spec: corev1.PodSpec{
+          Containers: []corev1.Container{
+            {
+              Name:  "database",
+              Image: db.Spec.Engine + ":" + db.Spec.Version,
+              Ports: []corev1.ContainerPort{
+                {
+                  ContainerPort: 5432,
+                  Name:          "db",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }
 
-	return statefulSet
+  return statefulSet
 }
 
 // constructService는 Headless Service를 생성한다
 func (r *DatabaseReconciler) constructService(db *appsv1alpha1.Database) *corev1.Service {
-	service := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      db.Name + "-headless",
-			Namespace: db.Namespace,
-		},
-		Spec: corev1.ServiceSpec{
-			ClusterIP: "None",  // Headless
-			Selector: map[string]string{
-				"app":      "database",
-				"database": db.Name,
-			},
-			Ports: []corev1.ServicePort{
-				{
-					Port: 5432,
-					Name: "db",
-				},
-			},
-		},
-	}
+  service := &corev1.Service{
+    ObjectMeta: metav1.ObjectMeta{
+      Name:      db.Name + "-headless",
+      Namespace: db.Namespace,
+    },
+    Spec: corev1.ServiceSpec{
+      ClusterIP: "None", // Headless
+      Selector: map[string]string{
+        "app":      "database",
+        "database": db.Name,
+      },
+      Ports: []corev1.ServicePort{
+        {
+          Port: 5432,
+          Name: "db",
+        },
+      },
+    },
+  }
 
-	return service
+  return service
 }
 
 // SetupWithManager는 Controller를 Manager에 등록한다
 func (r *DatabaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&appsv1alpha1.Database{}).
-		Owns(&appsv1.StatefulSet{}).
-		Owns(&corev1.Service{}).
-		Complete(r)
+  return ctrl.NewControllerManagedBy(mgr).
+    For(&appsv1alpha1.Database{}).
+    Owns(&appsv1.StatefulSet{}).
+    Owns(&corev1.Service{}).
+    Complete(r)
 }
 ```
 
@@ -680,24 +686,24 @@ Operator는 **CRD + Custom Controller + 도메인 지식**을 결합하여 복�
 **Capability Levels:**
 
 1. **Basic Install**
-   - Automated application provisioning and configuration management
-   - 자동 설치 및 설정
+  - Automated application provisioning and configuration management
+  - 자동 설치 및 설정
 
 2. **Seamless Upgrades**
-   - Patch and minor version upgrades supported
-   - 무중단 업그레이드
+  - Patch and minor version upgrades supported
+  - 무중단 업그레이드
 
 3. **Full Lifecycle**
-   - App lifecycle, storage lifecycle (backup, failure recovery)
-   - 백업, 복원, 장애 복구
+  - App lifecycle, storage lifecycle (backup, failure recovery)
+  - 백업, 복원, 장애 복구
 
 4. **Deep Insights**
-   - Metrics, alerts, log processing and workload analysis
-   - 메트릭, 알림, 로그 분석
+  - Metrics, alerts, log processing and workload analysis
+  - 메트릭, 알림, 로그 분석
 
 5. **Auto Pilot**
-   - Horizontal/vertical scaling, auto config tuning, abnormality detection, scheduling tuning
-   - 자동 스케일링, 자동 튜닝
+  - Horizontal/vertical scaling, auto config tuning, abnormality detection, scheduling tuning
+  - 자동 스케일링, 자동 튜닝
 
 ### 대표적인 Operators
 
@@ -939,29 +945,29 @@ spec:
 **Operator 기능:**
 
 1. **자동 설치**
-   - Primary + Replica StatefulSet 생성
-   - Headless Service 생성
-   - PVC 생성
+  - Primary + Replica StatefulSet 생성
+  - Headless Service 생성
+  - PVC 생성
 
 2. **고가용성**
-   - Patroni 또는 repmgr 통합
-   - 자동 Failover
-   - Synchronous Replication
+  - Patroni 또는 repmgr 통합
+  - 자동 Failover
+  - Synchronous Replication
 
 3. **백업 및 복원**
-   - CronJob으로 정기 백업
-   - Point-in-Time Recovery (PITR)
-   - S3 또는 PV로 백업 저장
+  - CronJob으로 정기 백업
+  - Point-in-Time Recovery (PITR)
+  - S3 또는 PV로 백업 저장
 
 4. **업그레이드**
-   - Rolling Update
-   - pg_upgrade 실행
-   - 데이터 마이그레이션
+  - Rolling Update
+  - pg_upgrade 실행
+  - 데이터 마이그레이션
 
 5. **모니터링**
-   - PostgreSQL Exporter Pod 배포
-   - ServiceMonitor 생성 (Prometheus 연동)
-   - 메트릭 수집
+  - PostgreSQL Exporter Pod 배포
+  - ServiceMonitor 생성 (Prometheus 연동)
+  - 메트릭 수집
 
 ---
 
@@ -1007,9 +1013,9 @@ Reconcile 함수는 여러 번 호출되어도 같은 결과를 반환해야 한
 
 ```go
 if err != nil {
-	log.Error(err, "Failed to create StatefulSet")
-	// 에러를 반환하면 자동으로 재시도됨
-	return ctrl.Result{}, err
+log.Error(err, "Failed to create StatefulSet")
+// 에러를 반환하면 자동으로 재시도됨
+return ctrl.Result{}, err
 }
 ```
 
@@ -1030,11 +1036,11 @@ return ctrl.Result{}, nil
 
 ```go
 meta.SetStatusCondition(&database.Status.Conditions, metav1.Condition{
-	Type:               "Ready",
-	Status:             metav1.ConditionTrue,
-	Reason:             "AllReplicasReady",
-	Message:            "All database replicas are ready",
-	LastTransitionTime: metav1.Now(),
+Type:               "Ready",
+Status:             metav1.ConditionTrue,
+Reason:             "AllReplicasReady",
+Message:            "All database replicas are ready",
+LastTransitionTime: metav1.Now(),
 })
 ```
 
@@ -1044,35 +1050,35 @@ meta.SetStatusCondition(&database.Status.Conditions, metav1.Condition{
 
 ```go
 func TestReconcile(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = appsv1alpha1.AddToScheme(scheme)
+scheme := runtime.NewScheme()
+_ = appsv1alpha1.AddToScheme(scheme)
 
-	database := &appsv1alpha1.Database{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-db",
-			Namespace: "default",
-		},
-		Spec: appsv1alpha1.DatabaseSpec{
-			Replicas: 3,
-		},
-	}
+database := &appsv1alpha1.Database{
+ObjectMeta: metav1.ObjectMeta{
+Name:      "test-db",
+Namespace: "default",
+},
+Spec: appsv1alpha1.DatabaseSpec{
+Replicas: 3,
+},
+}
 
-	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(database).Build()
+client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(database).Build()
 
-	reconciler := &DatabaseReconciler{
-		Client: client,
-		Scheme: scheme,
-	}
+reconciler := &DatabaseReconciler{
+Client: client,
+Scheme: scheme,
+}
 
-	req := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      "test-db",
-			Namespace: "default",
-		},
-	}
+req := reconcile.Request{
+NamespacedName: types.NamespacedName{
+Name:      "test-db",
+Namespace: "default",
+},
+}
 
-	_, err := reconciler.Reconcile(context.Background(), req)
-	assert.NoError(t, err)
+_, err := reconciler.Reconcile(context.Background(), req)
+assert.NoError(t, err)
 }
 ```
 

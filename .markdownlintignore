@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+_site/
+.jekyll-cache/
+
+# README and license files
+README.md
+LICENSE.md
+CONTRIBUTING.md
+
+# Changelog
+CHANGELOG.md

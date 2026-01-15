@@ -17,23 +17,23 @@ mermaid: true
   - gRPC는 왜 빠르게 동작하는가?
   - gRPC Gateway가 필요한 상황
 - **Kafka**
-    - 카프카의 구성요소 및 구조
-    - 컨슈머의 내부 동작 원리
-    - 프로듀서의 내부 동작 원리
-    - 이벤트 전송 간 오류가 발생했을 때 어떻게 처리할 것인지?
-        - 프로듀싱 실패
-        - 컨슈밍 실패
-        - 컨슘 후 컨슈머에서 로직 처리 실패
-    - 카프카의 전송 보장 옵션
-    - DLT
+  - 카프카의 구성요소 및 구조
+  - 컨슈머의 내부 동작 원리
+  - 프로듀서의 내부 동작 원리
+  - 이벤트 전송 간 오류가 발생했을 때 어떻게 처리할 것인지?
+    - 프로듀싱 실패
+    - 컨슈밍 실패
+    - 컨슘 후 컨슈머에서 로직 처리 실패
+  - 카프카의 전송 보장 옵션
+  - DLT
 - **Spring Cloud Gateway 동작원리**
   - Spring Cloud Gateway Filter vs Spring Security Filter vs Spring Reactive Security Filter
 - **ElasticSearch**
-    - ES의 구조
-    - 다른 DBMS에 비해 검색을 빠르게 지원하는 원리
+  - ES의 구조
+  - 다른 DBMS에 비해 검색을 빠르게 지원하는 원리
 - **Redis**
-    - Redis의 캐싱 전략
-    - Caffeine Cache와 비교
+  - Redis의 캐싱 전략
+  - Caffeine Cache와 비교
 - **Cypher 문법**
 - **Passport**
   - Passport란 무엇이고 왜 쓰는 것인가?

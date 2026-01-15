@@ -1,8 +1,8 @@
 ---
 title: "CKA Mock Exam - 3"
 date: 2026-01-15
-categories: [CKA, Kubernetes, Sysctl, ServiceAccount, StorageClass, ConfigMap, PriorityClass, NetworkPolicy, Taint, PersistentVolume, Kubeconfig, Troubleshooting, HPA, HTTPRoute, Helm, PodCIDR]
-tags: [CKA, Kubernetes, Sysctl, ServiceAccount, StorageClass, ConfigMap, PriorityClass, NetworkPolicy, Taint, PersistentVolume, Kubeconfig, Troubleshooting, HPA, HTTPRoute, Helm, PodCIDR]
+categories: [ CKA, Kubernetes, Sysctl, ServiceAccount, StorageClass, ConfigMap, PriorityClass, NetworkPolicy, Taint, PersistentVolume, Kubeconfig, Troubleshooting, HPA, HTTPRoute, Helm, PodCIDR ]
+tags: [ CKA, Kubernetes, Sysctl, ServiceAccount, StorageClass, ConfigMap, PriorityClass, NetworkPolicy, Taint, PersistentVolume, Kubeconfig, Troubleshooting, HPA, HTTPRoute, Helm, PodCIDR ]
 layout: post
 toc: true
 math: true
@@ -12,6 +12,7 @@ mermaid: true
 ### Q. 1 Sysctl Configuration
 
 **Task:** You are an administrator preparing your environment to deploy a Kubernetes cluster using kubeadm. Adjust the following network parameters on the system to the following values, and make sure your changes persist reboots:
+
 - net.ipv4.ip_forward = 1
 - net.bridge.bridge-nf-call-iptables = 1
 
@@ -21,6 +22,7 @@ mermaid: true
 - **검색 키워드:** `sysctl`, `kubeadm prerequisites`, `ip_forward`, `bridge-nf-call-iptables`
 
 **Solution:**
+
 ```bash
 echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
 echo 'net.bridge.bridge-nf-call-iptables = 1' >> /etc/sysctl.conf
@@ -41,6 +43,7 @@ sysctl net.bridge.bridge-nf-call-iptables
 - **검색 키워드:** `ServiceAccount`, `ClusterRole`, `ClusterRoleBinding`, `serviceAccountName`
 
 **Solution:**
+
 ```bash
 kubectl create serviceaccount pvviewer
 kubectl create clusterrole pvviewer-role --resource=persistentvolumes --verb=list
@@ -56,8 +59,8 @@ metadata:
     run: pvviewer
 spec:
   containers:
-  - image: redis
-    name: pvviewer
+    - image: redis
+      name: pvviewer
   serviceAccountName: pvviewer
 ```
 
@@ -70,6 +73,7 @@ kubectl apply -f pvviewer.yaml
 ### Q. 3 StorageClass Configuration
 
 **Task:** Create a StorageClass named rancher-sc with the following specifications:
+
 - The provisioner should be rancher.io/local-path
 - The volume binding mode should be WaitForFirstConsumer
 - Volume expansion should be enabled
@@ -80,6 +84,7 @@ kubectl apply -f pvviewer.yaml
 - **검색 키워드:** `StorageClass`, `provisioner`, `volumeBindingMode`, `allowVolumeExpansion`
 
 **Solution:**
+
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -100,6 +105,7 @@ kubectl get storageclass rancher-sc
 ### Q. 4 ConfigMap & Environment Variables
 
 **Task:** Create a ConfigMap named app-config in the namespace cm-namespace with the following key-value pairs:
+
 - ENV=production
 - LOG_LEVEL=info
 
@@ -111,6 +117,7 @@ Then, modify the existing Deployment named cm-webapp in the same namespace to us
 - **검색 키워드:** `ConfigMap`, `kubectl create configmap`, `kubectl set env`, `envFrom`
 
 **Solution:**
+
 ```bash
 kubectl create configmap app-config -n cm-namespace \
   --from-literal=ENV=production \
@@ -130,6 +137,7 @@ kubectl set env deployment/cm-webapp -n cm-namespace --from=configmap/app-config
 - **검색 키워드:** `PriorityClass`, `priorityClassName`, `pod priority`
 
 **Solution:**
+
 ```yaml
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
@@ -162,6 +170,7 @@ Important: Don't delete any current objects deployed.
 - **검색 키워드:** `NetworkPolicy`, `Ingress`, `podSelector`, `policyTypes`
 
 **Solution:**
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -173,11 +182,11 @@ spec:
     matchLabels:
       run: np-test-1
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - ports:
-    - protocol: TCP
-      port: 80
+    - ports:
+        - protocol: TCP
+          port: 80
 ```
 
 ```bash
@@ -189,6 +198,7 @@ kubectl apply -f ingress-to-nptest.yaml
 ### Q. 7 Taints and Tolerations
 
 **Task:** Taint the worker node node01 to be Unschedulable. Once done, create a pod called dev-redis, image redis:alpine, to ensure workloads are not scheduled to this worker node. Finally, create a new pod called prod-redis and image: redis:alpine with toleration to be scheduled on node01.
+
 - key: env_type
 - value: production
 - operator: Equal
@@ -199,6 +209,7 @@ kubectl apply -f ingress-to-nptest.yaml
 - **검색 키워드:** `kubectl taint`, `tolerations`, `NoSchedule`
 
 **Solution:**
+
 ```bash
 kubectl taint node node01 env_type=production:NoSchedule
 kubectl run dev-redis --image=redis:alpine
@@ -212,13 +223,13 @@ metadata:
   name: prod-redis
 spec:
   containers:
-  - name: prod-redis
-    image: redis:alpine
+    - name: prod-redis
+      image: redis:alpine
   tolerations:
-  - effect: NoSchedule
-    key: env_type
-    operator: Equal
-    value: production
+    - effect: NoSchedule
+      key: env_type
+      operator: Equal
+      value: production
 ```
 
 ```bash
@@ -238,6 +249,7 @@ kubectl get pods -o wide | grep prod-redis
 - **검색 키워드:** `PersistentVolume`, `PersistentVolumeClaim`, `accessModes`, `binding`
 
 **Solution:**
+
 ```bash
 kubectl describe pv app-pv
 kubectl describe pvc app-pvc -n storage-ns
@@ -260,6 +272,7 @@ kubectl get pvc app-pvc -n storage-ns
 - **검색 키워드:** `kubeconfig`, `kubectl cluster-info`, `kube-apiserver port`
 
 **Solution:**
+
 ```bash
 vi /root/CKA/super.kubeconfig
 # Change port from 9999 to 6443
@@ -278,6 +291,7 @@ kubectl cluster-info --kubeconfig=/root/CKA/super.kubeconfig
 - **검색 키워드:** `kube-controller-manager`, `static pods`, `troubleshooting`
 
 **Solution:**
+
 ```bash
 kubectl scale deploy nginx-deploy --replicas=3
 kubectl get pods -n kube-system
@@ -299,6 +313,7 @@ Note: Deployment named api-deployment is available in api namespace. Ignore erro
 - **검색 키워드:** `HPA custom metrics`, `Pods metric type`, `AverageValue`
 
 **Solution:**
+
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -313,13 +328,13 @@ spec:
   minReplicas: 1
   maxReplicas: 20
   metrics:
-  - type: Pods
-    pods:
-      metric:
-        name: requests_per_second
-      target:
-        type: AverageValue
-        averageValue: "1000"
+    - type: Pods
+      pods:
+        metric:
+          name: requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "1000"
 ```
 
 ```bash
@@ -340,6 +355,7 @@ Note: web-gateway, web-service, and web-service-v2 have already been created and
 - **검색 키워드:** `HTTPRoute`, `traffic splitting`, `weight`, `backendRefs`
 
 **Solution:**
+
 ```bash
 kubectl create -n default -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1
@@ -379,6 +395,7 @@ EOF
 - **검색 키워드:** `helm lint`, `helm install`, `helm uninstall`, `helm ls`
 
 **Solution:**
+
 ```bash
 helm ls -n default
 cd /root/
@@ -399,6 +416,7 @@ helm uninstall webpage-server-01 -n default
 - **검색 키워드:** `podSubnet`, `kubeadm-config`, `CNI`, `pod network CIDR`
 
 **Solution:**
+
 ```bash
 kubectl -n kube-system get configmap kubeadm-config -o yaml | grep podSubnet
 kubectl -n kube-system get configmap kubeadm-config -o yaml | awk '/podSubnet:/{print $2}' > /root/pod-cidr.txt
@@ -410,6 +428,7 @@ cat /root/pod-cidr.txt
 ## 문제 풀이 팁
 
 ### kubectl explain 활용법
+
 ```bash
 # 리소스의 전체 구조 확인
 kubectl explain <resource>
@@ -428,17 +447,20 @@ kubectl explain hpa.spec.metrics
 ```
 
 ### 공식문서 검색 전략
+
 1. **Kubernetes 공식 문서:** https://kubernetes.io/docs/
 2. **kubectl 치트시트:** https://kubernetes.io/docs/reference/kubectl/cheatsheet/
 3. **API Reference:** https://kubernetes.io/docs/reference/kubernetes-api/
 4. **Gateway API:** https://gateway-api.sigs.k8s.io/
 5. **Helm 문서:** https://helm.sh/docs/
 6. **시험 중 검색 키워드:**
-  - `kubectl <resource>` (예: `kubectl priorityclass`)
-  - `kubernetes <개념>` (예: `kubernetes taints`)
-  - `<resource> example` (예: `httproute example`)
+
+- `kubectl <resource>` (예: `kubectl priorityclass`)
+- `kubernetes <개념>` (예: `kubernetes taints`)
+- `<resource> example` (예: `httproute example`)
 
 ### 시험 시 주의사항
+
 1. **항상 namespace 확인:** `-n` 옵션 사용
 2. **dry-run 활용:** `--dry-run=client -o yaml`로 템플릿 생성
 3. **kubectl explain 활용:** 필드명이나 구조가 불확실할 때

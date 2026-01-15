@@ -28,10 +28,10 @@ REST란 아키텍처 접근 방식 중 하나이다. 분산 하이퍼미디어 �
 # REST 제약조건
 
 - uniform interface
-    - Identification of Resources(리소스가 URI로 식별되면 된다.)
-    - Manipulation of Resources Through Representation(HTTP 메서드로 행위를 명시하면 된다.)
-    - Self-Descriptive Message
-    - Hypermedia as The Engine of Application State(HAETOAS)
+  - Identification of Resources(리소스가 URI로 식별되면 된다.)
+  - Manipulation of Resources Through Representation(HTTP 메서드로 행위를 명시하면 된다.)
+  - Self-Descriptive Message
+  - Hypermedia as The Engine of Application State(HAETOAS)
 - client-server
 - stateless
 - cache
@@ -47,10 +47,10 @@ uniform interface를 제외한 제약조건은 HTTP를 사용한다면 대부분
 # REST 제약조건 - Uniform Interface
 
 - uniform interface
-    - Identification of Resources(리소스가 URI로 식별되면 된다.)
-    - Manipulation of Resources Through Representation(HTTP 메서드로 행위를 명시하면 된다.)
-    - Self-Descriptive Message
-    - Hypermedia as The Engine of Application State(HAETOS)
+  - Identification of Resources(리소스가 URI로 식별되면 된다.)
+  - Manipulation of Resources Through Representation(HTTP 메서드로 행위를 명시하면 된다.)
+  - Self-Descriptive Message
+  - Hypermedia as The Engine of Application State(HAETOS)
 
 리소스가 URI로 식별되는 것, HTTP 메서드로 행위를 구분하는 것은 REST API란 무엇인가? 등 구글에 검색해보면 똑같은 소리를 다하고 있다.
 
@@ -354,6 +354,7 @@ PATCH는 기본적으로 Patch Document라는 형식으로 통신이 오고간�
 예를 들면 다음과 같다.
 
 아래와 같은 기존 자원이 있다고 가정했을 때
+
 ```json
 {
     "name": "diger",

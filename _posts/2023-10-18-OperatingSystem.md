@@ -154,7 +154,7 @@ mermaid: true
 
 ```java
 public class main {
-    public static void main(String[] args) {
+    static void main(String[] args) {
 
         int primitiveVariable = 1;
         int[] referenceVariable = {1};
@@ -253,7 +253,7 @@ A 함수가 B 함수를 호출 할 때, B 함수의 결과를 B 함수가 처리
 ```java
 public class SyncNonBlocking {
 
-    public static void main(String[] args) throws InterruptedException {
+    static void main(String[] args) throws InterruptedException {
         // waitOneSecond 함수 호출 후 바로 다음 코드가 실행된다.
         System.out.println("Sync-nonBlocking 시작");
         waitOneSecond();
@@ -271,7 +271,7 @@ public class SyncNonBlocking {
 ```java
 public class SyncNonBlocking {
 
-    public static void main(String[] args) throws InterruptedException {
+    static void main(String[] args) throws InterruptedException {
         // waitOneSecond 함수 호출 후 바로 다음 코드가 실행된다.
         System.out.println("Sync-nonBlocking 시작");
         waitOneSecond();
@@ -289,7 +289,7 @@ public class SyncNonBlocking {
 ```java
 public class AsyncBlocking {
 
-    public static void main(String[] args) throws InterruptedException {
+    static void main(String[] args) throws InterruptedException {
         // 1초 동안 대기하는 함수
         private static void waitOneSecond() throws InterruptedException {
             Thread.sleep(1000);
@@ -321,7 +321,7 @@ public class AsyncBlocking {
 ```java
 public class AsyncNonBlocking {
 
-    public static void main(String[] args) throws InterruptedException {
+    static void main(String[] args) throws InterruptedException {
         // 1초 동안 대기하는 함수
         private static void waitOneSecond() throws InterruptedException {
             Thread.sleep(1000);

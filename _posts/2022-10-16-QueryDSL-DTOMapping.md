@@ -22,7 +22,6 @@ mermaid: true
 
 특징: DTO 생성자에 @QueryProjection어노테이션을 붙이면 자동으로 생성되고 실제 클래스가 선언한 생성자기반으로 작성됨. 따라서 제일권장됨.
 
-
 ## Projections.bean (프로퍼티 접근 Setter)
 
     /**
@@ -87,7 +86,6 @@ mermaid: true
 필드에 직접 접근하여 값을 매핑하는 방법이다.
 
 ## 3. Projections.constructor
-
 
     /**
      *

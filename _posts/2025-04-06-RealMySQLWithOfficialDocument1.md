@@ -14,6 +14,7 @@ mermaid: true
 ## 목차
 
 ### 4.1 아키텍처
+
 - [MySQL Server Architecture](https://dev.mysql.com/doc/refman/8.4/en/pluggable-storage-overview.html)
 - [메모리 사용 구조](https://dev.mysql.com/doc/refman/8.0/en/memory-use.html)
 - [플러그인 스토리지 엔진 모델](https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html)
@@ -23,6 +24,7 @@ mermaid: true
 - [스레드 풀](https://dev.mysql.com/doc/refman/8.0/en/thread-pool.html)
 
 ### 4.2 InnoDB 스토리지 엔진 아키텍처
+
 - [InnoDB 소개](https://dev.mysql.com/doc/refman/8.0/en/innodb-introduction.html)
 - [클러스터링 인덱스](https://dev.mysql.com/doc/refman/8.0/en/innodb-index-types.html)
 - [외래 키 지원](https://dev.mysql.com/doc/refman/8.0/en/innodb-foreign-key-constraints.html)
@@ -37,7 +39,6 @@ mermaid: true
 ## 4.1.1 MySQL 엔진 아키텍처
 
 ![](https://dev.mysql.com/doc/refman/8.4/en/images/mysql-architecture.png)
-
 
 MySQL의 전체 아키텍처는 크게 두 가지로 나뉜다.
 
@@ -141,6 +142,7 @@ MySQL의 메모리 사용은 두 가지 영역으로 나뉜다.
 ### 4.1.3.1. 전역 메모리 영역 (Global Memory)
 
 #### InnoDB 버퍼 풀
+
 - **목적**: 테이블 데이터와 인덱스를 캐싱하여 디스크 I/O를 줄임
 - **크기 설정**: `innodb_buffer_pool_size` 시스템 변수로 제어
 - **권장 설정**: 시스템 메모리의 50-75%
@@ -151,30 +153,36 @@ MySQL의 메모리 사용은 두 가지 영역으로 나뉜다.
   - `innodb_buffer_pool_instances`로 버퍼 풀을 여러 인스턴스로 분할 가능
 
 #### MyISAM 키 버퍼
+
 - **목적**: MyISAM 테이블의 인덱스 블록을 캐싱
 - **크기 설정**: `key_buffer_size` 시스템 변수로 제어
 - **특징**: 모든 스레드가 공유하는 영역
 
 #### 테이블 캐시
+
 - **목적**: 열린 테이블의 핸들러 구조를 저장
 - **크기 설정**: `table_open_cache` 시스템 변수로 제어
 - **특징**: "FIFO"(First In, First Out) 방식으로 관리
 
 #### 테이블 정의 캐시
+
 - **목적**: 테이블 정의를 메모리에 저장
 - **크기 설정**: `table_definition_cache` 시스템 변수로 제어
 - **특징**: 테이블 캐시보다 적은 공간을 사용하고 파일 디스크립터를 사용하지 않음
 
 #### 퍼포먼스 스키마
+
 - **목적**: MySQL 서버 실행을 낮은 수준에서 모니터링
 - **특징**: 동적으로 메모리를 할당하며 서버 부하에 따라 확장됨
 
 #### 임시 테이블
+
 - **메모리 내 임시 테이블**:
   - `tmp_table_size` 및 `max_heap_table_size` 변수로 크기 제한
   - 크기가 제한을 초과하면 디스크 기반 테이블로 자동 변환
 
 #### 기타 전역 캐시
+
 - **권한 정보 캐시**: `GRANT`, `CREATE USER`, `CREATE SERVER`, `INSTALL PLUGIN` 명령 결과를 캐싱
 - **바이너리 로그 캐시**: `max_binlog_cache_size`로 크기 제한
 
@@ -183,70 +191,85 @@ MySQL의 메모리 사용은 두 가지 영역으로 나뉜다.
 각 클라이언트 연결 스레드마다 다음과 같은 메모리가 할당된다.
 
 #### 스레드 스택
+
 - **크기 설정**: `thread_stack` 시스템 변수로 제어
 - **목적**: 스레드 실행에 필요한 기본 메모리 공간
 
 #### 연결 버퍼
+
 - **초기 크기**: `net_buffer_length` 시스템 변수
 - **최대 크기**: `max_allowed_packet` 시스템 변수
 - **목적**: 클라이언트와의 통신에 사용
 
 #### 결과 버퍼
+
 - **초기 크기**: `net_buffer_length`
 - **최대 크기**: `max_allowed_packet`
 - **특징**: SQL 문장 실행 후 `net_buffer_length`로 축소
 
 #### 정렬 버퍼
+
 - **목적**: 정렬 작업 수행 시 할당
 - **관련 파일**: 결과 크기에 따라 0~2개의 임시 파일 사용
 
 #### 읽기 버퍼
+
 - **순차 읽기 버퍼**: `read_buffer_size` 시스템 변수로 크기 조절
 - **랜덤 읽기 버퍼**: `read_rnd_buffer_size` 시스템 변수로 크기 조절
 - **목적**: 테이블 스캔 성능 향상
 
 #### 조인 버퍼
+
 - **크기 설정**: `join_buffer_size` 시스템 변수로 제어
 - **목적**: 테이블 조인 시 사용
 
 #### BLOB 처리 버퍼
+
 - **특징**: BLOB 컬럼이 있는 테이블마다 동적으로 확장되는 버퍼 할당
 - **크기**: 가장 큰 BLOB 값 크기까지 확장 가능
 
 #### 구문 다이제스트 버퍼
+
 - **크기 설정**: `max_digest_length` 시스템 변수로 제어
 - **목적**: 구문 다이제스트 계산에 사용
 
 ### 4.1.3.3. 메모리 관리
 
 #### 메모리 할당 시점
+
 - **전역 메모리**: 주로 서버 시작 시 할당
 - **스레드별 메모리**: 클라이언트 연결 시 할당
 
 #### 메모리 해제
+
 - 스레드가 더 이상 필요하지 않을 때 메모리 해제
 - 스레드가 스레드 캐시로 돌아가는 경우 메모리는 해제되지 않고 유지
 
 #### 파싱 및 계산 메모리
+
 - 스레드 로컬 및 재사용 가능한 메모리 풀 사용
 - 작은 항목에 대한 메모리 오버헤드가 없음
 - 예상보다 큰 문자열에 대해서만 메모리 할당
 
 #### 메모리 해제 명령
+
 - `FLUSH TABLES` 또는 `mysqladmin flush-tables` 명령은 사용되지 않는 모든 테이블을 한 번에 닫음
 - `FLUSH PRIVILEGES` 명령은 캐시된 권한 정보를 해제
 
 ### 4.1.3.4. 메모리 사용 최적화 고려사항
 
 #### 버퍼 풀 크기 최적화
+
 - **너무 작은 버퍼 풀**: 페이지가 너무 빨리 플러시되어 짧은 시간 내에 다시 필요하게 됨
 - **너무 큰 버퍼 풀**: 메모리 경쟁으로 인한 스와핑 발생 가능성
 
 #### 스레드별 버퍼 크기 조정
+
 - 클라이언트 연결 수가 많은 경우, 스레드별 버퍼 크기를 줄여 총 메모리 사용량 감소
 - 대규모 쿼리를 처리하는 경우, 읽기/정렬 버퍼 크기를 늘려 성능 향상
 
 #### 복제 토폴로지에서의 메모리 설정
+
 - `max_allowed_packet`: 소스에서 레플리카로 보내는 최대 메시지 크기 제한 (기본 64M)
 - `replica_pending_jobs_size_max`: 멀티스레드 레플리카에서 처리 대기 중인 메시지를 위한 최대 메모리 (기본 128M)
 - `rpl_read_size`: 바이너리 로그 파일과 릴레이 로그 파일에서 읽는 최소 데이터 양 (기본 8192바이트)
@@ -422,14 +445,14 @@ InnoDB는 각 행에3개의 시스템 필드를 추가한다.
 ### 데이터 변경 시 발생하는 과정
 
 1. 데이터 변경 전: 원본 데이터가 테이블에 존재
-2. UPDATE 실행: 트랜잭션이 데이터를 변경할 때 
-   - 원본 데이터의 복사본이 언두 로그에 저장된다.
-   - 테이블의 실제 데이터는 변경된다. 
-   - `DB_ROLL_PTR`는 언두 로그의 이전 버전을 가리킨다 
-   - `DB_TRX_ID`는 현재 트랜잭션 ID로 업데이트된다.
+2. UPDATE 실행: 트랜잭션이 데이터를 변경할 때
+  - 원본 데이터의 복사본이 언두 로그에 저장된다.
+  - 테이블의 실제 데이터는 변경된다.
+  - `DB_ROLL_PTR`는 언두 로그의 이전 버전을 가리킨다
+  - `DB_TRX_ID`는 현재 트랜잭션 ID로 업데이트된다.
 
 ### 읽기 작업 처리
- 
+
 - 트랜잭션 A가 업데이트를 수행한 B보다 먼저 시작된 경우: 트랜잭션 A가 시작된 후 다른 트랜잭션이 데이터를 변경해도, 트랜잭션 A는 시작 시점의 데이터 스냅샷을 계속 읽는다.
 - 새로운 트랜잭션 시작: 새 트랜잭션은 커밋된 최신 데이터를 읽는다.
 
@@ -488,15 +511,15 @@ InnoDB의 MVCC는 트랜잭션 격리 수준에 따라 다르게 동작합니다
 
 ### 기본 개념
 
-Buffer Pool은 InnoDB가 테이블과 인덱스 데이터를 캐싱하는 메인 메모리 영역이다. 자주 사용되는 데이터를 메모리에서 직접 액세스할 수 있게 하여 처리 속도를 향상시킨다. 
+Buffer Pool은 InnoDB가 테이블과 인덱스 데이터를 캐싱하는 메인 메모리 영역이다. 자주 사용되는 데이터를 메모리에서 직접 액세스할 수 있게 하여 처리 속도를 향상시킨다.
 
 물리적 메모리의 최대 80%까지 Buffer Pool에 할당하는 것이 일반적이다.
 
 ### Buffer Pool LRU 알고리즘
 
-Buffer Pool은 LRU(Least Recently Used) 알고리즘의 변형을 사용하여 관리된다. 
+Buffer Pool은 LRU(Least Recently Used) 알고리즘의 변형을 사용하여 관리된다.
 
-Buffer Pool에 새 페이지를 추가할 공간이 필요할 때, 가장 최근에 사용되지 않은 페이지가 제거되고 새 페이지가 리스트의 중간에 추가된다. 
+Buffer Pool에 새 페이지를 추가할 공간이 필요할 때, 가장 최근에 사용되지 않은 페이지가 제거되고 새 페이지가 리스트의 중간에 추가된다.
 
 이러한 중간 삽입 전략은 리스트를 두 개의 하위 리스트로 나눈다.
 
@@ -525,7 +548,7 @@ Buffer Pool에 새 페이지를 추가할 공간이 필요할 때, 가장 최근
 
 ### Buffer Pool 모니터링
 
-`SHOW ENGINE INNODB STATUS`를 통해 Buffer Pool 작동에 관한 메트릭을 확인할 수 있다. 
+`SHOW ENGINE INNODB STATUS`를 통해 Buffer Pool 작동에 관한 메트릭을 확인할 수 있다.
 
 Buffer Pool 메트릭은 출력의 `BUFFER POOL AND MEMORY` 섹션에 위치한다.
 
@@ -555,6 +578,7 @@ I/O sum[0]:cur[0], unzip sum[0]:cur[0]
 ```
 
 주요 모니터링 지표는 아래와 같다.
+
 - `Buffer pool size`: Buffer Pool에 할당된 총 페이지 수
 - `Database pages`: Buffer Pool LRU 리스트의 총 페이지 수
 - `Old database pages`: Buffer Pool 오래된 LRU 하위 리스트의 총 페이지 수
@@ -569,9 +593,9 @@ I/O sum[0]:cur[0], unzip sum[0]:cur[0]
 - **버퍼링 역할**: 버퍼 풀은 디스크의 데이터 파일이나 인덱스 정보를 메모리에 캐시해 두는 공간이다. 또한 쓰기 작업을 지연시켜 일괄 작업으로 처리할 수 있게 해주는 버퍼 역할도 한다.
 - **데이터 보호**: InnoDB는 변경된 데이터를 버퍼 풀에만 기록하고 디스크에는 기록하지 않은 상태에서 MySQL 서버가 비정상적으로 종료되면 데이터가 유실될 수 있다. 이런 문제를 막기 위해 리두 로그를 사용한다.
 - **변경 기록 과정**: 데이터 변경 시 리두 로그에는 변경 내용을 바로 기록하고, 버퍼 풀의 데이터는 특정 시점에 디스크로 기록된다.
-- **LSN((Log Sequence Number)의 역할**: 
+- **LSN((Log Sequence Number)의 역할**:
 
-LSN은 데이터베이스 변경 시점을 식별하는 숫자값으로, 로그가 기록된 시점과 해당 로그의 데이터 저장 포인트 등을 담고 있다. 
+LSN은 데이터베이스 변경 시점을 식별하는 숫자값으로, 로그가 기록된 시점과 해당 로그의 데이터 저장 포인트 등을 담고 있다.
 
 매번 로그가 기록될 때마다 증가하며, 리두 로그 공간의 어느 지점에 변경 사항이 기록되었는지 나타낸다.
 
@@ -587,11 +611,13 @@ InnoDB는 이 차이를 모니터링하고 필요시 체크포인트를 수행�
 InnoDB는 버퍼 풀에서 아직 디스크로 기록되지 않은 데이터 페이지를 '더티 페이지(Dirty Page)'라고 한다. 이 더티 페이지들은 특정 시점에 디스크로 동기화되어야 하는데, 이 과정을 '플러시(Flush)'라고 한다.
 
 InnoDB는 다음과 같은 경우에 플러시를 수행한다:
+
 - 버퍼 풀의 공간이 필요한 경우
 - 체크포인트가 발생하는 경우
 - 리두 로그 공간이 부족한 경우
 
 플러시는 일반적으로 다음 두 종류의 리스트를 이용한다:
+
 1. LRU(Least Recently Used) 리스트
 2. 플러시 리스트(Flush List)
 
@@ -605,15 +631,17 @@ InnoDB는 다음과 같은 경우에 플러시를 수행한다:
 
 ### 4.2.7.4.2 LRU 리스트 플러시
 
-LRU 리스트는 버퍼 풀에서 페이지의 사용 빈도를 관리하는 리스트이다. 
+LRU 리스트는 버퍼 풀에서 페이지의 사용 빈도를 관리하는 리스트이다.
 
 최근에 사용된 페이지는 리스트의 앞부분(MRU, Most Recently Used)에, 오래전에 사용된 페이지는 리스트의 뒷부분(LRU, Least Recently Used)에 위치한다.
 
 InnoDB는 LRU 리스트를 다음과 같이 관리한다.
+
 - 새로운 페이지가 필요하면 LRU의 끝부분(tail)의 페이지를 제거하고 새 페이지를 추가한다.
 - 만약 제거할 페이지가 더티 페이지라면, 먼저 디스크에 기록해야 한다.
 
 InnoDB는 LRU 리스트를 두 부분으로 나눈다.
+
 1. New 서브리스트(young): 최근에 접근된 페이지들
 2. Old 서브리스트: 상대적으로 오래전에 접근된 페이지들
 
@@ -624,10 +652,12 @@ InnoDB는 LRU 리스트를 두 부분으로 나눈다.
 MySQL 5.6부터 InnoDB는 버퍼 풀의 상태를 백업하고 복구할 수 있는 기능을 제공한다. 서버가 재시작될 때 워밍업 시간을 줄이기 위한 목적이다.
 
 관련 설정 파라미터:
+
 - `innodb_buffer_pool_dump_at_shutdown`: 서버 종료 시 버퍼 풀 상태 덤프 여부
 - `innodb_buffer_pool_load_at_startup`: 서버 시작 시 덤프된 버퍼 풀 상태 로드 여부
 
 수동으로 덤프와 로드를 제어하는 명령:
+
 - `SET GLOBAL innodb_buffer_pool_dump_now=ON`
 - `SET GLOBAL innodb_buffer_pool_load_now=ON`
 - `SET GLOBAL innodb_buffer_pool_load_abort=ON` (로드 작업 중단)

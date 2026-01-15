@@ -22,6 +22,7 @@ Upgrade the current version of kubernetes from `1.33.0` to `1.34.0` exactly usin
 Upgrade `controlplane` node first and drain node `node01` before upgrading it. Pods for `gold-nginx` should run on the `controlplane` node subsequently.
 
 **공식 문서:**
+
 - [kubeadm 클러스터 업그레이드](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/)
 
 ---
@@ -133,6 +134,7 @@ DEPLOYMENT   CONTAINER_IMAGE   READY_REPLICAS   NAMESPACE
 The data should be sorted by the increasing order of the deployment name.
 
 **Example:**
+
 ```
 DEPLOYMENT   CONTAINER_IMAGE   READY_REPLICAS   NAMESPACE
 deploy0   nginx:alpine   1   admin2406
@@ -141,6 +143,7 @@ deploy0   nginx:alpine   1   admin2406
 Write the result to the file `/opt/admin2406_data`.
 
 **공식 문서:**
+
 - [kubectl Custom Columns](https://kubernetes.io/docs/reference/kubectl/quick-reference/#custom-columns)
 - [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
 
@@ -170,6 +173,7 @@ cat /opt/admin2406_data
 A kubeconfig file called `admin.kubeconfig` has been created in `/root/CKA`. There is something wrong with the configuration. Troubleshoot and fix it.
 
 **공식 문서:**
+
 - [kubeconfig 파일을 사용한 클러스터 접근 구성](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
 - [여러 클러스터 접근 구성](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 
@@ -203,12 +207,12 @@ kubectl --kubeconfig=/root/CKA/admin.kubeconfig get nodes
 
 #### 일반적인 문제와 해결방법
 
-| 문제 | 해결방법 |
-|------|----------|
-| **잘못된 API 서버 포트** | `6443`(기본값)으로 변경 |
-| **잘못된 인증 기관** | CA 인증서 경로 또는 데이터 확인 |
-| **컨텍스트의 잘못된 클러스터 이름** | 컨텍스트가 기존 클러스터를 참조하는지 확인 |
-| **누락되거나 유효하지 않은 클라이언트 인증서** | 클라이언트 인증서 및 키 확인 |
+| 문제                          | 해결방법                    |
+|-----------------------------|-------------------------|
+| **잘못된 API 서버 포트**           | `6443`(기본값)으로 변경        |
+| **잘못된 인증 기관**               | CA 인증서 경로 또는 데이터 확인     |
+| **컨텍스트의 잘못된 클러스터 이름**       | 컨텍스트가 기존 클러스터를 참조하는지 확인 |
+| **누락되거나 유효하지 않은 클라이언트 인증서** | 클라이언트 인증서 및 키 확인        |
 
 ---
 
@@ -219,11 +223,13 @@ kubectl --kubeconfig=/root/CKA/admin.kubeconfig get nodes
 Create a deployment, update its image, and record the change using annotations.
 
 **Requirements:**
+
 1. Create a deployment named `nginx-deploy` with `nginx:1.16` image
 2. Update the deployment to use `nginx:1.17` image
 3. Annotate the deployment to record the change
 
 **공식 문서:**
+
 - [Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
 - [디플로이먼트 업데이트](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment)
 - [롤아웃 히스토리 확인](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#checking-rollout-history-of-a-deployment)
@@ -275,11 +281,13 @@ kubectl describe deployment nginx-deploy
 A new deployment called `alpha-mysql` has been deployed in the `alpha` namespace. However, the pods are not running. Troubleshoot and fix the issue.
 
 **Requirements:**
+
 - The deployment should use the persistent volume `alpha-pv` mounted at `/var/lib/mysql`
 - Should use the environment variable `MYSQL_ALLOW_EMPTY_PASSWORD=1` for an empty root password
 - **Important:** Do not alter the persistent volume
 
 **공식 문서:**
+
 - [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
 - [파드에서 PersistentVolume 사용 구성](https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/)
 
@@ -379,6 +387,7 @@ kubectl get pv alpha-pv
 Take the backup of ETCD at the location `/opt/etcd-backup.db` on the controlplane node.
 
 **공식 문서:**
+
 - [etcd 클러스터 백업](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster)
 - [etcd 재해 복구](https://etcd.io/docs/v3.5/op-guide/recovery/)
 
@@ -432,12 +441,14 @@ ETCDCTL_API=3 etcdctl snapshot status /opt/etcd-backup.db --write-out=table
 Create a pod called `secret-1401` in the `admin1401` namespace using the `busybox` image.
 
 **Requirements:**
+
 - Container name: `secret-admin`
 - Container should sleep for 4800 seconds
 - Mount a read-only secret volume called `secret-volume` at `/etc/secret-volume`
 - Use the existing secret `dotfile-secret`
 
 **공식 문서:**
+
 - [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)
 - [Secret을 사용한 안전한 자격증명 배포](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/)
 - [파드에서 Secret을 파일로 사용](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod)
@@ -524,14 +535,14 @@ kubectl -n admin1401 exec secret-1401 -- ls -la /etc/secret-volume
 
 이 Lightning Lab 연습 문제들은 CKA 시험의 핵심 주제를 다룬다:
 
-| 번호 | 주제 | 핵심 내용 |
-|------|------|-----------|
-| 1 | **클러스터 업그레이드** | kubeadm을 사용한 안전한 롤링 업그레이드 |
-| 2 | **데이터 포맷팅** | kubectl 커스텀 컬럼 출력 |
-| 3 | **트러블슈팅** | Kubeconfig 검증 및 복구 |
-| 4 | **디플로이먼트 관리** | 어노테이션을 사용한 디플로이먼트 생성 및 업데이트 |
-| 5 | **스토리지** | PersistentVolume 및 PersistentVolumeClaim 트러블슈팅 |
-| 6 | **ETCD 운영** | 클러스터 백업 절차 |
-| 7 | **보안** | 파드에서 Secret 사용 |
+| 번호 | 주제             | 핵심 내용                                          |
+|----|----------------|------------------------------------------------|
+| 1  | **클러스터 업그레이드** | kubeadm을 사용한 안전한 롤링 업그레이드                      |
+| 2  | **데이터 포맷팅**    | kubectl 커스텀 컬럼 출력                              |
+| 3  | **트러블슈팅**      | Kubeconfig 검증 및 복구                             |
+| 4  | **디플로이먼트 관리**  | 어노테이션을 사용한 디플로이먼트 생성 및 업데이트                    |
+| 5  | **스토리지**       | PersistentVolume 및 PersistentVolumeClaim 트러블슈팅 |
+| 6  | **ETCD 운영**    | 클러스터 백업 절차                                     |
+| 7  | **보안**         | 파드에서 Secret 사용                                 |
 
 > **팁**: 시험 환경에서 근육 기억(muscle memory)을 구축하기 위해 이러한 시나리오를 반복적으로 연습한다.

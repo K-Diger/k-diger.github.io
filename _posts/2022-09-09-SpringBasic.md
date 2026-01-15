@@ -100,7 +100,6 @@ AnnotationConfigApplicationContext.java 라는 클래스에서 스프링 컨테�
         }
     }
 
-
 ## 코드 상세
 
 - AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(AppConfig.class);
@@ -132,7 +131,6 @@ AnnotationConfigApplicationContext.java 라는 클래스에서 스프링 컨테�
     name = orderService object = hello.core.order.OrderServiceImpl@413f69cc
     name = discountPolicy object = hello.core.discount.RateDiscountPolicy@3eb81efb
 
-
 위와 같이
 
 **Spring 내부적으로 가지고 있는 Bean**과, **직접 생성한 Bean 이름 + Bean 객체의 실체 정보**를 조회할 수 있다.
@@ -147,7 +145,6 @@ AnnotationConfigApplicationContext.java 라는 클래스에서 스프링 컨테�
 
 **손자 객체 :** Child 6 (Child1 을 상속받음)
 
-
 다음과 같이 있다고 했을 때,
 
 각 조회에 대한 출력 내용은 다음 표와 같다.
@@ -156,7 +153,7 @@ AnnotationConfigApplicationContext.java 라는 클래스에서 스프링 컨테�
 |------------|--------------------------------------------|
 | Parent     | Child 1, Child 2, Child3, Child 4, Child 5 |
 | Child 1    | Child 1 Child 6                            |
-| Child 6    | Child 6                            |
+| Child 6    | Child 6                                    |
 
 위 표에서 볼 수 있듯이, **상위 계층에 해당하는 Bean을 조회하면** 그것을 **상속받는 자식 클래스(하위 계층 Bean)은 모두 조회**된다.
 
@@ -205,7 +202,6 @@ AnnotationConfigApplicationContext.java 라는 클래스에서 스프링 컨테�
 # 3. BeanFactory(Interface) 와 ApplicationContext(Interface)
 
 BeanFactory <- ApplicationContext <- AnnotationConfigApplicationContext
-
 
 <- 는 부모라는 것을 의미한다. (BeanFactory를 ApplicationContext 가 부모로 삼는다.)
 
@@ -266,9 +262,9 @@ BeanFactory와 ApplicationContext를 스프링 컨테이너라고 한다.
     }
 
 ### 출력결과
+
     memberService1 = hello.core.member.MemberServiceImpl@3bbc39f8
     memberService2 = hello.core.member.MemberServiceImpl@4ae3c1cd
-
 
 만약, 1000만명이 동시에 요청을 하는 상황에 놓였다고 생각했을때 객체를 1000만개 생성하고 소멸시키는 라이프사이클을 거쳐야한다.
 
@@ -287,6 +283,7 @@ BeanFactory와 ApplicationContext를 스프링 컨테이너라고 한다.
 --> private 생성자를 사용하여 외부에서 임의로 new 키워드를 사용하지 못하도록 막아야한다.
 
 ### 1.1 싱글톤 패턴의 장점
+
 이미 만들어진 객체를 사용하는 것이기 때문에, 효율성에서 이득을 가져갈 수 있다.
 
 ### 1.2. 싱글톤 패턴의 단점
@@ -315,6 +312,7 @@ BeanFactory와 ApplicationContext를 스프링 컨테이너라고 한다.
 ### 1.3. 싱글톤 패턴 예시코드
 
 #### Dependency.java
+
     public class Dependency {
         private Dependency() {}
     }
@@ -868,7 +866,6 @@ OrderService 에서 사용하는 MemberRepository, DiscountPolicy 를 주입해�
         }
     }
 
-
 메서드 단위마다 의존성 주입을 해주는 방식이다.
 
 한번에 여러 필드를 주입받을 수 있는게 장점이지만
@@ -919,7 +916,6 @@ OrderService 에서 사용하는 MemberRepository, DiscountPolicy 를 주입해�
 그러니까 실수로 생성자에 의존성 주입을 해주지 않았다면 컴파일 에러로 의존성 주입이 누락됐다는 것을 알 수 있게 해주는 것이다.
 
 또한 final 키워드의 가장 원초적인 존재 목적답게 절대 수정할 수 없는 값이 되므로 불변성을 추가로 보장한다.
-
 
 ## Setter 주입은 변경 가능성을 열어둔다.
 
@@ -1002,9 +998,7 @@ DiscountPolicy 에 해당하는 Bean 을 주입하려하는데, 이를 구현한
 
 ### 방법 3. @Qualifier
 
-
 ### 방법 4. @Primary
-
 
 ---
 
@@ -1151,7 +1145,6 @@ Bean 을 다 사용한 상황이라면 destroy() 소멸자 콜백 메서드가 �
 #### 웹 관련 스코프
 
 request, session, application
-
 
 ### 등록 방법
 

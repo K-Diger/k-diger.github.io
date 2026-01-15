@@ -25,10 +25,10 @@
   --checkbox-checked-color: var(--link-color);
   --img-bg: radial-gradient(circle, rgb(20 24 28) 0%, rgb(35 40 46) 100%);
   --shimmer-bg: linear-gradient(
-    90deg,
-    rgb(255 255 255 / 0%) 0%,
-    rgb(150 160 170 / 25%) 50%,
-    rgb(255 255 255 / 0%) 100%
+      90deg,
+      rgb(255 255 255 / 0%) 0%,
+      rgb(150 160 170 / 25%) 50%,
+      rgb(255 255 255 / 0%) 100%
   );
 
   /* Sidebar - 더 차분하고 세련된 사이드바 */
@@ -68,7 +68,7 @@
   --card-bg: #1a1f24;
   --card-hover-bg: #252b32;
   --card-shadow: rgb(8 12 16 / 80%) 0 8px 24px 0,
-    rgb(55 65 75 / 30%) 0 0 0 1px;
+  rgb(55 65 75 / 30%) 0 0 0 1px;
   --kbd-wrap-color: #8a95a3;
   --kbd-text-color: #e1e8ed;
   --kbd-bg-color: #252b32;
@@ -140,12 +140,12 @@
 
   #archives li:nth-child(odd) {
     background-image: linear-gradient(
-      to left,
-      rgb(16 20 24),
-      rgb(35 40 46),
-      rgb(35 40 46),
-      rgb(35 40 46),
-      rgb(16 20 24)
+        to left,
+        rgb(16 20 24),
+        rgb(35 40 46),
+        rgb(35 40 46),
+        rgb(35 40 46),
+        rgb(16 20 24)
     );
   }
 
@@ -294,11 +294,18 @@
 
   /* --- YAML 특화 스타일--- */
 
-  /* YAML 키 (property names)*/
+  /* YAML 키 (property names) */
   .language-yaml .highlight .na,
   .language-yml .highlight .na {
     color: #e8a45c; /* for keys */
     font-weight: 500;
+
+    /* YAML 앵커와 별칭 (&, *) - 노란색 */
+    &[class*="anchor"],
+    &[class*="alias"] {
+      color: #ffc66d; /* IntelliJ 노란색 for anchors */
+      font-weight: 600;
+    }
   }
 
   /* YAML 문자열 값 - 초록색 */
@@ -351,16 +358,6 @@
   .language-yml .highlight .p,
   .language-yml .highlight .pi {
     color: #a9b7c6; /* IntelliJ 밝은 회색 */
-  }
-
-  /* YAML 앵커와 별칭 (&, *) - 노란색 */
-  .language-yaml .highlight .na,
-  .language-yml .highlight .na {
-    &[class*="anchor"],
-    &[class*="alias"] {
-      color: #ffc66d; /* IntelliJ 노란색 for anchors */
-      font-weight: 600;
-    }
   }
 
   /* YAML 타입 태그 (!!) - 금색 */

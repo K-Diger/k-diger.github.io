@@ -246,8 +246,12 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
         @include mx.ml-mr(calc((v.$sb-btn-gap-lg - $btn-border-width) / 2));
       }
     }
-  } /* .sidebar-bottom */
-} /* #sidebar */
+  }
+
+  /* .sidebar-bottom */
+}
+
+/* #sidebar */
 
 [#{$sidebar-display}] {
   #main-wrapper {

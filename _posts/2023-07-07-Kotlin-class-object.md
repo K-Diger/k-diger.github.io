@@ -610,9 +610,7 @@ class Outer {
 
 - Kotlin - 클래스 내의 inner 클래스 = inner 클래스로, outer 클래스에 대한 참조 값을 가지고 있다.
 
-
 **공통적으로** inner class는 outer클래스가 생성되어야 그 안에 있는 class가 생성된다.
-
 
 - nested class는 외부 클래스와 완전히 독립적으로 존재하기 때문에 외부 클래스의 인스턴스와 상관없이 객체를 생성할 수 있다.
 
@@ -632,6 +630,7 @@ class OuterClass {
 - 따라서 inner class를 IoC컨테이너에 Bean으로 등록하려면 수동으로 Bean을 등록해주어야한다.
 
 수동 등록 코드
+
 ```kotlin
 @Component
 class OuterClass {
@@ -647,7 +646,6 @@ val innerInstance = outerInstance.InnerClass()
 ```
 
 ---
-
 
 ## object
 
@@ -859,7 +857,6 @@ class ClassForTest {
 - `companion object`는 해당 클래스 외부(부모 클래스 내부)에 선언되고 초기화된다.
 
 - `object`는 해당 클래스 내부에 static 블록을 통해 초기화된다.
-
 
 object는 단일 인스턴스를 나타내는데 사용되며, 클래스의 내용과 함께 정의된다.
 

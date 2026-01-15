@@ -100,7 +100,7 @@ def client_request():
 
 ## Java Agent
 
-Otel을 위한 자동 계측 자바 구현체는 [코드를 계측하기 위해 자바 계측 API를 활용한다.](https://docs.oracle.com/javase/8/docs/api/java/lang/instrument/Instrumentation.html) 
+Otel을 위한 자동 계측 자바 구현체는 [코드를 계측하기 위해 자바 계측 API를 활용한다.](https://docs.oracle.com/javase/8/docs/api/java/lang/instrument/Instrumentation.html)
 
 또한 [GitHub 저장소](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases)에서 JAR파일로도 다운로드할 수 있다. 이 JAR가 포함하고있는 컴포넌트는 아래와 같다.
 
@@ -117,13 +117,12 @@ java -javaagent:/app/opentelemetry-javaagent.jar \
      -jar broken-telephone.jar
 ```
 
-위 명령어처럼 otel 에이전트를 로드하면 다른 코드가 실행되기 전에 라이브러리들의 바이트 코드를 수정할 수 있다. 
+위 명령어처럼 otel 에이전트를 로드하면 다른 코드가 실행되기 전에 라이브러리들의 바이트 코드를 수정할 수 있다.
 
 - -javaagent 옵션 지정 후 실행
   - OpenTelemetryAgent는 아래 작업을 비동기로 진행
     - OpenTelemetryInstaller를 통해 Otel 구성
     - AgentInstaller가 Byte Buddy와 서드파티 계측 라이브러리를 설치
-
 
 다음은 gRPC 요청을 보내는 코드이다.
 

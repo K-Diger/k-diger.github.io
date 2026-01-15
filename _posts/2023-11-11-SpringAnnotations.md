@@ -162,6 +162,7 @@ public class TestWebConfig {
     }
 }
 ```
+
 위와 같은 TestConfigBean을 사용하기 위해 아래와 같이 사용하여 설정 정보를 Import시켜주는 기능을 보유한다.
 
 ```java

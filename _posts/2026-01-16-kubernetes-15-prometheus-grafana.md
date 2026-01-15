@@ -25,18 +25,22 @@ Kubernetes 클러스터와 애플리케이션을 운영하려면 다음을 지�
 ### 모니터링 스택의 구성 요소
 
 **1. Metrics (메트릭)**
+
 - 시간별 숫자 데이터 (CPU 사용률, 메모리, RPS 등)
 - Prometheus
 
 **2. Logs (로그)**
+
 - 애플리케이션과 시스템 로그
 - ELK/EFK Stack, Loki
 
 **3. Traces (분산 추적)**
+
 - 마이크로서비스 간 요청 추적
 - Jaeger, Zipkin
 
 **4. Visualization (시각화)**
+
 - 대시보드와 그래프
 - Grafana
 
@@ -273,38 +277,39 @@ Kubernetes 리소스 상태 메트릭 (Pod, Deployment, Node 등)
 package main
 
 import (
-	"net/http"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+  "net/http"
+
+  "github.com/prometheus/client_golang/prometheus"
+  "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
-	httpRequestsTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "http_requests_total",
-			Help: "Total number of HTTP requests",
-		},
-		[]string{"path", "method", "status"},
-	)
+  httpRequestsTotal = prometheus.NewCounterVec(
+    prometheus.CounterOpts{
+      Name: "http_requests_total",
+      Help: "Total number of HTTP requests",
+    },
+    []string{"path", "method", "status"},
+  )
 
-	httpRequestDuration = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: "http_request_duration_seconds",
-			Help: "HTTP request latencies in seconds",
-			Buckets: prometheus.DefBuckets,
-		},
-		[]string{"path", "method"},
-	)
+  httpRequestDuration = prometheus.NewHistogramVec(
+    prometheus.HistogramOpts{
+      Name:    "http_request_duration_seconds",
+      Help:    "HTTP request latencies in seconds",
+      Buckets: prometheus.DefBuckets,
+    },
+    []string{"path", "method"},
+  )
 )
 
 func init() {
-	prometheus.MustRegister(httpRequestsTotal)
-	prometheus.MustRegister(httpRequestDuration)
+  prometheus.MustRegister(httpRequestsTotal)
+  prometheus.MustRegister(httpRequestDuration)
 }
 
 func main() {
-	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":8080", nil)
+  http.Handle("/metrics", promhttp.Handler())
+  http.ListenAndServe(":8080", nil)
 }
 ```
 

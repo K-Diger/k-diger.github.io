@@ -342,7 +342,7 @@ spring:
   - `http://localhost:10001?testArgument=1` (게이트웨이를 통해 라우팅된 URL)
 
 - `http://localhost:8000/api/auth/testPathVariable` (클라이언트가 요청한 URL)
-    - `http://localhost:10001/testPathVariable` (게이트웨이를 통해 라우팅된 URL)
+  - `http://localhost:10001/testPathVariable` (게이트웨이를 통해 라우팅된 URL)
 
 ---
 
@@ -643,6 +643,7 @@ spring:
 ```
 
 예를 들면 [POST]`api.example.com/some/object/name`요청에 대해 Location Response Header 값인
+
 - object-service.prod.example.net/v2/some/object/id가
 - api.example.com/some/object/id로 재작성된다.
 
@@ -1061,15 +1062,15 @@ management:
 
 /actuator/gateway를 기본 경로로 가진다.
 
-| ID | HTTP Method | 설명                                 |
-|---|---|------------------------------------|
-| /actuator/gateway/globalfilters | GET | Route에 적용된 Global Filter 목록 표시       |
-| /actuator/gateway/routefilters | GET | 특정 Route에 적용된 GatewayFilter 팩토리 목록 표시 |
-| /actuator/gateway/refresh | POST | Route 캐시 제거                        |
-| /actuator/gateway/routes | GET | 게이트웨이에 정의된 Route 목록을 표시          |
-| /actuator/gateway/routes/{id} | GET | 특정 Route에 대한 정보를 표시              |
-| /actuator/gateway/routes/{id} | POST | 게이트웨이에 새로운 Route를 추가             |
-| /actuator/gateway/routes/{id} | DELETE | 게이트웨이에서 기존 Route를 제거             |
+| ID                              | HTTP Method | 설명                                    |
+|---------------------------------|-------------|---------------------------------------|
+| /actuator/gateway/globalfilters | GET         | Route에 적용된 Global Filter 목록 표시        |
+| /actuator/gateway/routefilters  | GET         | 특정 Route에 적용된 GatewayFilter 팩토리 목록 표시 |
+| /actuator/gateway/refresh       | POST        | Route 캐시 제거                           |
+| /actuator/gateway/routes        | GET         | 게이트웨이에 정의된 Route 목록을 표시               |
+| /actuator/gateway/routes/{id}   | GET         | 특정 Route에 대한 정보를 표시                   |
+| /actuator/gateway/routes/{id}   | POST        | 게이트웨이에 새로운 Route를 추가                  |
+| /actuator/gateway/routes/{id}   | DELETE      | 게이트웨이에서 기존 Route를 제거                  |
 
 ---
 
@@ -1228,7 +1229,7 @@ dependencyManagement {
 @EnableDiscoveryClient
 public class GatewayServiceApplication {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         SpringApplication.run(GatewayServiceApplication.class, args);
     }
 

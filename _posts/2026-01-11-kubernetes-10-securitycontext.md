@@ -117,6 +117,7 @@ metadata:
 ## 실습 과제
 
 1. **SecurityContext 설정**
+
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -154,6 +155,7 @@ kubectl exec secure-pod -- id
 ```
 
 2. **Pod Security Standards 적용**
+
 ```bash
 # Namespace 생성 (restricted 정책)
 kubectl create namespace production

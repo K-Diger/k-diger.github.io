@@ -127,6 +127,7 @@ class A implements B {
 ![img_1.png](images/wooahhan-oop/image4.png)
 
 양방향 의존성 예시
+
 ```java
 class A {
     private B b;
@@ -147,6 +148,7 @@ class B {
 ```
 
 단방향 의존성 예시
+
 ```java
 class A {
     private B b;
@@ -177,6 +179,7 @@ class B {
 ![img_1.png](images/wooahhan-oop/image5.png)
 
 다중성이 많은 방향 예시
+
 ```java
 class A {
     private List<B> bs;
@@ -187,6 +190,7 @@ class B {
 ```
 
 다중성이 적은 방향 예시
+
 ```java
 class A {
 }
@@ -342,6 +346,7 @@ Package A -> Package B -> Package C -> Package A
 이 탐색에 있어서는 그 객체간을 이어줄 통로역할을 하는 메세지가 있는 것이다.
 
 #### 일반적인 연관관계 표현 및 협력
+
 ```java
 class Order {
     // 연관관계 표현

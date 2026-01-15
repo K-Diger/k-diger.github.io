@@ -13,15 +13,15 @@
       {%- endcapture -%}
 
       {% if share.type == 'Mastodon' %}
-        <script defer type="module" src="https://cdn.jsdelivr.net/npm/@justinribeiro/share-to-mastodon/+esm"></script>
-        <button class="btn text-start" {{ tooltip }}>
+        <script defer src="https://cdn.jsdelivr.net/npm/@justinribeiro/share-to-mastodon/+esm" type="module"></script>
+        <button class="btn text-start" tooltip {{ }}>
           <share-to-mastodon
+            %}
+            -%}
             class="share-mastodon"
-            message="{{ title }}"
-            url="{{ url }}"
-            {%- if share.instances -%}
-              customInstanceList="{{ share.instances | jsonify | xml_escape }}"
-            {%- endif %}
+            customInstanceList="{{ share.instances | jsonify | xml_escape }}" endif if message="{{ title }}"
+            share.instances
+            url="{{ url }}" {%- {%-
           >
             <i class="fa-fw {{ share.icon }}"></i>
           </share-to-mastodon>
@@ -32,19 +32,19 @@
 
       {% assign link = share.link | replace: 'TITLE', title | replace: 'URL', url %}
 
-      <a href="{{ link }}" target="_blank" rel="noopener" {{ tooltip }}>
+      <a href="{{ link }}" rel="noopener" target="_blank" tooltip {{ }}>
         <i class="fa-fw {{ share.icon }}"></i>
       </a>
     {% endfor %}
 
     <button
-      id="copy-link"
       aria-label="Copy link"
       class="btn small"
-      data-bs-toggle="tooltip"
       data-bs-placement="top"
-      title="{{ site.data.locales[include.lang].post.button.share_link.title }}"
+      data-bs-toggle="tooltip"
       data-title-succeed="{{ site.data.locales[include.lang].post.button.share_link.succeed }}"
+      id="copy-link"
+      title="{{ site.data.locales[include.lang].post.button.share_link.title }}"
     >
       <i class="fa-fw fas fa-link pe-none fs-6"></i>
     </button>

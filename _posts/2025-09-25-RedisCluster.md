@@ -349,6 +349,7 @@ Step 5: 설정 전파
 ## 7. 공식 문서의 실제 출력 예시
 
 **CLUSTER NODES 명령 출력 (공식 문서에서):**
+
 ```
 $ redis-cli cluster nodes
 d1861060fe6a534d42d8a19aeb36600e18785e04 127.0.0.1:6379 myself - 0 1318428930 1 connected 0-1364
@@ -357,6 +358,7 @@ d289c575dcbc4bdd2931585fd4339089e461a27d 127.0.0.1:6381 master - 1318428931 1318
 ```
 
 **CLUSTER SLOTS 명령 출력 (공식 문서에서):**
+
 ```
 127.0.0.1:7000> cluster slots
 1) 1) (integer) 5461      ← 슬롯 범위 시작

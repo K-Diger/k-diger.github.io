@@ -373,6 +373,7 @@ public abstract class AbstractStickyAssignor extends AbstractPartitionAssignor {
 위 `assign()` 메서드를 구현한 모든 내용을 요약하면 아래와 같다.
 
 모든 **컨슈머가 동일한 토픽을 구독**할 때 `constrainedAssign()`를 호출한다.
+
 - 이 메서드는 컨슈머당 최소(minQuota)와 최대(maxQuota) 할당량을 계산 한다.
   - 이전 할당 상태를 검토하여 다음과 같이 처리한다.
   - minQuota보다 적게 가진 컨슈머: 기존 파티션 모두 유지
@@ -397,6 +398,7 @@ int currentNumMembersWithOverMinQuotaPartitions = 0;
 ```
 
 **컨슈머마다 다른 토픽을 구독**할 때 `generalAssign`를 호출한다.
+
 - 현재 유효한 할당은 최대한 유지한다.
 - 구독이 변경된 경우 해당 할당은 제거한다.
 - 미할당된 파티션을 분배한다.

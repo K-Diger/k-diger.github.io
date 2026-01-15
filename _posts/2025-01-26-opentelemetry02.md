@@ -279,21 +279,27 @@ OpenTelemetry가 활성 스팬 정보를 메트릭에 포함시키도록하여 �
 OpenTelemetry에서 정의된 데이터 포인트는 아래와 같은 정보들을 갖는다.
 
 ## 1. 추적 ID (Trace ID)
+
 - 전체 트랜잭션의 고유 식별자
 - 형식: 16바이트 hex 문자열
+
 ```yaml
 trace_id: "4bf92f3577b34da6a3ce929d0e0e4736"
 ```
 
 ## 2. 스팬 ID (Span ID)
+
 - 개별 작업 단위의 식별자
 - 형식: 8바이트 hex 문자열
+
 ```yaml
 span_id: "00f067aa0ba902b7"
 ```
 
 ## 3. 타임스탬프 (Timestamp)
+
 - 이벤트 발생 시각 (나노초 단위)
+
 ```yaml
 timestamp: "2024-01-26T09:00:00.123456789Z"
 ```
@@ -301,6 +307,7 @@ timestamp: "2024-01-26T09:00:00.123456789Z"
 ## 4. 표준 속성 (Standard Attributes)
 
 ### 서비스 식별
+
 ```yaml
 service:
   name: "payment-service"
@@ -310,6 +317,7 @@ service:
 ```
 
 ### HTTP 요청 정보
+
 ```yaml
 http:
   method: "POST"
@@ -319,6 +327,7 @@ http:
 ```
 
 ### 데이터베이스 작업
+
 ```yaml
 database:
   system: "postgresql"
@@ -328,6 +337,7 @@ database:
 ```
 
 ### 클라우드/인프라 정보
+
 ```yaml
 cloud:
   provider: "aws"
@@ -339,6 +349,7 @@ kubernetes:
 ```
 
 ### 사용자 정의 속성
+
 ```yaml
 custom:
   customer_id: "12345"

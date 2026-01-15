@@ -20,9 +20,9 @@ JRE (Java Runtime Environment) 의 약자로 JVM, Java Class Library, Java Comma
 JDK (Java Development Kit) 의 약자로, JRE 를 포함하여, 컴파일러인 javac, javadoc, jar 등 실제 개발환경에 필요한 요소들을 패키징 한 것이다.
 
 - JRE
-    - 빌드가 완료된 Java 기반의 프로그램을 실행 할 수 있는 환경
+  - 빌드가 완료된 Java 기반의 프로그램을 실행 할 수 있는 환경
 - JDK
-    - Java 기반의 프로그램을 작성부터 빌드 후 실행까지 할 수 있는 환경
+  - Java 기반의 프로그램을 작성부터 빌드 후 실행까지 할 수 있는 환경
 
 JDK 를 다운 받다 보면 `Java SE` 8 ... 9, `Java EE` 8 ... 9 뭐 이런 용어가 있다 이것들도 알아봐보자.
 
@@ -78,7 +78,7 @@ public class Client {
 ```java
 public class StaticMethodReference {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         // 기존 람다 표현식으로 정적 메서드 호출
         boolean oldFeature = list.stream().anyMatch(u -> User.isRealUser(u));
 
@@ -93,7 +93,7 @@ public class StaticMethodReference {
 ```java
 public class StaticMethodReference {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         User user = new User();
 
         // 인스턴스 메서드 호출
@@ -116,20 +116,19 @@ public class StaticMethodReference {
 Null을 다룰 수 있는 래퍼 객체인 Optional이 추가되었다.
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     Optional<String> optional = Optional.empty();
 
     String str = "value";
     Optional<String> optional = Optional.of(str);
 
-    Optional<String> optional = Optional.ofNullable(getString());
-}
+    Optional<String> optional = Optional.ofNullable(getStrin
 ```
 
 ### Java 8 이전 Optional 기능을 대체할 구문
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     // #1
     List<String> list = getList();
     List<String> listOpt = list != null ? list : new ArrayList<>();
@@ -157,12 +156,11 @@ public static void main(String[] args) {
     } catch (NullPointerException exception) {
         throw new CustomException();
     }
-    // #3
-}
+    
 ```
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     // #1
     List<String> listOpt = getList().orElseGet(() -> new ArrayList<>());
     // #1
@@ -179,9 +177,7 @@ public static void main(String[] args) {
     String value = null;
     Optional<String> valueOpt = Optional.ofNullable(value);
     String result = valueOpt.orElseThrow(CustomException::new).toUpperCase();
-    // #3
-}
-
+    /
 ```
 
 ---
@@ -191,11 +187,10 @@ public static void main(String[] args) {
 ### 기본 사용법
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     String[] arr = new String[]{"a", "b", "c"};
     Stream<String> stream = Arrays.stream(arr);
-    stream = Stream.of("a", "b", "c");
-}
+    stream = Stream.of("a", "b", 
 ```
 
 ### 멀티 쓰레드 환경에서의 스트림 사용법
@@ -203,9 +198,8 @@ public static void main(String[] args) {
 일반적인 `stream()`구문이 아닌 `parallelStream()`구문으로 멀티 쓰레드 환경에서 안전하게 스트림을 사용할 수 있다.
 
 ```java
-public static void main(String[] args) {
-    list.parallelStream().forEach(element -> doWork(element));
-}
+static void main(String[] args) {
+    list.parallelStream().forEach(element -> doWork(eleme
 ```
 
 ### 스트림 주요 연산
@@ -217,7 +211,7 @@ public static void main(String[] args) {
 #### 스트림 중간 연산 - Iterating
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     // 스트림 사용 전
     for (String string : list) {
         if (string.contains("a")) {
@@ -226,14 +220,13 @@ public static void main(String[] args) {
     }
 
     // 스트림 사용 후
-    boolean isExist = list.stream().anyMatch(element -> element.contains("a"));
-}
+    boolean isExist = list.stream().anyMatch(element -> element.contains("
 ```
 
 #### 스트림 중간 연산 - Filtering
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     List<String> list = new ArrayList<>();
     list.add("One");
     list.add("OneAndOnly");
@@ -247,8 +240,7 @@ public static void main(String[] args) {
     list.add("");
     list.add("");
 
-    Stream<String> stream = list.stream().filter(element -> element.contains("d"));
-}
+    Stream<String> stream = list.stream().filter(element -> element.contains("
 ```
 
 위와 같은 `filter`연산으로 조건절에 부합하는 내용만 뽑아오는 기능을 적용할 수 있다.
@@ -256,12 +248,11 @@ public static void main(String[] args) {
 #### 스트림 종단 연산 - Mapping
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     List<Detail> details = new ArrayList<>();
     details.add(new Detail());
     Stream<String> stream = details.stream()
-        .flatMap(detail -> detail.getParts().stream());
-}
+        .flatMap(detail -> detail.getParts().strea
 ```
 
 `flatMap`메서드를 사용하면 PARTS 필드의 모든 요소가 추출되어 새로운 결과 스트림에 추가된다.
@@ -269,7 +260,7 @@ public static void main(String[] args) {
 `flatMap`메서드와 `map`메서드를 사용할 수 있는데 두 차이점은 아래와 같다.
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     // map()
     List<List<String>> mapList = Arrays.asList(
         Arrays.asList("Java", "is"),
@@ -292,26 +283,23 @@ public static void main(String[] args) {
         .flatMap(List::stream)
         .collect(Collectors.toList());
     System.out.println(flatList);
-    // 결과 : [Java, is, super, fun]
-}
+    // 결과 : [Java, is, super,
 ```
 
 `flatMap`은 중복된 스트림을 1차원으로 평면화 시키는 메서드이다.
 
 `flatMap 내부의 Arrays::stream`은 **배열을 스트림으로 변환해주는 메서드 참조 표현**이다. `flatMap`을 사용하면 각각의 String 리스트를 스트림으로 만드는 것이 아니라, 한 단계 더 깊은 깊이의 모든 요소를 하나의 스트림으로 합친다.
 
-
 #### 스트림 종단 연산 - Matching
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     boolean isValid = list.stream().anyMatch(element -> element.contains("h")); // true
     boolean isValidOne = list.stream().allMatch(element -> element.contains("h")); // false
     boolean isValidTwo = list.stream().noneMatch(element -> element.contains("h")); // false
 
     Stream.empty().allMatch(Objects::nonNull); // true
-    Stream.empty().anyMatch(Objects::nonNull); // false
-}
+    Stream.empty().anyMatch(Objects::nonNull); // 
 ```
 
 ---
@@ -394,6 +382,7 @@ Epsilon이라는 새로운 가비지 수집기가 Java 11에서 실험판으로 
 ```shell
 -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
 ```
+
 플래그를 사용하면 된다.
 
 ---
@@ -416,7 +405,6 @@ JAF, JAXB, JAX-WS와 같은 기술들은 더 이상 Java SE에 제공되지 않�
 - java.xml.ws (JAX-WS)
 - java.xml.ws.annotation
 
-
 ---
 
 ## [🌟6. JEP 321 - HTTP Client 표준화](https://openjdk.org/jeps/321)
@@ -432,7 +420,7 @@ JEP 321은 JDK 9에서 인큐베이팅(innovating) API로 도입됐고 JDK 10에
 ### 동기 방식
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     HttpClient httpClient = HttpClient.newBuilder()
         .version(HttpClient.Version.HTTP_2)
         .connectTimeout(Duration.ofSeconds(20))
@@ -445,14 +433,13 @@ public static void main(String[] args) {
 
     HttpResponse httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-    assertThat(httpResponse.body()).isEqualTo("Hello from the server!");
-}
+    assertThat(httpResponse.body()).isEqualTo("Hello from the serve
 ```
 
 ### 비동기 방식
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     HttpClient httpClient = HttpClient.newBuilder()
         .version(HttpClient.Version.HTTP_2)
         .connectTimeout(Duration.ofSeconds(20))
@@ -466,8 +453,7 @@ public static void main(String[] args) {
     HttpResponse httpResponse = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
         .thenApply(HttpResponse::body)
         .thenAccept(System.out::println)
-        .join(); // 비동기 작업 완료까지 대기
-}
+        .join(); // 비동기 작업 완료
 ```
 
 ---
@@ -479,17 +465,15 @@ public static void main(String[] args) {
 ### 기존 코드
 
 ```java
-public static void main(String[] args) {
-    (BinaryOperator<Integer> bo) = (Integer x, Integer y) -> x + y;
-}
+static void main(String[] args) {
+    (BinaryOperator<Integer> bo) = (Integer x, Integer y) -> x
 ```
 
 ### 적용 후 코드
 
 ```java
-public static void main(String[] args) {
-    (BinaryOperator<Integer> bo) = (var x, var y) -> x + y;
-}
+static void main(String[] args) {
+    (BinaryOperator<Integer> bo) = (var x, var y) -> x
 ```
 
 ---
@@ -506,7 +490,7 @@ public static void main(String[] args) {
 
 ```java
 public class UnicodeExample {
-    public static void main(String[] args) {
+    static void main(String[] args) {
         String newEmoji = "\uD83E\uDD84"; // 🦄유니콘 이모지
 
         System.out.println("유니코드 10의 새로운 이모지: " + newEmoji);
@@ -557,7 +541,7 @@ import java.util.List;
 
 public class Main {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         List<Object> items = new ArrayList<>(1);
         try {
             while (true) {
@@ -598,7 +582,7 @@ import javax.crypto.spec.ChaCha20ParameterSpec;
 
 public class Main {
 
-    public static void main(String[] args)
+    static void main(String[] args)
         throws NoSuchAlgorithmException,
         NoSuchPaddingException,
         InvalidAlgorithmParameterException,
@@ -781,12 +765,11 @@ JDK7에 첫 등장한 **G1 GC**가 **기본값**으로 등록된 버전이다.
 Collection에 `toArray()`가 추가되어 List -> Array의 변환이 간편해졌다.
 
 ```java
-public static void main(String[] args) {
+static void main(String[] args) {
     List<String> sampleList = Arrays.asList("Java", "Kotlin");
     String[] sampleArray = sampleList.toArray(String[]::new);
 
-    assertThat(sampleArray).containsExactly("Java", "Kotlin");
-}
+    assertThat(sampleArray).containsExactly("Java", "Kotl
 ```
 
 ---
@@ -822,7 +805,7 @@ import java.util.random.RandomGeneratorFactory;
 
 public class Main {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         RandomGeneratorFactory.all()
             .map(factory -> String.format("%s: %s", factory.group(), factory.name()))
             .sorted()
@@ -893,7 +876,7 @@ public class Main {
 
     private static final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 
-    public static void main(String[] args) throws IOException {
+    static void main(String[] args) throws IOException {
         String day = bufferedReader.readLine();
 
         // Java 17 이전 버전
@@ -947,7 +930,6 @@ RMI 활성화 기능은 시대에 뒤떨어지고 사용되지 않아 RMI 활성
 
 - `non-sealed class`나 `non-sealed interface`는 어떤 클래스나 인터페이스로부터도 확장되거나 구현될 수 있다.
 
-
 ### 설계 목적
 
 - Final 클래스
@@ -957,18 +939,21 @@ RMI 활성화 기능은 시대에 뒤떨어지고 사용되지 않아 RMI 활성
   - Sealed 클래스는 클래스 계층 구조의 일부를 통제하고 특정 클래스나 인터페이스를 상속 또는 구현할 수 있는 클래스의 범위를 제한함으로써, 더 명확하고 제한된 클래스 계층을 구성할 수 있게된다.
 
 ### UserCustomException.java (최상위 계층)
+
 ```java
 // UserCustomException 클래스는 UserBadRequestException과 UserForbiddenException에 의해서만 상속될 수 있다.
 public sealed class UserCustomException permits UserBadRequestException, UserForbiddenException {}
 ```
 
 ### UserBadRequestException.java (두 번째 계층)
+
 ```java
 // UserBadRequestException은 상속될 수 없는 final 클래스이다.
 public final class UserBadRequestException extends UserCustomException {}
 ```
 
 ### UserForbiddenException.java (두 번째 계층)
+
 ```java
 // UserForbiddenException은 UserAuthortionException, UserNotFoundException에 의해서만 다시 상속될 수 있는 sealed 클래스이다.
 public sealed class UserForbiddenException
@@ -979,6 +964,7 @@ public sealed class UserForbiddenException
 ```
 
 ### UserAuthorizationException.java (세 번째 계층)
+
 ```java
 // UserAuthorizationException은 상속될 수 없는 final 클래스이다.
 public final class UserAuthorizationException extends UserForbiddenException {}

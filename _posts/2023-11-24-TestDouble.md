@@ -70,7 +70,7 @@ interface UserRepositoryInterface {
 class RealUserRepository implements UserRepositoryInterface {
     @Override
     public User getUserById(Long userId) {
-        return jdbcTemplate.query(userId) ... ;
+        return jdbcTemplate.query(userId) ...
     }
 }
 
@@ -172,7 +172,7 @@ class ShoppingService {
 
 class LoggerTest extends TestCase {
     public void testMovieBudgetFactory() {
-        MockShoppingService service = this.createMock(ShoppingService::class);
+        MockShoppingService service = this.createMock(ShoppingService::class)
         service
             .method('getShoppingCart') // Overriding the method.
             .willReturn([100, 200, 300]);
@@ -182,7 +182,7 @@ class LoggerTest extends TestCase {
 
         self.assertEquals(600, totalAmount);
     }
-}
+
 ```
 
 ---

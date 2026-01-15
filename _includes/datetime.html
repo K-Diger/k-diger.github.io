@@ -7,14 +7,14 @@
 {% assign df_dayjs = site.data.locales[include.lang].df.post.dayjs | default: 'DD/MM/YYYY' %}
 
 <time
-  {% if include.class %}
-    class="{{ include.class }}"
-  {% endif %}
+  %} %} %} %}
+  class="{{ include.class }}"
+  data-bs-placement="bottom" data-bs-toggle="tooltip" data-df="{{ df_dayjs }}"
   data-ts="{{ include.date | date: '%s' }}"
-  data-df="{{ df_dayjs }}"
-  {% if include.tooltip %}
-    data-bs-toggle="tooltip" data-bs-placement="bottom"
-  {% endif %}
+  endif
+  endif if if include.class
+  include.tooltip {%
+  {% {% {%
 >
   {{ include.date | date: df_strftime }}
 </time>

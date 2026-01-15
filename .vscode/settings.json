@@ -1,28 +1,83 @@
 {
-  // Prettier
+  // Editor settings
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.rulers": [120],
+  "editor.wordWrap": "on",
+  "editor.trimAutoWhitespace": true,
+
+  // Files settings
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/_site": true,
+    "**/.jekyll-cache": true,
+    "**/.sass-cache": true
+  },
+
   // Shopify Liquid
   "files.associations": {
     "*.html": "liquid"
   },
+
+  // Language-specific formatters
   "[markdown]": {
-    "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on",
+    "files.trimTrailingWhitespace": false
   },
-  // Formatter
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.autoIndent": "advanced"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "[html][liquid]": {
     "editor.defaultFormatter": "Shopify.theme-check-vscode"
   },
   "[shellscript]": {
     "editor.defaultFormatter": "mkhl.shfmt"
   },
-  // Disable vscode built-in stylelint
+
+  // Markdown lint settings
+  "markdownlint.config": {
+    "default": true,
+    "MD013": false,
+    "MD033": {
+      "allowed_elements": ["kbd", "sub", "sup", "br", "details", "summary"]
+    }
+  },
+
+  // Prettier settings
+  "prettier.requireConfig": true,
+  "prettier.useEditorConfig": true,
+
+  // Disable vscode built-in validators
   "css.validate": false,
   "scss.validate": false,
   "less.validate": false,
-  // Stylint extension settings
+
+  // Stylelint extension settings
   "stylelint.snippet": ["css", "scss"],
   "stylelint.validate": ["css", "scss"],
+
+  // Search settings
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/_site": true,
+    "**/.jekyll-cache": true,
+    "**/.sass-cache": true,
+    "**/vendor": true
+  },
+
   // Run tasks in macOS
   "terminal.integrated.profiles.osx": {
     "zsh": { "path": "/bin/zsh", "args": ["-l", "-i"] }

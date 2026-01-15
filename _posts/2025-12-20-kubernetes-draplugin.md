@@ -13,7 +13,7 @@ mermaid: true
 
 ## 개요
 
-최근 Kubernetes 오픈소스 프로젝트에 기여한 [PR #133964](https://github.com/kubernetes/kubernetes/pull/133964)가 v1.36 마일스톤에 병합되었다. 
+최근 Kubernetes 오픈소스 프로젝트에 기여한 [PR #133964](https://github.com/kubernetes/kubernetes/pull/133964)가 v1.36 마일스톤에 병합되었다.
 
 이 글에서는 DRA(Dynamic Resource Allocation) 플러그인의 gRPC 연결 관리 방식을 개선한 과정과 그 배경을 다룬다.
 
@@ -21,7 +21,7 @@ mermaid: true
 
 ### DRA의 등장 배경
 
-Dynamic Resource Allocation(DRA)은 Kubernetes v1.26에서 알파로 도입되어 v1.34에서 GA를 목표로 하는 기능이다. 
+Dynamic Resource Allocation(DRA)은 Kubernetes v1.26에서 알파로 도입되어 v1.34에서 GA를 목표로 하는 기능이다.
 
 GPU, TPU, FPGA와 같은 특수 하드웨어 리소스를 Pod에 동적으로 할당하는 새로운 API를 제공한다.
 
@@ -129,22 +129,26 @@ sequenceDiagram
 **주요 작업**:
 
 1. **디바이스 검증 및 확보**
-  - 요청된 GPU가 실제로 사용 가능한지 확인
-  - 다른 Pod가 사용 중이지 않은지 검증
+
+- 요청된 GPU가 실제로 사용 가능한지 확인
+- 다른 Pod가 사용 중이지 않은지 검증
 
 2. **하드웨어 초기화**
-  - GPU 메모리 초기화
-  - PCIe 링크 구성
-  - CUDA 컨텍스트 설정
+
+- GPU 메모리 초기화
+- PCIe 링크 구성
+- CUDA 컨텍스트 설정
 
 3. **CDI Spec 생성**
-  - 컨테이너가 접근할 디바이스 파일 정의
-  - 환경 변수 설정
-  - 마운트 포인트 정의
+
+- 컨테이너가 접근할 디바이스 파일 정의
+- 환경 변수 설정
+- 마운트 포인트 정의
 
 4. **권한 및 네임스페이스 설정**
-  - cgroup 설정
-  - device 파일 권한 구성
+
+- cgroup 설정
+- device 파일 권한 구성
 
 **CDI Spec 예시** (NVIDIA GPU):
 
@@ -172,17 +176,20 @@ Pod가 종료될 때 호출되어 리소스를 정리하고 다른 Pod에서 사
 **주요 작업**:
 
 1. **디바이스 정리**
-  - GPU 메모리 해제
-  - 실행 중인 CUDA 프로세스 종료
-  - 하드웨어 상태 리셋
+
+- GPU 메모리 해제
+- 실행 중인 CUDA 프로세스 종료
+- 하드웨어 상태 리셋
 
 2. **리소스 해제**
-  - ResourceClaim 예약 해제
-  - 다른 Pod 할당 가능 상태로 전환
+
+- ResourceClaim 예약 해제
+- 다른 Pod 할당 가능 상태로 전환
 
 3. **메타데이터 정리**
-  - 사용 기록 업데이트
-  - 모니터링 메트릭 정리
+
+- 사용 기록 업데이트
+- 모니터링 메트릭 정리
 
 #### 실제 사용 시나리오
 
@@ -297,9 +304,11 @@ sequenceDiagram
 5. **NodeWatchResources (Health API)** - 백그라운드 모니터링 시작
 6. 정상 실행...
 7. [선택] 장애 발생 시
-  - Health Update: Unhealthy
-  - Pod Status 업데이트
-  - 운영자 개입 또는 자동 복구
+
+- Health Update: Unhealthy
+- Pod Status 업데이트
+- 운영자 개입 또는 자동 복구
+
 8. Pod 종료
 9. **NodeUnprepareResources (DRA API)** - GPU 정리 및 해제
 

@@ -7,7 +7,7 @@ resource_hints:
   - url: https://fonts.gstatic.com
     links:
       - rel: preconnect
-        opts: [crossorigin]
+        opts: [ crossorigin ]
       - rel: dns-prefetch
   - url: https://cdn.jsdelivr.net
     links:

@@ -12,6 +12,7 @@ mermaid: true
 ### Q. 1 StorageClass Configuration
 
 **Task:** Create a StorageClass named local-sc with the following specifications and set it as the default storage class:
+
 - The provisioner should be kubernetes.io/no-provisioner
 - The volume binding mode should be WaitForFirstConsumer
 - Volume expansion should be enabled
@@ -22,6 +23,7 @@ mermaid: true
 - **검색 키워드:** `StorageClass`, `no-provisioner`, `WaitForFirstConsumer`, `allowVolumeExpansion`, `default storage class`
 
 **Solution:**
+
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -44,6 +46,7 @@ kubectl get storageclass
 ### Q. 2 Sidecar Container Pattern
 
 **Task:** Create a deployment named logging-deployment in the namespace logging-ns with 1 replica, with the following specifications:
+
 - The main container should be named app-container, use the image busybox, and should run the following command to simulate writing logs:
   ```
   sh -c "while true; do echo 'Log entry' >> /var/log/app/app.log; sleep 5; done"
@@ -61,6 +64,7 @@ kubectl get storageclass
 - **검색 키워드:** `sidecar container`, `emptyDir`, `volumeMounts`, `logging pattern`
 
 **Solution:**
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -105,12 +109,14 @@ kubectl logs -n logging-ns deployment/logging-deployment -c log-agent
 ### Q. 3 Ingress Configuration
 
 **Task:** A Deployment named webapp-deploy is running in the ingress-ns namespace and is exposed via a Service named webapp-svc. Create an Ingress resource called webapp-ingress in the same namespace that will route traffic to the service. The Ingress must:
+
 - Use pathType: Prefix
 - Route requests sent to path / to the backend service
 - Forward traffic to port 80 of the service
 - Be configured for the host kodekloud-ingress.app
 
 Test app availability using the following command:
+
 ```bash
 curl -s http://kodekloud-ingress.app/
 ```
@@ -121,6 +127,7 @@ curl -s http://kodekloud-ingress.app/
 - **검색 키워드:** `Ingress`, `pathType Prefix`, `ingress rules`, `host`
 
 **Solution:**
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -161,6 +168,7 @@ Note: Use the kubectl apply command to create or update the deployment.
 - **검색 키워드:** `deployment rolling update`, `kubectl set image`, `rollout history`, `--record`
 
 **Solution:**
+
 ```bash
 kubectl create deployment nginx-deploy --image=nginx:1.16 --replicas=1 --dry-run=client -o yaml > nginx-deploy.yaml
 kubectl apply -f nginx-deploy.yaml --record
@@ -183,6 +191,7 @@ Important Note: As of kubernetes 1.19, the CertificateSigningRequest object expe
 - **검색 키워드:** `CertificateSigningRequest`, `signerName`, `kubectl certificate approve`, `Role`, `RoleBinding`
 
 **Solution:**
+
 ```yaml
 apiVersion: certificates.k8s.io/v1
 kind: CertificateSigningRequest
@@ -210,6 +219,7 @@ kubectl auth can-i update pods --as=john --namespace=development
 ### Q. 6 DNS Resolution & Service Discovery
 
 **Task:** Create an nginx pod named nginx-resolver using the nginx image and expose it internally using a ClusterIP service called nginx-resolver-service. From within the cluster, verify:
+
 - DNS resolution of the service name
 - Network reachability of the pod using its IP address
 
@@ -221,6 +231,7 @@ Use the busybox:1.28 image to perform the lookups. Save the service DNS lookup o
 - **검색 키워드:** `DNS pod service`, `nslookup`, `service discovery`, `pod dns`
 
 **Solution:**
+
 ```bash
 kubectl run nginx-resolver --image=nginx
 kubectl expose pod nginx-resolver --name=nginx-resolver-service --port=80 --target-port=80 --type=ClusterIP
@@ -241,6 +252,7 @@ kubectl run test-nslookup --image=busybox:1.28 --rm -it --restart=Never -- nsloo
 - **검색 키워드:** `static pod`, `staticPodPath`, `kubelet config`, `/etc/kubernetes/manifests`
 
 **Solution:**
+
 ```bash
 kubectl run nginx-critical --image=nginx --dry-run=client -o yaml > static.yaml
 scp static.yaml node01:/root/
@@ -263,6 +275,7 @@ kubectl get pods
 - **검색 키워드:** `HPA memory`, `horizontal pod autoscaler memory`, `averageUtilization`, `resource metrics`
 
 **Solution:**
+
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -301,6 +314,7 @@ kubectl create -f webapp-hpa.yaml
 - **검색 키워드:** `Gateway TLS`, `certificateRefs`, `HTTPS gateway`, `gateway listener`
 
 **Solution:**
+
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -335,6 +349,7 @@ kubectl apply -f web-gateway.yaml
 - **검색 키워드:** `helm list`, `helm uninstall`, `kubectl get deployments`, `jq`
 
 **Solution:**
+
 ```bash
 # 모든 Helm 릴리스 확인
 helm ls -A
@@ -358,6 +373,7 @@ helm uninstall <RELEASE-NAME> -n <NAMESPACE>
 - **검색 키워드:** `NetworkPolicy`, `namespaceSelector`, `podSelector`, `ingress rules`
 
 **Solution:**
+
 ```bash
 # 세 정책 파일 확인
 cat /root/net-pol-1.yaml  # 너무 광범위
@@ -374,6 +390,7 @@ kubectl get netpol -n backend
 ## 문제 풀이 팁
 
 ### kubectl explain 활용법
+
 ```bash
 # 리소스의 전체 구조 확인
 kubectl explain <resource>
@@ -392,17 +409,19 @@ kubectl explain hpa.spec.metrics
 ```
 
 ### 공식문서 검색 전략
+
 1. **Kubernetes 공식 문서:** https://kubernetes.io/docs/
 2. **kubectl 치트시트:** https://kubernetes.io/docs/reference/kubectl/cheatsheet/
 3. **API Reference:** https://kubernetes.io/docs/reference/kubernetes-api/
 4. **Gateway API:** https://gateway-api.sigs.k8s.io/
 5. **Helm 문서:** https://helm.sh/docs/
 6. **시험 중 검색 키워드:**
-   - `kubectl <resource>` (예: `kubectl storageclass`)
-   - `kubernetes <개념>` (예: `kubernetes networkpolicy`)
-   - `<resource> example` (예: `ingress example`)
+  - `kubectl <resource>` (예: `kubectl storageclass`)
+  - `kubernetes <개념>` (예: `kubernetes networkpolicy`)
+  - `<resource> example` (예: `ingress example`)
 
 ### 시험 시 주의사항
+
 1. **항상 namespace 확인:** `-n` 옵션 사용
 2. **dry-run 활용:** `--dry-run=client -o yaml`로 템플릿 생성
 3. **kubectl explain 활용:** 필드명이나 구조가 불확실할 때

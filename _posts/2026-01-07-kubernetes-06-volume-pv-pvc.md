@@ -248,6 +248,7 @@ volumeBindingMode: WaitForFirstConsumer
 **다양한 클라우드 프로바이더 예제:**
 
 AWS EBS:
+
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -261,6 +262,7 @@ parameters:
 ```
 
 GCE Persistent Disk:
+
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -273,6 +275,7 @@ parameters:
 ```
 
 Azure Disk:
+
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -325,18 +328,18 @@ Dynamic Provisioning은 관리자가 수동으로 PV를 생성하지 않아도, 
 **동작 원리:**
 
 1. **PVC 생성 시**:
-   - PVC에 `storageClassName`이 지정되면 해당 StorageClass 사용
-   - 지정되지 않으면 기본(default) StorageClass 사용
-   - `storageClassName: ""`로 지정하면 정적 프로비저닝만 사용
+  - PVC에 `storageClassName`이 지정되면 해당 StorageClass 사용
+  - 지정되지 않으면 기본(default) StorageClass 사용
+  - `storageClassName: ""`로 지정하면 정적 프로비저닝만 사용
 
 2. **PV 자동 생성**:
-   - StorageClass의 provisioner가 클라우드 제공자 API 호출
-   - 실제 물리적 스토리지 리소스 생성 (EBS 볼륨, GCE PD 등)
-   - 생성된 스토리지를 참조하는 PV 객체 자동 생성
+  - StorageClass의 provisioner가 클라우드 제공자 API 호출
+  - 실제 물리적 스토리지 리소스 생성 (EBS 볼륨, GCE PD 등)
+  - 생성된 스토리지를 참조하는 PV 객체 자동 생성
 
 3. **바인딩 시점 제어** (volumeBindingMode):
-   - **Immediate**: PVC 생성 즉시 바인딩, 가용 영역 미고려 가능
-   - **WaitForFirstConsumer**: Pod 스케줄링 시 바인딩, Pod와 같은 가용 영역에 생성
+  - **Immediate**: PVC 생성 즉시 바인딩, 가용 영역 미고려 가능
+  - **WaitForFirstConsumer**: Pod 스케줄링 시 바인딩, Pod와 같은 가용 영역에 생성
 
 **예제:**
 
@@ -385,13 +388,13 @@ spec:
 
 **정적 vs 동적 프로비저닝:**
 
-| 특성 | 정적 프로비저닝 | 동적 프로비저닝 |
-|------|----------------|----------------|
-| PV 생성 | 관리자가 수동 생성 | 자동 생성 |
-| 관리 오버헤드 | 높음 | 낮음 |
-| 유연성 | 낮음 | 높음 |
-| 사용 사례 | 온프레미스, 특수 요구사항 | 클라우드, 일반적 사용 |
-| StorageClass 필요 | 선택사항 | 필수 |
+| 특성              | 정적 프로비저닝       | 동적 프로비저닝     |
+|-----------------|----------------|--------------|
+| PV 생성           | 관리자가 수동 생성     | 자동 생성        |
+| 관리 오버헤드         | 높음             | 낮음           |
+| 유연성             | 낮음             | 높음           |
+| 사용 사례           | 온프레미스, 특수 요구사항 | 클라우드, 일반적 사용 |
+| StorageClass 필요 | 선택사항           | 필수           |
 
 ---
 
@@ -473,12 +476,12 @@ kubectl get pvc app-pvc -n storage-ns
 
 **일반적인 바인딩 실패 원인:**
 
-| 원인 | 증상 | 해결 방법 |
-|------|------|----------|
-| **accessModes 불일치** | PVC Pending | PVC의 accessModes를 PV와 일치시킴 |
-| **용량 부족** | PVC Pending | 더 큰 PV 생성 또는 PVC 요청량 감소 |
+| 원인                       | 증상          | 해결 방법                          |
+|--------------------------|-------------|--------------------------------|
+| **accessModes 불일치**      | PVC Pending | PVC의 accessModes를 PV와 일치시킴     |
+| **용량 부족**                | PVC Pending | 더 큰 PV 생성 또는 PVC 요청량 감소        |
 | **storageClassName 불일치** | PVC Pending | PVC와 PV의 storageClassName 일치시킴 |
-| **PV 이미 바인딩됨** | PVC Pending | 사용 가능한 PV 확인 및 생성 |
+| **PV 이미 바인딩됨**           | PVC Pending | 사용 가능한 PV 확인 및 생성              |
 
 **사용 예:**
 
@@ -505,6 +508,7 @@ spec:
 ## 실습 과제
 
 1. **emptyDir Volume 실습**
+
 ```bash
 # emptyDir Pod 생성
 kubectl apply -f emptydir-example.yaml
@@ -517,6 +521,7 @@ kubectl logs emptydir-example -c reader
 ```
 
 2. **PV와 PVC 실습**
+
 ```bash
 # PV 생성
 kubectl apply -f my-pv.yaml
@@ -538,6 +543,7 @@ kubectl exec mysql-pod -- df -h
 ```
 
 3. **StorageClass와 동적 프로비저닝**
+
 ```bash
 # StorageClass 확인
 kubectl get storageclass

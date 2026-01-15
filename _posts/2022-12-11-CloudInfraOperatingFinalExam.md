@@ -24,7 +24,8 @@ VPC를 사용하여 사용자가 정의한 가상 네트워크를 생성한 후 
 2. Internet과 통신이 가능하도록 Internet Gateway 생성 및 VPC 연결
 3. Subnet 생성 (Seoul 리전의 경우, 가용영역 각각 2a, 2c에 생성한다.)
 4. Routing Table 구성 -> 외부의 모든 네트워크와 통신이 가능한 Internet Gateway 경로를 등록한다.
-5. 3. 에서 생성한 Public Subnet 리소스들은 Internet과 통신이 가능하도록 RoutingTable을 Public Subnet에 연결한다.
+5.
+  3. 에서 생성한 Public Subnet 리소스들은 Internet과 통신이 가능하도록 RoutingTable을 Public Subnet에 연결한다.
 6. Web 서버(EC2 인스턴스)와 DB 서버(RDS)가 사용할 보안 그룹 생성
 
 ---
@@ -85,6 +86,7 @@ Route 53은
 - DNS 라우팅
 - 리소스 상태 확인
 -
+
 이라는 세 가지 주요 기능을 제공한다.
 
 ## 4.1. Route 53 구성 과정

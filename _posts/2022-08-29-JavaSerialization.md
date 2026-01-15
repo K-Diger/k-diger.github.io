@@ -102,11 +102,9 @@ JPA 표준 스펙에는 명시가 되어 있긴한데 해당 내용을 사용하
     // 직렬화 - 2단계 (직렬화 된 Byte Stream 획득)
     byte[] serializedObject = byteArrayOutputStream.toByteArray();
 
-
 ---
 
 # 역직렬화 - 코드
-
 
     // 역직렬화 전 셋팅, ByteInputStream 과 ObjectOutputStream 의 인스턴스를 만든다.
     ByteArrayInputStream bios = new ByteArrayInputSteram();
@@ -114,7 +112,6 @@ JPA 표준 스펙에는 명시가 되어 있긴한데 해당 내용을 사용하
 
     // 역직렬화 수행
     CustomObject customObject = (CustomObject) ois.readObject();
-
 
 ---
 

@@ -50,7 +50,7 @@ Javac에 의해 바이트코드로 변환된 클래스 파일을 JVM 메모리�
 ```java
 public class App {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         System.out.println("Hello My Name Is main In App.class");
         System.out.println(App.class.getSuperclass());
 

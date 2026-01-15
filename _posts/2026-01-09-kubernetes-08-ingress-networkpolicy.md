@@ -76,6 +76,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/cont
 ```
 
 설치 확인:
+
 ```bash
 # Ingress Controller Pod 확인
 kubectl get pods -n ingress-nginx
@@ -86,17 +87,17 @@ kubectl get svc -n ingress-nginx
 
 **주요 Ingress Controller 비교:**
 
-| 특성 | Nginx | Traefik | HAProxy | Istio Gateway |
-|------|-------|---------|---------|---------------|
-| **성능** | 매우 높음 | 높음 | 매우 높음 | 높음 |
-| **설정 복잡도** | 중간 | 낮음 | 높음 | 높음 |
-| **동적 구성** | 부분 지원 | 완전 지원 | 제한적 | 완전 지원 |
-| **자동 HTTPS** | Cert-Manager 필요 | 내장 (Let's Encrypt) | 별도 도구 | Cert-Manager 통합 |
-| **모니터링** | Prometheus 통합 | 내장 대시보드 | 별도 설정 | Kiali, Grafana 통합 |
-| **웹소켓** | 지원 | 지원 | 지원 | 지원 |
-| **gRPC** | 지원 | 지원 | 제한적 | 완전 지원 |
-| **커뮤니티** | 매우 활발 | 활발 | 활발 | 매우 활발 |
-| **사용 사례** | 범용, 프로덕션 | 중소규모, 간편함 | 고성능 요구 | Service Mesh |
+| 특성           | Nginx           | Traefik            | HAProxy | Istio Gateway     |
+|--------------|-----------------|--------------------|---------|-------------------|
+| **성능**       | 매우 높음           | 높음                 | 매우 높음   | 높음                |
+| **설정 복잡도**   | 중간              | 낮음                 | 높음      | 높음                |
+| **동적 구성**    | 부분 지원           | 완전 지원              | 제한적     | 완전 지원             |
+| **자동 HTTPS** | Cert-Manager 필요 | 내장 (Let's Encrypt) | 별도 도구   | Cert-Manager 통합   |
+| **모니터링**     | Prometheus 통합   | 내장 대시보드            | 별도 설정   | Kiali, Grafana 통합 |
+| **웹소켓**      | 지원              | 지원                 | 지원      | 지원                |
+| **gRPC**     | 지원              | 지원                 | 제한적     | 완전 지원             |
+| **커뮤니티**     | 매우 활발           | 활발                 | 활발      | 매우 활발             |
+| **사용 사례**    | 범용, 프로덕션        | 중소규모, 간편함          | 고성능 요구  | Service Mesh      |
 
 **Nginx Ingress Controller:**
 
@@ -324,8 +325,8 @@ NetworkPolicy는 **Pod 간의 네트워크 트래픽을 제어**하는 방화벽
 1. **podSelector로 대상 Pod 선택**: 어떤 Pod에 정책을 적용할지 결정
 2. **policyTypes 지정**: Ingress, Egress 또는 둘 다 제어
 3. **규칙 정의**:
-   - Ingress: 어떤 소스에서 오는 트래픽을 허용할지
-   - Egress: 어떤 목적지로 가는 트래픽을 허용할지
+  - Ingress: 어떤 소스에서 오는 트래픽을 허용할지
+  - Egress: 어떤 목적지로 가는 트래픽을 허용할지
 4. **CNI 플러그인이 실제 방화벽 규칙 적용**: iptables, eBPF 등 사용
 
 **주의사항:**
@@ -365,6 +366,7 @@ spec:
 **세부 규칙 옵션:**
 
 1. **podSelector**: 같은 Namespace의 특정 Pod에서만 허용
+
 ```yaml
 from:
   - podSelector:
@@ -373,6 +375,7 @@ from:
 ```
 
 2. **namespaceSelector**: 특정 Namespace의 모든 Pod에서 허용
+
 ```yaml
 from:
   - namespaceSelector:
@@ -381,6 +384,7 @@ from:
 ```
 
 3. **podSelector + namespaceSelector**: 특정 Namespace의 특정 Pod에서만 허용 (AND 조건)
+
 ```yaml
 from:
   - namespaceSelector:
@@ -392,6 +396,7 @@ from:
 ```
 
 4. **여러 소스 허용** (OR 조건):
+
 ```yaml
 from:
   - podSelector:  # 같은 Namespace의 frontend OR
@@ -403,6 +408,7 @@ from:
 ```
 
 5. **IP 블록 기반 허용**:
+
 ```yaml
 from:
   - ipBlock:
@@ -937,6 +943,7 @@ helm install cilium cilium/cilium --namespace kube-system
 ## 실습 과제
 
 1. **Ingress 설정**
+
 ```bash
 # Nginx Ingress Controller 설치
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
@@ -953,6 +960,7 @@ kubectl get ingress
 ```
 
 2. **NetworkPolicy 실습**
+
 ```bash
 # Backend Pod 생성
 kubectl run backend --image=nginx --labels=app=backend

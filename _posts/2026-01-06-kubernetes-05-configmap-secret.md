@@ -1,8 +1,8 @@
 ---
 title: "Part 5: ConfigMap과 Secret - 설정 및 민감정보 관리"
 date: 2026-01-06
-categories: [Container, Kubernetes]
-tags: [Container, Kubernetes, ConfigMap, Secret]
+categories: [ Container, Kubernetes ]
+tags: [ Container, Kubernetes, ConfigMap, Secret ]
 layout: post
 toc: true
 math: true
@@ -197,6 +197,7 @@ containers:
 ## 실습 과제
 
 1. **ConfigMap 생성 및 사용**
+
 ```bash
 # ConfigMap 생성 (명령형)
 kubectl create configmap app-config \
@@ -211,6 +212,7 @@ kubectl run nginx --image=nginx --env=SERVER_PORT=configMap:app-config:server.po
 ```
 
 2. **Secret 생성 및 사용**
+
 ```bash
 # Secret 생성 (명령형)
 kubectl create secret generic db-secret \
@@ -225,6 +227,7 @@ kubectl get secret db-secret -o jsonpath='{.data.password}' | base64 -d
 ```
 
 3. **ConfigMap을 파일로 마운트**
+
 ```yaml
 apiVersion: v1
 kind: Pod

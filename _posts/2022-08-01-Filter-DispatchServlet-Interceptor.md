@@ -42,7 +42,7 @@ import java.io.IOException;
 
 public interface Filter {
 
-    public default void init(FilterConfig filterConfig) throws ServletException {}
+    default void init(FilterConfig filterConfig) throws ServletException {}
 
     public void doFilter(
             ServletRequest request,
@@ -50,8 +50,7 @@ public interface Filter {
             FilterChain chain
     ) throws IOException, ServletException;
 
-    public default void destroy() {}
-}
+    public default void 
 ```
 
 해당 코드에서 제거된 주석을 자세히 보면, 약 9가지의 쓰임새로 사용된다고 한다.
@@ -109,7 +108,6 @@ Filter Inteface는 3가지 메서드를 명세해 놓았다.
 2. ServletResponse response – 요청과 관련된 응답
 
 3. chain – 필터의 추가 처리를 위해서, 요청 및 응답을 전달할 체인의 다음 필터에 대한 액세스를 제공
-
 
 ### doFilter() 요약
 
@@ -197,7 +195,6 @@ Dispatcher Servlet 이 요청을 처리할 컨트롤러를 먼저 찾고
 
 8. Server의 응답을 Client에 반환한다.
 
-
 `Dispatcher-Servlet, Handler-Mapping, Handler-Adapter 는 Spring의 구현체`
 
 `Controller, Service, Repository, ResponseEntity 는 개발자의 몫`
@@ -264,7 +261,6 @@ preHandler의 매개변수인 Object handler 는 Handler-Mapping 이 찾아준 C
 이 메서드에는 Controller가 반환하는 ModelAndView 타입의 정보가 제공되지만,
 
 최근 RestController 를 사용하게 되면서 자주 사용되지 않는다.
-
 
 ## afterCompletion
 

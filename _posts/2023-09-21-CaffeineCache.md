@@ -204,7 +204,7 @@ public final class Caffeine<K, V> {
   // 참조 강도 열거형 (Strong, Weak, Soft)
   enum Strength {
     WEAK,  // 약한 참조: GC가 즉시 수집
-    SOFT;   // 소프트 참조: 메모리 부족 시 수집
+    SOFT   // 소프트 참조: 메모리 부족 시 수집
   }
 }
 ```
@@ -214,9 +214,11 @@ public final class Caffeine<K, V> {
 # Caffeine Cache 구조
 
 #### 공식문서 버전
+
 ![](https://raw.githubusercontent.com/ben-manes/caffeine/master/wiki/design/design.png)
 
 #### 김도현버전
+
 ![img.png](../images/caffeine/components.png)
 ![img.png](../images/caffeine/flow.png)
 
@@ -259,17 +261,20 @@ Caffeine의 TinyLFU 정책은 CountMinSketch 자료구조를 사용하여 빈도
 ConcurrentHashMap (CHM): 실제 캐시 데이터를 저장하는 동시성 해시맵
 
 ### Window Cache (1%)
+
 - 모든 신규 데이터의 첫 진입점
 - 버스트 트래픽으로부터 Main Cache 보호
 - LRU 정책으로 공간 확보
 - 방출 데이터는 TinyLFU 정책으로 Probation으로 이동 시도
 
 ### Probation Cache (20%)
+
 - 새로운 데이터의 유용성 검증 공간
 - TinyLFU 정책으로 데이터 관리
 - 자주 접근되는 데이터는 Protected로 승격
 
 ### Protected Cache (80%)
+
 - 자주 사용되는 데이터 보관
 - LRU 정책으로 공간 확보
 - 방출 데이터는 TinyLFU로 Probation 이동 시도
@@ -277,25 +282,30 @@ ConcurrentHashMap (CHM): 실제 캐시 데이터를 저장하는 동시성 해�
 ## 버퍼 시스템 (Buffer System)
 
 ### 읽기 버퍼 (Read Buffer)
+
 - Striped Ring Buffer: 스레드별 분리된 원형 버퍼로 읽기 작업 처리
 - Read Cache: 읽기 작업 임시 저장소
 
 ### 쓰기 버퍼 (Write Buffer)
+
 - Circular Array Buffer: 확장 가능한 원형 배열로 쓰기 작업 처리
 - Write Cache: 쓰기 작업 임시 저장소
 
 ## 정책 시스템 (Policy System)
+
 - TinyLFU Policy: 캐시 진입/방출 결정 정책
 - LRU Policy: 최근 사용 기반 방출 정책
 - CountMinSketch: 데이터 접근 빈도 추적기
 - Timer Wheel: 캐시 항목 만료 시간 관리자
 
 ## 유지보수 시스템 (Maintenance System)
+
 - Entry Expiration (항목 만료): 만료된 캐시 항목 관리
 - Entry Eviction (항목 방출): 캐시 공간 확보를 위한 방출 처리
 - Cleanup Task (정리 작업): 주기적인 캐시 정리 작업 수행
 
 ## 데이터 흐름
+
 1. 새 데이터 → Window Cache 진입
 2. Window Cache에서 LRU로 오래된 항목 방출 → TinyLFU 정책 평가
 3. TinyLFU 승인 시 → Probation Cache 이동
@@ -310,9 +320,10 @@ ConcurrentHashMap (CHM): 실제 캐시 데이터를 저장하는 동시성 해�
 - 약 1%의 무작위 승인으로 HashDoS 공격 방지
 
 ### Candidate (진입 후보)
+
 - **정의**
   - Window Cache나 Protected Cache에서 LRU 정책으로 방출된 데이터
-- **목적지** 
+- **목적지**
   - Probation Cache로 진입을 시도하는 데이터
 - **상태**
   - TinyLFU 정책의 평가를 기다리는 상태
@@ -322,6 +333,7 @@ ConcurrentHashMap (CHM): 실제 캐시 데이터를 저장하는 동시성 해�
   - 빈도수가 낮으면: 최종 방출 (캐시에서 제거)
 
 ### Victim (제거 대상)
+
 - **정의**
   - 새로운 Candidate를 위해 제거될 수 있는 Probation Cache 내의 데이터
 - **위치**
@@ -614,9 +626,9 @@ class ProductService {
 
 8스레드 환경:
 
--  Caffeine: 144,193,725 ops/s
--  Ehcache2: 9,472,810 ops/s
--  Ehcache3: 10,958,697 ops/s
+- Caffeine: 144,193,725 ops/s
+- Ehcache2: 9,472,810 ops/s
+- Ehcache3: 10,958,697 ops/s
 
 16스레드 환경:
 
@@ -685,12 +697,12 @@ public class CacheStaticsLogger {
 ## 캐시 TTL을 짧게 가져갔을 때와 길게 가져갔을 때의 장/단점은 어떤게 있을까?
 
 - `TTL을 짧게 가져간다면`
-    - 캐싱된 데이터가 가장 최근에 업데이트된 데이터에 빠르게 반영될 수 있는 장점이 있다.
-    - 하지만 자주 변하지 않는 데이터라면 캐시를 교체하는 리소스가 빈번하게 발생할 수 있다는 단점이 있다.
+  - 캐싱된 데이터가 가장 최근에 업데이트된 데이터에 빠르게 반영될 수 있는 장점이 있다.
+  - 하지만 자주 변하지 않는 데이터라면 캐시를 교체하는 리소스가 빈번하게 발생할 수 있다는 단점이 있다.
 
 - `TTL을 길게 가져간다면`
-    - 캐시를 교체하는 주기가 길어지기 때문에 캐싱된 데이터를 변경없이 오랫동안 제공할 수 있는 장점이 있다.
-    - 하지만 캐시가 교체되어야할 시점에 적절하게 교체되지 못하여 변경 전의 데이터를 장기간 제공하는 상황이 발생할 수 있다는 단점이 있따.
+  - 캐시를 교체하는 주기가 길어지기 때문에 캐싱된 데이터를 변경없이 오랫동안 제공할 수 있는 장점이 있다.
+  - 하지만 캐시가 교체되어야할 시점에 적절하게 교체되지 못하여 변경 전의 데이터를 장기간 제공하는 상황이 발생할 수 있다는 단점이 있따.
 
 ---
 
@@ -701,12 +713,11 @@ public class CacheStaticsLogger {
 - 캐시 데이터에 해당 캐시의 버전을 표기할 수 있는 메타데이터를 통해 클라이언트와 버전 싱크를 맞추면 해결할 수 있을 것으로 생각한다.
 
 - 클라이언트는 응답 받은 데이터의 캐시 정보에 대한 메타데이터를 확인하고 이전에 받은 데이터의 버전과 일치한다면 최신 버전으로 간주하고
-    - 만약 버전이 변경되었다면 새로운 캐시를 받아 반영하는 방식을 적용한다면 될 것 같다.
+  - 만약 버전이 변경되었다면 새로운 캐시를 받아 반영하는 방식을 적용한다면 될 것 같다.
 
 ### 캐시 신선도를 활용하기 위한 eTag 활용하기
 
 위에서 언급한 방법을 실제 코드로 적용한 바는 아래와 같다.
-
 
 ```java
 @Configuration

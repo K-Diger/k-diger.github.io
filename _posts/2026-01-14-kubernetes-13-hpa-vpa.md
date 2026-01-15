@@ -16,14 +16,17 @@ mermaid: true
 Kubernetes는 세 가지 레벨의 auto-scaling을 제공한다:
 
 **1. Horizontal Pod Autoscaler (HPA)**
+
 - Pod 개수를 자동 조절 (Scale Out/In)
 - CPU, 메모리, 커스텀 메트릭 기반
 
 **2. Vertical Pod Autoscaler (VPA)**
+
 - Pod의 리소스 requests/limits 자동 조절 (Scale Up/Down)
 - 컨테이너 크기 최적화
 
 **3. Cluster Autoscaler**
+
 - 노드 개수를 자동 조절
 - 클라우드 환경에서 동작
 
@@ -50,6 +53,7 @@ desiredReplicas = ceil[currentReplicas * (currentMetricValue / targetMetricValue
 ```
 
 예시:
+
 - 현재 replica: 3개
 - 현재 CPU 사용률: 90%
 - 목표 CPU 사용률: 50%
@@ -174,6 +178,7 @@ spec:
 **주의사항:**
 
 메모리 기반 HPA는 주의가 필요하다. 메모리는 압축 불가능한 리소스이므로:
+
 - Scale down 시 메모리가 즉시 해제되지 않을 수 있음
 - OOMKilled 위험
 - CPU 기반과 병행 사용 권장
@@ -219,6 +224,7 @@ spec:
 각 메트릭마다 필요한 replica 수를 계산하고, **가장 큰 값**을 선택한다.
 
 예시:
+
 - CPU 기준: 6개 필요
 - Memory 기준: 4개 필요
 - RPS 기준: 8개 필요
@@ -305,14 +311,17 @@ kubectl get pods -n kube-system | grep vpa
 ### VPA 컴포넌트
 
 **1. VPA Recommender**
+
 - 리소스 사용량 분석
 - 최적 값 추천
 
 **2. VPA Updater**
+
 - Pod 재시작 필요 여부 결정
 - Pod eviction 실행
 
 **3. VPA Admission Controller**
+
 - 새 Pod의 리소스 값 자동 설정
 
 ### VPA 생성
@@ -346,6 +355,7 @@ spec:
 ### Update Modes
 
 **1. Off**
+
 - 추천만 제공, 자동 적용 안 함
 - 모니터링 및 분석용
 
@@ -355,6 +365,7 @@ updatePolicy:
 ```
 
 **2. Initial**
+
 - Pod 최초 생성 시에만 적용
 - 기존 Pod는 그대로 유지
 
@@ -364,6 +375,7 @@ updatePolicy:
 ```
 
 **3. Recreate**
+
 - 리소스 변경 시 Pod 재생성
 - 다운타임 발생
 
@@ -373,6 +385,7 @@ updatePolicy:
 ```
 
 **4. Auto**
+
 - Recreate와 동일하지만 eviction API 사용
 - PodDisruptionBudget 준수
 
@@ -410,6 +423,7 @@ kubectl describe vpa myapp-vpa
 **1. HPA와 동시 사용 불가 (CPU/Memory 기준)**
 
 VPA와 HPA를 CPU/Memory 기준으로 동시 사용하면 충돌이 발생한다. 해결책:
+
 - VPA: CPU/Memory
 - HPA: Custom metrics (RPS 등)
 

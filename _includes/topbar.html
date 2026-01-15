@@ -1,76 +1,76 @@
 <!-- The Top Bar -->
 
-<header id="topbar-wrapper" class="flex-shrink-0" aria-label="Top Bar">
+<header aria-label="Top Bar" class="flex-shrink-0" id="topbar-wrapper">
   <div
-    id="topbar"
     class="d-flex align-items-center justify-content-between px-lg-3 h-100"
+    id="topbar"
   >
-    <nav id="breadcrumb" aria-label="Breadcrumb">
+    <nav aria-label="Breadcrumb" id="breadcrumb">
       {% assign paths = page.url | split: '/' %}
 
       {% if paths.size == 0 or page.layout == 'home' %}
-        <!-- index page -->
-        <span>{{ site.data.locales[include.lang].tabs.home | capitalize }}</span>
+      <!-- index page -->
+      <span>{{ site.data.locales[include.lang].tabs.home | capitalize }}</span>
 
       {% else %}
-        {% for item in paths %}
-          {% if forloop.first %}
-            <span>
+      {% for item in paths %}
+      {% if forloop.first %}
+      <span>
               <a href="{{ '/' | relative_url }}">
                 {{- site.data.locales[include.lang].tabs.home | capitalize -}}
               </a>
             </span>
 
-          {% elsif forloop.last %}
-            {% if page.collection == 'tabs' %}
-              <span>{{ site.data.locales[include.lang].tabs[item] | default: page.title }}</span>
-            {% else %}
-              <span>{{ page.title }}</span>
-            {% endif %}
+      {% elsif forloop.last %}
+      {% if page.collection == 'tabs' %}
+      <span>{{ site.data.locales[include.lang].tabs[item] | default: page.title }}</span>
+      {% else %}
+      <span>{{ page.title }}</span>
+      {% endif %}
 
-          {% elsif page.layout == 'category' or page.layout == 'tag' %}
-            <span>
+      {% elsif page.layout == 'category' or page.layout == 'tag' %}
+      <span>
               <a href="{{ item | append: '/' | relative_url }}">
                 {{- site.data.locales[include.lang].tabs[item] | default: page.title -}}
               </a>
             </span>
-          {% endif %}
-        {% endfor %}
+      {% endif %}
+      {% endfor %}
       {% endif %}
     </nav>
     <!-- endof #breadcrumb -->
 
-    <button type="button" id="sidebar-trigger" class="btn btn-link" aria-label="Sidebar">
+    <button aria-label="Sidebar" class="btn btn-link" id="sidebar-trigger" type="button">
       <i class="fas fa-bars fa-fw"></i>
     </button>
 
     <div id="topbar-title">
       {% if page.layout == 'home' %}
-        {{- site.data.locales[include.lang].title | default: site.title -}}
+      {{- site.data.locales[include.lang].title | default: site.title -}}
       {% elsif page.collection == 'tabs' or page.layout == 'page' %}
-        {%- capture tab_key -%}{{ page.url | split: '/' }}{%- endcapture -%}
-        {{- site.data.locales[include.lang].tabs[tab_key] | default: page.title -}}
+      {%- capture tab_key -%}{{ page.url | split: '/' }}{%- endcapture -%}
+      {{- site.data.locales[include.lang].tabs[tab_key] | default: page.title -}}
       {% else %}
-        {{- site.data.locales[include.lang].layout[page.layout] | default: page.layout | capitalize -}}
+      {{- site.data.locales[include.lang].layout[page.layout] | default: page.layout | capitalize -}}
       {% endif %}
     </div>
 
-    <button type="button" id="search-trigger" class="btn btn-link" aria-label="Search">
+    <button aria-label="Search" class="btn btn-link" id="search-trigger" type="button">
       <i class="fas fa-search fa-fw"></i>
     </button>
 
-    <search id="search" class="align-items-center ms-3 ms-lg-0">
+    <search class="align-items-center ms-3 ms-lg-0" id="search">
       <i class="fas fa-search fa-fw"></i>
       <input
-        class="form-control"
-        id="search-input"
-        type="search"
         aria-label="search"
         autocomplete="off"
+        class="form-control"
+        id="search-input"
         placeholder="{{ site.data.locales[include.lang].search.hint | capitalize }}..."
+        type="search"
       >
     </search>
-    <button type="button" class="btn btn-link text-decoration-none" id="search-cancel">
+    <button class="btn btn-link text-decoration-none" id="search-cancel" type="button">
       {{- site.data.locales[include.lang].search.cancel -}}
     </button>
   </div>

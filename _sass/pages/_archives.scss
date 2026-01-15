@@ -71,12 +71,12 @@
       &:nth-child(odd) {
         background-color: var(--main-bg, #ffffff);
         background-image: linear-gradient(
-          to left,
-          #ffffff,
-          #fbfbfb,
-          #fbfbfb,
-          #fbfbfb,
-          #ffffff
+            to left,
+            #ffffff,
+            #fbfbfb,
+            #fbfbfb,
+            #fbfbfb,
+            #ffffff
         );
       }
 
@@ -92,7 +92,9 @@
     &:last-child li:last-child::before {
       height: 1.5rem;
     }
-  } /* #archives ul */
+  }
+
+  /* #archives ul */
 
   .date {
     white-space: nowrap;
@@ -137,4 +139,6 @@
       z-index: 1;
     }
   }
-} /* #archives */
+}
+
+/* #archives */

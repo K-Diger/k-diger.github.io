@@ -1,8 +1,8 @@
 ---
 title: "Part 16: Node Drain과 Cluster Upgrade - 유지보수"
 date: 2026-01-17
-categories: [Container, Kubernetes]
-tags: [Container, Kubernetes, Maintenance, Backup, Upgrade]
+categories: [ Container, Kubernetes ]
+tags: [ Container, Kubernetes, Maintenance, Backup, Upgrade ]
 layout: post
 toc: true
 math: true
@@ -175,13 +175,13 @@ kubectl describe pdb web-pdb
 **업그레이드 순서:**
 
 1. Control Plane 컴포넌트 (한 번에 하나씩)
-   - etcd
-   - kube-apiserver
-   - kube-controller-manager
-   - kube-scheduler
+  - etcd
+  - kube-apiserver
+  - kube-controller-manager
+  - kube-scheduler
 2. Worker Node 컴포넌트
-   - kubelet
-   - kube-proxy
+  - kubelet
+  - kube-proxy
 
 **버전 skew 정책:**
 
@@ -191,6 +191,7 @@ kubectl describe pdb web-pdb
 - kubectl: N+1, N, N-1
 
 예: kube-apiserver가 1.28이면
+
 - controller-manager/scheduler: 1.27 또는 1.28
 - kubelet/kube-proxy: 1.26, 1.27, 1.28
 
@@ -330,6 +331,7 @@ kubectl get --raw='/readyz?verbose'
 **etcd의 중요성:**
 
 etcd는 Kubernetes 클러스터의 모든 상태 정보를 저장하는 핵심 데이터베이스입니다:
+
 - 모든 리소스 정의 (Pods, Services, ConfigMaps, Secrets 등)
 - 클러스터 설정
 - 네트워크 정책

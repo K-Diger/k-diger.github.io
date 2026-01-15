@@ -49,12 +49,15 @@ mermaid: true
 # Annotation(어노테이션)의 용도
 
 ### Information for the compiler
+
 컴파일러에게 코드 문법 에러를 체크하도록 정보를 제공
 
 ### Compile-time and deployment-time processing
+
 어노테이션 정보를 처리하여 코드, XML 파일 등을 생성 가능
 
 ### Runtime processing
+
 실행시(Runtime) 특정 기능을 실행하도록 정보를 제공
 
 ### Build.gradle
@@ -177,7 +180,6 @@ ElementType.TYPE_USE : 타입 선언에 붙이기
 ### @Inherited
 
 어노테이션의 상속을 가능하게 함
-
 
 ### @Repeatable
 
@@ -316,7 +318,6 @@ ElementType.TYPE으로 정의되어, 우리가 흔히 Controller 클래스 파�
 |------------------|-------------------------|
 | ElementType.Type | RetentionPolicy.RUNTIME |
 
-
 #### @Target
 
 ElementType.TYPE으로 정의되어, 우리가 흔히 Controller 클래스 파일을 만들었을 때, 해당 클래스에 어노테이션을 붙일 수 있게 해두었다.
@@ -324,7 +325,6 @@ ElementType.TYPE으로 정의되어, 우리가 흔히 Controller 클래스 파�
 #### @Retention
 
 런타임 시에도 유지되어야 하므로 RetentionPolicy.RUNTIME으로 작성 해두었다.
-
 
 ### Indexed
 

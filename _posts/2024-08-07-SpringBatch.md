@@ -175,13 +175,13 @@ private JobParameters buildJobParameters(String[] args) {
 
 ### Table. BATCH_JOB_EXECUTION_PARAMS
 
-| EXECUTION_ID | TYPE_CD | KEY_NAME |  STRING_VAL  | DATE_VAL            | LONG_VAL | DOUBLE_VAL | IDENTIFYING |
-|---|---------|----------|---|---------------------|----------|------------|---|
-|              |         |          |              |                     |          |            |             |
-1 | STRING  | name     | user1 | 1970-01-01 09:00:00 | 0        | 0          | Y |
-1 | LONG    | seq      |  | 1970-01-01 09:00:00 | 2        | 0          | Y |
-1 | DATE    | date     |  | now                 | 0        | 0          | Y |
-1 | DOUBLE  | double   |  | 1970-01-01 09:00:00 | 0        | 12.3       | Y |
+| EXECUTION_ID | TYPE_CD | KEY_NAME | STRING_VAL | DATE_VAL            | LONG_VAL | DOUBLE_VAL | IDENTIFYING |
+|--------------|---------|----------|------------|---------------------|----------|------------|-------------|
+|              |         |          |            |                     |          |            |             |
+ 1            | STRING  | name     | user1      | 1970-01-01 09:00:00 | 0        | 0          | Y           |
+ 1            | LONG    | seq      |            | 1970-01-01 09:00:00 | 2        | 0          | Y           |
+ 1            | DATE    | date     |            | now                 | 0        | 0          | Y           |
+ 1            | DOUBLE  | double   |            | 1970-01-01 09:00:00 | 0        | 12.3       | Y           |
 
 ---
 
@@ -270,14 +270,14 @@ StepExecution이 가지는 필드는 아래와 같다.
 - `JobExecution`: JobExecution객체
 - `stepName`: Step이름
 - `BatchStatus` : 실행 상태
-    - COMPLETED: 배치 작업 실행을 성공적으로 완료
-    - STARTING: 배치 작업 실행 전 상태
-    - STARTED: 배치 작업이 실행중
-    - STOPPING: 배치 작업을 중지하기 전에 단계가 완료되기를 기다리는 배치 작업 상태
-    - STOPPED: 요청에 의해 중지된 배치 작업
-    - FAILED: 배치 작업 실행 중에 실패
-    - ABANDONED: 제대로 중지되지 않아 다시 시작할 수 없는 배치 작업의 상태
-    - UNKNOWN: 불확실한 상태인 배치 작업의 상태
+  - COMPLETED: 배치 작업 실행을 성공적으로 완료
+  - STARTING: 배치 작업 실행 전 상태
+  - STARTED: 배치 작업이 실행중
+  - STOPPING: 배치 작업을 중지하기 전에 단계가 완료되기를 기다리는 배치 작업 상태
+  - STOPPED: 요청에 의해 중지된 배치 작업
+  - FAILED: 배치 작업 실행 중에 실패
+  - ABANDONED: 제대로 중지되지 않아 다시 시작할 수 없는 배치 작업의 상태
+  - UNKNOWN: 불확실한 상태인 배치 작업의 상태
 - `readCount`: read 성공한 아이템 수
 - `writeCount`: write 성공한 아이템 수
 - `commitCount`: 실행 중 커밋된 트랜잭션 수
@@ -291,12 +291,12 @@ StepExecution이 가지는 필드는 아래와 같다.
 - `lastUpdated`: JobExecution이 마지막 저장될 때의 시스템 시간
 - `ExecutionContext`: 실행되는 동안 유지하는 메타데이터
 - `ExitStatus` : 실행 결과
-    - UNKNOWN: 알 수 없는 상태, 배치 재시작이 불가능하다
-    - EXECUTING: 배치 처리가 진행중
-    - COMPLETED: 배치 실행이 정상적으로 종료되었을때
-    - NOOP: 배치 작업을 처리할 게 없는경우 ex) 배치가 이미 완료가 된경우
-    - FAILED: 배치 처리가 실패함
-    - STOPPED: 배치 처리 작업 중간에 중단된 상태
+  - UNKNOWN: 알 수 없는 상태, 배치 재시작이 불가능하다
+  - EXECUTING: 배치 처리가 진행중
+  - COMPLETED: 배치 실행이 정상적으로 종료되었을때
+  - NOOP: 배치 작업을 처리할 게 없는경우 ex) 배치가 이미 완료가 된경우
+  - FAILED: 배치 처리가 실패함
+  - STOPPED: 배치 처리 작업 중간에 중단된 상태
 - `failureException`: Job실행 중 발생한 예외 리스트
 
 ### Table. BATCH_STEP_EXECUTION
@@ -329,11 +329,11 @@ StepContribution은 아래 필드를 갖는다.
 - `writeSkipCount`: write에 실패해서 스킵된 횟수
 - `processSkipCount`: process에 실패해서 스킵된 횟수
 - `ExitStatus` : 실행 결과
-    - UNKNOWN: 알 수 없는 상태, 배치 재시작이 불가능하다
-    - EXECUTING: 배치 처리가 진행중
-    - COMPLETED: 배치 실행이 정상적으로 종료되었을때
-    - NOOP: 배치 작업을 처리할 게 없는경우 ex) 배치가 이미 완료가 된경우
-    - FAILED: 배치 처리가 실패함
-    - STOPPED: 배치 처리 작업 중간에 중단된 상태
+  - UNKNOWN: 알 수 없는 상태, 배치 재시작이 불가능하다
+  - EXECUTING: 배치 처리가 진행중
+  - COMPLETED: 배치 실행이 정상적으로 종료되었을때
+  - NOOP: 배치 작업을 처리할 게 없는경우 ex) 배치가 이미 완료가 된경우
+  - FAILED: 배치 처리가 실패함
+  - STOPPED: 배치 처리 작업 중간에 중단된 상태
 - `StepExecution`: StepExecution객체 저장
 

@@ -1,8 +1,8 @@
 ---
 title: "Part 19: Kubernetes Internals - 내부 동작 원리"
 date: 2026-01-20
-categories: [Container, Kubernetes]
-tags: [Container, Kubernetes, Architecture, DeepDive]
+categories: [ Container, Kubernetes ]
+tags: [ Container, Kubernetes, Architecture, DeepDive ]
 layout: post
 toc: true
 math: true
@@ -44,8 +44,8 @@ spec:
         app: nginx
     spec:
       containers:
-      - name: nginx
-        image: nginx:1.21
+        - name: nginx
+          image: nginx:1.21
 ```
 
 **Reconciliation Loop 동작:**
@@ -70,20 +70,24 @@ spec:
 ### Controller의 종류와 역할
 
 **Deployment Controller:**
+
 - ReplicaSet을 관리한다
 - Rolling Update와 Rollback을 제어한다
 - 배포 전략을 실행한다
 
 **Node Controller:**
+
 - 노드 상태를 모니터링한다
 - 5분간 응답 없는 노드를 Not Ready로 표시한다
 - 해당 노드의 Pod를 다른 노드로 재배치한다
 
 **Endpoint Controller:**
+
 - Service와 Pod를 연결한다
 - Pod의 IP 주소 변경을 감지하여 Endpoint를 자동 업데이트한다
 
 **참고 자료:**
+
 - [Kubernetes Controllers 공식 문서](https://kubernetes.io/docs/concepts/architecture/controller/)
 - [Kubernetes Design Principles](https://kubernetes.io/docs/concepts/architecture/#kubernetes-control-plane)
 
@@ -156,6 +160,7 @@ Leader → Client: 성공 응답
 - **대규모 엔터프라이즈**: 7개 etcd 노드 (3개 장애 허용)
 
 **7개 이상은 비권장:**
+
 - 네트워크 지연 증가
 - 합의 도달 시간 증가
 - 성능 저하
@@ -191,6 +196,7 @@ Leader → Client: 성공 응답
 ```
 
 **참고 자료:**
+
 - [etcd 공식 문서](https://etcd.io/docs/latest/)
 - [Raft 알고리즘 설명](https://raft.github.io/)
 - [Raft Visualization](http://thesecretlivesofdata.com/raft/)
@@ -350,6 +356,7 @@ Node2:
 ```
 
 **참고 자료:**
+
 - [Scheduler 공식 문서](https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/)
 - [Scheduler Configuration](https://kubernetes.io/docs/reference/scheduling/config/)
 
@@ -456,6 +463,7 @@ data:
 ```
 
 **참고 자료:**
+
 - [kube-proxy 공식 문서](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/)
 - [IPVS 모드](https://kubernetes.io/blog/2018/07/09/ipvs-based-in-cluster-load-balancing-deep-dive/)
 
@@ -552,6 +560,7 @@ NetworkPolicy 지원: 완전 지원 + L7 정책
 ```
 
 **참고 자료:**
+
 - [CNI 공식 문서](https://www.cni.dev/)
 - [Kubernetes 네트워킹 모델](https://kubernetes.io/docs/concepts/services-networking/)
 
@@ -727,6 +736,7 @@ spec:
 ```
 
 **참고 자료:**
+
 - [CSI 공식 문서](https://kubernetes-csi.github.io/docs/)
 - [Kubernetes Storage](https://kubernetes.io/docs/concepts/storage/)
 

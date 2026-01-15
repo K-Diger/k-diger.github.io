@@ -189,17 +189,19 @@ ETCDCTL_API=3 etcdctl snapshot save snapshot.db \
 **스케줄링 과정:**
 
 1. **필터링 (Filtering)**: 조건을 만족하는 노드 선택
-  - CPU/메모리 요청 확인
-  - 노드 셀렉터 확인
-  - Affinity/Anti-affinity 규칙 확인
-  - Taints와 Tolerations 확인
-  - 기타 제약 조건 확인
+
+- CPU/메모리 요청 확인
+- 노드 셀렉터 확인
+- Affinity/Anti-affinity 규칙 확인
+- Taints와 Tolerations 확인
+- 기타 제약 조건 확인
 
 2. **점수 부여 (Scoring)**: 적합한 노드 순위 지정
-  - 리소스 활용률
-  - 데이터 지역성
-  - Pod Affinity/Anti-affinity
-  - 토폴로지 분산
+
+- 리소스 활용률
+- 데이터 지역성
+- Pod Affinity/Anti-affinity
+- 토폴로지 분산
 
 3. **바인딩 (Binding)**: 최고 점수 노드에 Pod 할당
 

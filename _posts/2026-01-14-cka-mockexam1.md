@@ -19,6 +19,7 @@ mermaid: true
 - **검색 키워드:** `emptyDir`, `fieldRef`, `downward api`, `environment variable pod field`
 
 **Solution:**
+
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -69,6 +70,7 @@ As an administrator, you need to prepare node01 to install kubernetes. One of th
 - **검색 키워드:** `container runtimes`, `cri dockerd`, `docker engine`
 
 **Solution:**
+
 ```bash
 ssh bob@node01  # password: caleston123
 sudo -i
@@ -92,6 +94,7 @@ systemctl status cri-docker.service
 - **검색 키워드:** `kubectl get crd`, `custom resources`, `crd list`
 
 **Solution:**
+
 ```bash
 kubectl get crd -o custom-columns=NAME:.metadata.name --no-headers | grep verticalpodautoscaler > /root/vpa-crds.txt
 cat /root/vpa-crds.txt
@@ -109,6 +112,7 @@ cat /root/vpa-crds.txt
 - **검색 키워드:** `kubectl expose`, `service`, `clusterip`
 
 **Solution:**
+
 ```bash
 kubectl expose pod messaging --port=6379 --name messaging-service
 ```
@@ -125,6 +129,7 @@ kubectl expose pod messaging --port=6379 --name messaging-service
 - **검색 키워드:** `kubectl create deployment`, `deployment`, `replicas`
 
 **Solution:**
+
 ```bash
 kubectl create deployment hr-web-app --image=kodekloud/webapp-color --replicas=2
 ```
@@ -140,6 +145,7 @@ kubectl create deployment hr-web-app --image=kodekloud/webapp-color --replicas=2
 - **검색 키워드:** `init containers`, `initContainers`, `pod lifecycle`
 
 **Solution:**
+
 ```bash
 kubectl describe pod orange
 kubectl get pod orange -o yaml > orange.yaml
@@ -158,6 +164,7 @@ kubectl replace -f orange.yaml --force
 - **검색 키워드:** `Service NodePort`, `nodePort`, `service types`
 
 **Solution:**
+
 ```bash
 kubectl expose deployment hr-web-app --type=NodePort --port=8080 --name=hr-web-app-service --dry-run=client -o yaml > hr-web-app-service.yaml
 # Edit hr-web-app-service.yaml to add nodePort: 30082 under spec.ports[0]
@@ -181,6 +188,7 @@ kubectl apply -f hr-web-app-service.yaml
 - **검색 키워드:** `PersistentVolume hostPath`, `persistent volume`, `hostPath volume`
 
 **Solution:**
+
 ```yaml
 apiVersion: v1
 kind: PersistentVolume
@@ -216,6 +224,7 @@ Note: The kkapp-deploy deployment is created for backend; you can check in the t
 - **검색 키워드:** `stabilizationWindowSeconds`, `horizontal pod autoscaler`, `hpa behavior`, `scale down`
 
 **Solution:**
+
 ```yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -256,6 +265,7 @@ The VPA should automatically adjust the CPU and memory requests of the pods to o
 - **검색 키워드:** `VerticalPodAutoscaler`, `vpa`, `vertical pod autoscaler`
 
 **Solution:**
+
 ```yaml
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -294,6 +304,7 @@ kubectl apply -f analytics-vpa.yaml
 - **검색 키워드:** `Gateway API spec`, `gateway api`, `gateway listeners`
 
 **Solution:**
+
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -327,6 +338,7 @@ After updating the helm chart, upgrade the helm chart version to 18.1.15.
 - **검색 키워드:** `helm upgrade`, `helm repo update`, `helm search`, `helm list`
 
 **Solution:**
+
 ```bash
 helm list -n kk-ns
 helm repo update
@@ -340,6 +352,7 @@ helm list -n kk-ns
 ## 문제 풀이 팁
 
 ### kubectl explain 활용법
+
 ```bash
 # 리소스의 전체 구조 확인
 kubectl explain <resource>
@@ -358,15 +371,18 @@ kubectl explain deployment.spec.replicas
 ```
 
 ### 공식문서 검색 전략
+
 1. **Kubernetes 공식 문서:** https://kubernetes.io/docs/
 2. **kubectl 치트시트:** https://kubernetes.io/docs/reference/kubectl/cheatsheet/
 3. **API Reference:** https://kubernetes.io/docs/reference/kubernetes-api/
 4. **시험 중 검색 키워드:**
-  - `kubectl <resource>` (예: `kubectl deployment`)
-  - `kubernetes <개념>` (예: `kubernetes service`)
-  - `<resource> example` (예: `pod example`)
+
+- `kubectl <resource>` (예: `kubectl deployment`)
+- `kubernetes <개념>` (예: `kubernetes service`)
+- `<resource> example` (예: `pod example`)
 
 ### 시험 시 주의사항
+
 1. **항상 namespace 확인:** `-n` 옵션 사용
 2. **dry-run 활용:** `--dry-run=client -o yaml`로 템플릿 생성
 3. **kubectl explain 활용:** 필드명이나 구조가 불확실할 때

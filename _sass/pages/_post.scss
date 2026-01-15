@@ -65,7 +65,9 @@ header {
     span:last-child {
       @extend %text-sm;
     }
-  } /* .license-wrapper */
+  }
+
+  /* .license-wrapper */
 
   .post-meta a:not(:hover) {
     @extend %link-underline;
@@ -110,8 +112,12 @@ header {
 
         @extend %cursor-pointer;
       }
-    } /* .share-icons */
-  } /* .share-wrapper */
+    }
+
+    /* .share-icons */
+  }
+
+  /* .share-wrapper */
 }
 
 .post-tail-bottom {
@@ -127,7 +133,7 @@ header {
 
 .share-mastodon {
   /* See: https://github.com/justinribeiro/share-to-mastodon#properties */
-  --wc-stm-font-family: v.$font-family-base;
+  --wc-stm-font-family: #{v.$font-family-base};
   --wc-stm-dialog-background-color: var(--card-bg);
   --wc-stm-form-button-border: 1px solid var(--btn-border-color);
   --wc-stm-form-submit-background-color: var(--sidebar-btn-bg);
@@ -204,7 +210,9 @@ header {
     margin-top: 0.3rem;
     white-space: normal;
   }
-} /* .post-navigation */
+}
+
+/* .post-navigation */
 
 @media (hover: hover) {
   .post-navigation {
@@ -304,7 +312,7 @@ header {
       &:hover {
         color: var(--toc-highlight);
         text-decoration: none;
-        background-color: rgba(110, 118, 129, 0.08);
+        background-color: rgb(110 118 129 / 8%);
       }
 
       &::before {
@@ -315,7 +323,7 @@ header {
     .is-active-link {
       color: var(--toc-highlight) !important;
       font-weight: 600;
-      background-color: rgba(100, 181, 246, 0.1);
+      background-color: rgb(100 181 246 / 10%);
 
       &::before {
         display: inline-block;

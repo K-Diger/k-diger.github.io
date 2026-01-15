@@ -124,10 +124,10 @@ OpenTelemtry의 주요 개념은 다음과 같다.
 그리고 아래 세부적인 컴포넌트들로 이 시그널을 정의한다.
 
 * 규격 (Specification)
-    * 데이터 모델 (정의)
-    * API (인터페이스)
-    * SDK (구현)
-    * 시맨틱 표기법 (표준화)
+  * 데이터 모델 (정의)
+  * API (인터페이스)
+  * SDK (구현)
+  * 시맨틱 표기법 (표준화)
 
 **규격 (Specification)**
 
@@ -144,20 +144,20 @@ OpenTelemetry의 설계도와 같은 문서로 모든 구현체가 따라야 하
 관찰성 데이터의 구조를 정의한다. 위에서 언급한 규격의 세부적인 레벨의 규격이라고 보면 될 것 같다.
 
 * Traces
-    * TraceId
-    * SpanId
-    * TraceState
-    * SpanContext
+  * TraceId
+  * SpanId
+  * TraceState
+  * SpanContext
 * Metrics
-    * Name
-    * Description
-    * Unit
-    * DataPoints
+  * Name
+  * Description
+  * Unit
+  * DataPoints
 * Logs
-    * Timestamp
-    * Severity
-    * Body
-    * Attributes
+  * Timestamp
+  * Severity
+  * Body
+  * Attributes
 
 **API**
 
@@ -198,17 +198,17 @@ public class CustomSpanProcessor implements SpanProcessor {
 
 * 표준화된 이름과 속성을 정의한다.
 * 서비스 관련
-    * service.name
-    * service.version
-    * service.instance.id
+  * service.name
+  * service.version
+  * service.instance.id
 * HTTP 요청 관련
-    * http.method
-    * http.url
-    * http.status_code
+  * http.method
+  * http.url
+  * http.status_code
 * 데이터베이스 관련
-    * db.system
-    * db.name
-    * db.statement
+  * db.system
+  * db.name
+  * db.statement
 
 ### 파이프라인
 

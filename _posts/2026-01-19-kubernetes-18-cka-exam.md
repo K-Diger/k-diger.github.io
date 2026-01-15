@@ -34,26 +34,26 @@ mermaid: true
 ### 시험 도메인 및 배점
 
 1. **Storage (10%)**
-   - PersistentVolume, PersistentVolumeClaim
-   - StorageClass
+  - PersistentVolume, PersistentVolumeClaim
+  - StorageClass
 
 2. **Troubleshooting (30%)**
-   - 클러스터 및 애플리케이션 장애 해결
-   - Control Plane 및 Worker Node 문제 해결
-   - 네트워크 문제 해결
+  - 클러스터 및 애플리케이션 장애 해결
+  - Control Plane 및 Worker Node 문제 해결
+  - 네트워크 문제 해결
 
 3. **Workloads & Scheduling (15%)**
-   - Deployment, ConfigMap, Secret
-   - Resource Limits, 스케줄링
+  - Deployment, ConfigMap, Secret
+  - Resource Limits, 스케줄링
 
 4. **Cluster Architecture, Installation & Configuration (25%)**
-   - RBAC
-   - 클러스터 업그레이드
-   - etcd 백업/복원
+  - RBAC
+  - 클러스터 업그레이드
+  - etcd 백업/복원
 
 5. **Services & Networking (20%)**
-   - Service, Ingress
-   - NetworkPolicy
+  - Service, Ingress
+  - NetworkPolicy
 
 ---
 
@@ -398,16 +398,16 @@ kubectl config get-contexts
 ### 2. 문제 풀이 순서
 
 1. **점수 대비 시간이 짧은 문제 먼저**
-   - 1-2분 안에 풀 수 있는 문제
-   - Imperative 명령어로 바로 해결 가능한 문제
+  - 1-2분 안에 풀 수 있는 문제
+  - Imperative 명령어로 바로 해결 가능한 문제
 
 2. **배점이 높은 문제**
-   - Troubleshooting (30%)
-   - Cluster Architecture (25%)
+  - Troubleshooting (30%)
+  - Cluster Architecture (25%)
 
 3. **어려운 문제는 Flag**
-   - 시험 인터페이스의 Flag 기능 활용
-   - 모든 문제를 한 번 훑은 후 다시 돌아오기
+  - 시험 인터페이스의 Flag 기능 활용
+  - 모든 문제를 한 번 훑은 후 다시 돌아오기
 
 ### 3. 각 문제당 시간 배분
 

@@ -42,7 +42,7 @@ GET, POST, DELETE, PUT 등 HTTP 메서드를 매핑하는 코드가 구현체로
 아래 코드를 자세히 살펴보면 보인다!!
 
 ```java
-protected void service(HttpServletRequest req, HttpServletResponse resp)
+private void service(HttpServletRequest req, HttpServletResponse resp)
     throws ServletException, IOException {
 
             String method = req.getMethod();
@@ -108,7 +108,6 @@ protected void service(HttpServletRequest req, HttpServletResponse resp)
         }
 ```
 
-
 ## 3. 서블릿이 사용되지 않을 때 GC 에 의해 메모리 해제가 진행된다.
 
 ---
@@ -146,7 +145,7 @@ Web Context(Servlet Container) 가 멀티 쓰레드를 가졌기 때문에 여�
 ```java
 public interface Servlet {
 
-    public void init(ServletConfig config) throws ServletException;
+    void init(ServletConfig config) throws ServletException;
 
     public ServletConfig getServletConfig();
 
@@ -155,8 +154,7 @@ public interface Servlet {
 
     public String getServletInfo();
 
-    public void destroy();
-}
+
 ```
 
 Servlet 인터페이스의 각 메서드들의 명세를 살펴보겠다.
@@ -198,7 +196,6 @@ Returns a ServletConfig object, which contains initialization and startup parame
 The ServletConfig object returned is the one passed to the init method.
 
 Implementations of this interface are responsible for storing the ServletConfig object so that this method can return it. The GenericServlet class, which implements this interface, already does this.
-
 
 ```text
 Servlet 설정을 반환하는 메서드이다.
@@ -269,14 +266,13 @@ This method gives the servlet an opportunity to clean up any resources that are 
 ```java
     public interface ServletConfig {
 
-        public String getServletName();
+        String getServletName();
 
         public ServletContext getServletContext();
 
         public String getInitParameter(String name);
 
-        public Enumeration<String> getInitParameterNames();
-    }
+        public Enumeration<String> getInitPa
 ```
 
 ---
@@ -437,7 +433,6 @@ Attribute names should follow the same conventions as package names. Names begin
 name – a String specifying the name of the attribute
 
 an Object containing the value of the attribute, or null if the attribute does not exist
-
 
 ```text
 명명된 속성의 값을 Object로 반환하거나 지정된 이름의 속성이 없으면 null을 반환한다.
@@ -846,7 +841,7 @@ RequestDispatcher 개체를 사용하여 요청을 리소스에 전달하거나 
 ```java
 public interface ServletResponse {
 
-    public String getCharacterEncoding();
+    String getCharacterEncoding();
 
     public String getContentType();
 
@@ -870,14 +865,7 @@ public interface ServletResponse {
 
     public void resetBuffer();
 
-    public boolean isCommitted();
-
-    public void reset();
-
-    public void setLocale(Locale loc);
-
-    public Locale getLocale();
-}
+    public boolean isCommitt
 ```
 
 ---
@@ -887,6 +875,7 @@ public interface ServletResponse {
 Returns the name of the character encoding (MIME charset) used for the body sent in this response. The charset for the MIME body response can be specified explicitly or implicitly.
 
 The priority order for specifying the response body is:
+
 1. explicitly per request using setCharacterEncoding and setContentType
 2. implicitly per request using setLocale
 3. per web application via the deployment descriptor or ServletContext.setRequestCharacterEncoding(String)
@@ -1090,7 +1079,6 @@ A call to this method automatically commits the response, meaning the status cod
 
 즉, 응답 내용과 상태 코드와 헤더가 작성된다.
 ```
-
 
 ---
 

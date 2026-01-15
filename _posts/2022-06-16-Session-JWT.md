@@ -13,7 +13,6 @@ mermaid: true
 
 # 참고자료
 
-
 [Baeldung Document](https://www.baeldung.com/cs/tokens-vs-sessions)
 
 [Redis Document](https://redis.com/blog/json-web-tokens-jwt-are-dangerous-for-user-sessions/)
@@ -29,7 +28,6 @@ mermaid: true
 `인가(Authorization) : 인증된 유저가 권한이 있는지 확인하는 과정`
 
 ---
-
 
 # 토큰기반 인증 방식 (:JWT)
 
@@ -97,7 +95,6 @@ JWT는 `헤더`, `페이로드`, `서명`으로 구성되어있다.
 
 3. 해시한 값이 요청한 AccessToken과 같은지 비교하는 것으로 검증을 마친다.
 
-
 ## 토큰 기반 인증 방식의 보완점
 
 토큰이 탈취되면 손을 쓸 수 없다는 단점을 보완하기위해 AccessToken과 RefreshToken을 함께 사용하는 개념이 등장했다.
@@ -130,7 +127,7 @@ public class StandardSessionIdGenerator extends SessionIdGeneratorBase {
     @Override
     public String generateSessionId(String route) {
 
-        byte random[] = new byte[16];
+        byte[] random = new byte[16];
         int sessionIdLength = getSessionIdLength();
 
         // Render the result as a String of hexadecimal digits

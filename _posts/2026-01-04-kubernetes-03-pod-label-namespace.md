@@ -251,10 +251,12 @@ containers:
 - **limits**: Pod이 사용할 수 있는 최대 리소스. CPU는 Throttle되고, 메모리는 초과 시 OOMKilled된다.
 
 **CPU 단위:**
+
 - `1` = 1 vCPU/Core
 - `500m` = 0.5 vCPU (m은 milli)
 
 **메모리 단위:**
+
 - `128Mi` = 128 메비바이트 (1024 기반)
 - `128M` = 128 메가바이트 (1000 기반)
 
@@ -359,6 +361,7 @@ metadata:
 - **Annotation**: 추가 정보 저장. 더 많은 데이터 저장 가능. 도구, 라이브러리가 읽는 메타데이터.
 
 **사용 예:**
+
 - Label: 환경(dev/prod), 버전, 계층(frontend/backend)
 - Annotation: 빌드 정보, 설명, 타임스탬프, 외부 도구 설정
 

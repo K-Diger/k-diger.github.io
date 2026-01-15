@@ -48,26 +48,31 @@ mermaid: true
 ### 1.2 각 구성 요소의 실제 역할
 
 **클러스터 (Cluster)**
+
 - 전체 엘라스틱서치 시스템의 최상위 단위로, 동일한 cluster.name을 가진 모든 노드의 집합
 - 클러스터 상태(Cluster State)를 통해 모든 메타데이터 관리: 어떤 인덱스가 있는지, 샤드가 어느 노드에 있는지, 마스터가 누구인지 등
 - 마스터 노드가 클러스터 전체의 의사결정을 담당하며, 샤드 할당과 노드 관리를 수행
 
 **노드 (Node)**
+
 - 개별 JVM 프로세스로 실행되는 엘라스틱서치 인스턴스
 - 역할별 분담: 마스터(클러스터 관리), 데이터(샤드 저장), 조정(요청 라우팅), 인제스트(데이터 전처리) 노드
 - 각 노드는 루씬 인덱스들을 직접 관리하며 독립적으로 검색과 저장 작업 수행
 
 **인덱스 (Index)**
+
 - 논리적 데이터 그룹으로, 관계형 DB의 데이터베이스와 유사한 개념
 - 실제로는 여러 샤드로 분산 저장되며, 사용자에게는 하나의 통합된 데이터셋으로 보임
 - 매핑(어떤 필드가 있는지)과 설정(샤드 수, 레플리카 수 등) 메타데이터 포함
 
 **샤드 (Shard)**
+
 - 물리적 데이터 저장 단위이자 검색의 최소 실행 단위
 - 각 샤드는 하나의 Apache Lucene 인덱스로, 완전히 독립적으로 동작
 - 최대 약 20억 개의 도큐먼트 저장 가능, 병렬 검색으로 성능 향상
 
 **도큐먼트 (Document)**
+
 - JSON 형태의 실제 데이터로, 내부적으로 Lucene Document로 변환되어 저장
 - 불변(Immutable) 특성을 가져 업데이트 시 새 버전으로 교체됨
 
@@ -98,6 +103,7 @@ mermaid: true
 프라이머리 샤드는 데이터의 **권한 있는 원본**이며 모든 쓰기 작업의 진입점이다.
 
 **핵심 책임:**
+
 - 모든 쓰기 요청의 진입점: 인덱싱, 업데이트, 삭제 요청을 최초로 받아 처리
 - 도큐먼트 ID 기반 라우팅의 최종 목적지: 해시 계산 결과에 따라 결정된 유일한 저장소
 - In-Sync 레플리카 집합 관리: 어떤 레플리카들이 동기화되어 있는지 추적
@@ -141,6 +147,7 @@ public void executeBulkItemRequest(BulkPrimaryExecutionContext context,
 레플리카는 **프라이머리의 정확한 복사본**이면서 독립적인 검색 엔진 역할을 한다.
 
 **주요 특징:**
+
 - 읽기 전용 관점에서는 프라이머리와 동등한 성능: 검색, 집계, 분석 작업을 독립적으로 처리
 - 복제 시에만 프라이머리에 의존적: 쓰기 작업은 항상 프라이머리를 거쳐서 전달받음
 - 장애 시 프라이머리로 승격 가능: In-Sync 상태라면 즉시 프라이머리 역할 수행 가능
@@ -169,6 +176,7 @@ public void performOnReplica(ReplicaRequest request, IndexShard replica) {
 ```
 
 **레플리카의 독립성과 의존성:**
+
 - 독립성: 검색 요청을 자체적으로 처리, 프라이머리 부하 분산에 기여
 - 의존성: 모든 데이터 변경은 프라이머리를 통해서만 가능, 직접적인 쓰기 불가
 
@@ -177,6 +185,7 @@ public void performOnReplica(ReplicaRequest request, IndexShard replica) {
 엘라스틱서치는 고가용성을 위해 엄격한 배치 규칙을 적용한다:
 
 **동일 샤드 분리 원칙:**
+
 ```
 노드 1: P0, R1, R2  ← 프라이머리 0 + 다른 샤드의 레플리카들
 노드 2: P1, R0, R2  ← 프라이머리 1 + 다른 샤드의 레플리카들
@@ -186,11 +195,13 @@ public void performOnReplica(ReplicaRequest request, IndexShard replica) {
 ```
 
 이 배치 규칙은 **단일 장애점(Single Point of Failure)**을 제거한다:
+
 - 노드 1 장애 시: P0를 잃지만 R0(노드 2, 3)이 즉시 승격
 - 전체 서비스는 중단 없이 계속 제공
 - 데이터 손실 없이 가용성 보장
 
 **제어 설정:**
+
 ```json
 PUT /_cluster/settings
 {
@@ -213,6 +224,7 @@ PUT /_cluster/settings
 #### 3.1.1 1단계: 미할당 샤드 할당 (allocateUnassigned)
 
 **우선순위 기반 할당 순서:**
+
 1. 프라이머리 샤드가 레플리카보다 절대 우선
 2. 인덱스 우선순위(`index.priority`) 높은 순서
 3. 생성 시간이 오래된 순서
@@ -273,6 +285,7 @@ private boolean allocateUnassigned(RoutingAllocation allocation) {
 제약 조건을 위반하는 샤드들을 **즉시** 다른 노드로 이동시킨다.
 
 **강제 이동이 필요한 경우:**
+
 - 디스크 용량 한계 초과 (워터마크 위반)
 - 할당 필터 규칙 위반 (사용자가 특정 노드 제외 설정)
 - 동일 샤드의 프라이머리와 레플리카가 같은 노드에 있는 경우
@@ -319,6 +332,7 @@ private boolean moveShards(RoutingAllocation allocation) {
 클러스터 전체 균형을 위한 **선택적** 샤드 이동이다. 성능에 미치는 영향을 고려하여 신중하게 수행된다.
 
 **리밸런싱 조건:**
+
 - 노드 간 샤드 수 차이가 임계값(기본 1.0)을 초과
 - 현재 진행 중인 복구 작업이 제한 수 이하
 - 클러스터가 안정적인 상태
@@ -367,6 +381,7 @@ private float calculateWeight(RoutingNode node, String index) {
 ```
 
 **가중치 계산의 의미:**
+
 - **전체 샤드 균형 (0.45)**: 노드 전체의 샤드 개수가 고르게 분산되도록
 - **인덱스 샤드 균형 (0.55)**: 특정 인덱스의 샤드들이 한 노드에 몰리지 않도록
 - **프라이머리 균형 (0.05)**: 프라이머리 샤드들이 고르게 분산되도록
@@ -405,6 +420,7 @@ public Decision canAllocate(ShardRouting shardRouting, RoutingNode node, Routing
 5. **ReplicaAfterPrimaryActiveAllocationDecider**: 프라이머리가 활성화된 후에만 레플리카 할당
 
 **할당 제어 설정:**
+
 ```json
 PUT /_cluster/settings
 {
@@ -431,23 +447,27 @@ PUT /_cluster/settings
 #### 4.1.1 기본 라우팅 공식
 
 **ES 7.0+ 기준 정확한 공식:**
+
 ```
 routing_factor = num_routing_shards / num_primary_shards
 shard_num = (hash(_routing) % num_routing_shards) / routing_factor
 ```
 
 **각 변수의 의미:**
+
 - `_routing`: 라우팅 값 (기본적으로 도큐먼트 ID `_id` 사용)
 - `num_routing_shards`: 인덱스 설정의 `index.number_of_routing_shards` 값
 - `num_primary_shards`: 인덱스의 실제 프라이머리 샤드 수
 - `hash()`: Murmur3 해시 알고리즘으로 균등 분산 보장
 
 **단순한 경우 (프라이머리 샤드 수 = 라우팅 샤드 수):**
+
 ```
 shard_num = hash(_routing) % number_of_primary_shards
 ```
 
 **실제 라우팅 구현:**
+
 ```java
 // 출처: https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/OperationRouting.java
 public ShardId shardId(ClusterState clusterState, String index, String id, @Nullable String routing) {
@@ -470,11 +490,13 @@ private String effectiveRouting(String id, @Nullable String routing) {
 #### 4.1.2 해시 알고리즘의 특성
 
 **Murmur3 해시의 균등 분산:**
+
 - 입력값의 작은 변화도 완전히 다른 해시값 생성
 - 모든 샤드에 도큐먼트가 고르게 분산되도록 보장
 - 빠른 계산 속도와 높은 품질의 해시 분포
 
 **결정론적 특성의 장점:**
+
 - 동일한 라우팅 값은 항상 같은 샤드로 이동
 - 샤드 수가 변하지 않는 한 위치 불변
 - 클러스터 재시작과 무관하게 일관성 유지
@@ -505,11 +527,13 @@ GET my_index/_search?routing=user123
 ```
 
 **커스텀 라우팅의 장점:**
+
 - 관련 데이터가 같은 샤드에 저장되어 검색 성능 향상
 - 전체 샤드 대신 특정 샤드만 검색하여 리소스 절약
 - 사용자별, 날짜별 등 논리적 그룹핑 가능
 
 **주의사항:**
+
 - 라우팅 값의 분포가 고르지 않으면 핫스팟 발생 가능
 - 큰 사용자 데이터가 한 샤드에 집중될 위험
 
@@ -531,12 +555,14 @@ PUT partitioned_index
 ```
 
 **파티션 라우팅 공식:**
+
 ```
 routing_value = hash(_routing) + hash(_id) % routing_partition_size
 shard_num = (routing_value % num_routing_shards) / routing_factor
 ```
 
 **동작 원리:**
+
 - 큰 라우팅 그룹(예: user123)이 3개 파티션으로 분산됨
 - 검색 시에는 3개 샤드만 검색하면 되므로 성능 유지
 - 단일 샤드 과부하 방지와 검색 효율성의 절충점 제공
@@ -558,6 +584,7 @@ public int getShardId(String routing, String docId, int partitionSize, int numSh
 #### 4.3.1 검색 성능 최적화
 
 **단일 샤드 검색:**
+
 ```bash
 # 특정 사용자의 데이터만 검색 (1개 샤드)
 GET user_data/_search?routing=user123
@@ -577,6 +604,7 @@ GET user_data/_search?routing=user123,user456,user789
 ```
 
 **성능 향상 효과:**
+
 - 전체 샤드 대신 필요한 샤드만 검색
 - 네트워크 트래픽과 CPU 사용량 감소
 - 응답 시간 단축 및 동시 처리 능력 향상
@@ -602,6 +630,7 @@ PUT my_index/_doc/1
 ```
 
 **라우팅 필수 설정의 이유:**
+
 - 일관된 데이터 분산 보장
 - 검색 성능 최적화 강제
 - 개발자 실수 방지
@@ -634,6 +663,7 @@ public static int hash32(byte[] data, int offset, int length, int seed) {
 ```
 
 **해시 계산의 특성:**
+
 - 입력값이 조금만 달라도 완전히 다른 결과
 - 균등 분산을 위한 수학적으로 검증된 알고리즘
 - 빠른 계산 속도 (O(1) 시간 복잡도)
@@ -641,6 +671,7 @@ public static int hash32(byte[] data, int offset, int length, int seed) {
 #### 4.4.2 라우팅 최적화 모니터링
 
 **샤드별 도큐먼트 분산 확인:**
+
 ```bash
 # 샤드별 도큐먼트 분산 확인
 GET /_cat/shards/my_index?v&h=index,shard,prirep,docs&s=shard
@@ -656,6 +687,7 @@ GET /_cat/shards/my_index?v&h=index,shard,prirep,docs&s=shard
 ```
 
 **라우팅 필드별 분포 분석:**
+
 ```bash
 GET my_index/_search
 {
@@ -672,6 +704,7 @@ GET my_index/_search
 ```
 
 **불균등 분산 감지 및 대응:**
+
 - 특정 샤드에 데이터가 몰리는 현상 모니터링
 - 라우팅 전략 재검토 및 파티션 라우팅 적용 고려
 - 샤드 리밸런싱으로 부하 분산 최적화
@@ -686,12 +719,13 @@ GET my_index/_search
 
 엘라스틱서치의 기본 샤드 설정은 사용 패턴의 변화와 경험을 바탕으로 진화했다:
 
-| 버전 | 프라이머리 샤드 | 레플리카 샤드 | 변경 배경 |
-|------|----------------|---------------|----------|
-| ES 6.x 이전 | 5개 | 1개 | 대용량 데이터 환경을 가정한 설정 |
-| ES 7.0+ | 1개 | 1개 | 대부분이 중소 규모 인덱스라는 경험 반영 |
+| 버전        | 프라이머리 샤드 | 레플리카 샤드 | 변경 배경                  |
+|-----------|----------|---------|------------------------|
+| ES 6.x 이전 | 5개       | 1개      | 대용량 데이터 환경을 가정한 설정     |
+| ES 7.0+   | 1개       | 1개      | 대부분이 중소 규모 인덱스라는 경험 반영 |
 
 **변경 이유:**
+
 - 실제 사용 통계에서 대부분의 인덱스가 GB 단위의 소규모
 - 5개 샤드로 인한 불필요한 오버헤드 문제
 - 작은 데이터에 과도한 샤드는 성능 저하 원인
@@ -712,6 +746,7 @@ PUT /my_index
 ```
 
 **주요 설정 항목 설명:**
+
 - `number_of_shards`: 실제 프라이머리 샤드 수, **인덱스 생성 후 변경 불가**
 - `number_of_replicas`: 각 프라이머리 샤드의 복사본 수, **실시간 변경 가능**
 - `number_of_routing_shards`: Split API를 위한 라우팅 샤드 수
@@ -735,6 +770,7 @@ PUT /my_index/_settings
 ```
 
 **레플리카 수 변경의 실제 과정:**
+
 1. 클러스터 상태에 새로운 레플리카 수 반영
 2. 부족한 레플리카는 자동으로 생성 및 할당
 3. 과도한 레플리카는 자동으로 제거
@@ -758,6 +794,7 @@ PUT /_template/logs_template
 ```
 
 **템플릿 우선순위 제어:**
+
 ```json
 PUT /my_index/_settings
 {
@@ -770,6 +807,7 @@ PUT /my_index/_settings
 #### 5.3.1 데이터 크기 기반 계산
 
 **권장 기준:**
+
 - 샤드당 20-40GB (검색 성능과 복구 시간의 균형점)
 - 너무 작으면 오버헤드, 너무 크면 복구 시간 증가
 
@@ -793,11 +831,13 @@ public int calculateOptimalShardCount(long totalDataSizeGB, int expectedQPS, int
 #### 5.3.2 성능 기준 고려사항
 
 **검색 성능 기준:**
+
 - 샤드당 1000 QPS 기준으로 계산
 - 복잡한 쿼리일수록 더 적은 QPS 처리 가능
 - 집계가 많은 경우 추가 고려 필요
 
 **인프라 기준:**
+
 - heap 1GB당 20-25개 샤드 이하 권장
 - 마스터 노드 부하를 고려하여 클러스터당 10,000개 샤드 이하
 - SSD vs HDD에 따른 I/O 성능 차이 고려
@@ -883,6 +923,7 @@ PUT /_ilm/policy/logs_policy
 ARS는 **[C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.cs.cmu.edu/~dga/papers/c3-nsdi2015.pdf)** 논문을 엘라스틱서치에 맞게 구현한 것이다.
 
 **도입 일정과 배경:**
+
 - ES 6.1+: 사용 가능하지만 기본 비활성화 ([GitHub Issue #24915](https://github.com/elastic/elasticsearch/issues/24915))
 - ES 7.0+: 기본 활성화로 변경 ([GitHub PR #26522](https://github.com/elastic/elasticsearch/pull/26522))
 - 기존 라운드 로빈 방식의 tail latency 문제 해결이 목적
@@ -890,19 +931,22 @@ ARS는 **[C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Sel
 #### 6.2.2 C3 알고리즘의 수학적 구현
 
 **핵심 공식:**
+
 ```
 Ψ(s) = R(s) + μ̄(s) + (q(s) × b) + (os(s) × n)
 ```
 
 **변수의 정확한 의미:**
+
 - `R(s)`: 해당 샤드(노드)의 응답 시간 EWMA (지수가중이동평균, α=0.3)
-- `μ̄(s)`: 실제 서비스 시간의 EWMA (α=0.3)  
+- `μ̄(s)`: 실제 서비스 시간의 EWMA (α=0.3)
 - `q(s)`: 큐 크기의 EWMA (α=0.3)
 - `os(s)`: 해당 샤드에 대한 현재 미처리 요청 수
 - `n`: 전체 클라이언트 수 (동시성 보정 계수)
 - `b`: 큐 페널티 가중치 (기본값: 4)
 
 **EWMA 계산 방식:**
+
 ```java
 // 지수가중이동평균 계산
 public double updateEWMA(double currentValue, double newValue, double alpha) {
@@ -951,7 +995,7 @@ public ShardIterator preferenceActiveShardIterator(ShardRouting[] shards,
     }
     
     // ARS가 비활성화된 경우 기본 라운드 로빈
-    return new PlainShardIterator(shardId, Arrays.asList(shards));
+    return new PlainShardIterator(shardId, Collections.singletonList(shards));
 }
 
 private double calculateARSScore(ResponseStats stats) {
@@ -963,6 +1007,7 @@ private double calculateARSScore(ResponseStats stats) {
 ```
 
 **ARS의 실시간 최적화 효과:**
+
 - 부하가 높은 노드 자동 회피
 - 네트워크 지연이 큰 노드 우선순위 하락
 - 큐가 밀린 노드에 추가 요청 전송 방지
@@ -973,6 +1018,7 @@ private double calculateARSScore(ResponseStats stats) {
 ARS 도입 이전에 사용된 단순한 라운드 로빈 방식의 문제점:
 
 **라운드 로빈의 동작:**
+
 ```java
 // 기존 라운드 로빈 방식 (단순화)
 public ShardRouting selectShard(List<ShardRouting> shards, AtomicInteger counter) {
@@ -982,17 +1028,20 @@ public ShardRouting selectShard(List<ShardRouting> shards, AtomicInteger counter
 ```
 
 **주요 한계점:**
+
 - **부하 무시**: 노드의 실제 부하 상태를 전혀 고려하지 않음
 - **일방적 배분**: 성능이 좋은 노드와 나쁜 노드에 동일하게 요청 전송
 - **tail latency**: 느린 노드 때문에 전체 응답 시간이 지연됨
 - **리소스 낭비**: 빠른 노드는 여유가 있는데 느린 노드는 과부하
 
 **ARS vs 라운드 로빈 성능 비교:**
+
 - 평균 응답 시간: 20-30% 개선
 - 95th percentile 응답 시간: 50% 이상 개선
 - 전체 처리량: 15-25% 향상
 
 **ARS 제어 설정:**
+
 ```json
 PUT /_cluster/settings
 {
@@ -1013,6 +1062,7 @@ PUT /_cluster/settings
 엘라스틱서치는 [Microsoft Research의 PacificA 논문](https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/)을 기반으로 한 복제 시스템을 사용한다.
 
 **복제 발생 시점:**
+
 - 모든 쓰기 작업 (인덱싱, 업데이트, 삭제) 시에 즉시 발생
 - 프라이머리에서 작업 완료 후 동기식으로 레플리카에 전파
 - 클라이언트 응답은 모든 인-싱크 레플리카의 복제 완료 후 전송
@@ -1054,6 +1104,7 @@ public void execute() throws Exception {
 ```
 
 **복제 과정의 핵심 특징:**
+
 - **동기식 복제**: 모든 인-싱크 레플리카의 완료를 기다림
 - **병렬 처리**: 여러 레플리카에 동시에 복제 요청 전송
 - **순서 보장**: 시퀀스 번호로 작업 순서 보장
@@ -1104,12 +1155,14 @@ public class ReplicationTracker {
 ```
 
 **In-Sync 상태의 의미:**
+
 - **동기화 완료**: 프라이머리와 동일한 데이터를 보유한 상태
 - **복제 참여**: 모든 새로운 쓰기 작업에 참여하는 레플리카
 - **승격 자격**: 프라이머리 장애 시 승격 가능한 후보
 - **일관성 보장**: 글로벌 체크포인트 계산에 참여
 
 **In-Sync에서 제외되는 경우:**
+
 - 복제 요청 타임아웃 (기본 30초)
 - 네트워크 연결 끊김
 - 노드 장애나 과부하로 응답 불가
@@ -1176,16 +1229,16 @@ private void recoverFromTranslog(long startingSeqNo, long endSeqNo, StartRecover
 **복구 과정의 세 가지 유형:**
 
 1. **트랜잭션 로그 복구**: 작은 차이 (수천 개 작업 이하)
-   - 누락된 작업들만 트랜잭션 로그에서 가져와서 재실행
-   - 빠른 복구 가능 (수초~수분)
+  - 누락된 작업들만 트랜잭션 로그에서 가져와서 재실행
+  - 빠른 복구 가능 (수초~수분)
 
 2. **파일 기반 복구**: 중간 차이 (수만 개 작업)
-   - 루씬 인덱스 파일들을 직접 복사 후 트랜잭션 로그로 마무리
-   - 중간 속도 복구 (수분~수십분)
+  - 루씬 인덱스 파일들을 직접 복사 후 트랜잭션 로그로 마무리
+  - 중간 속도 복구 (수분~수십분)
 
 3. **전체 복구**: 큰 차이 (매우 오래된 레플리카)
-   - 처음부터 모든 데이터를 다시 복사
-   - 느린 복구 (수십분~수시간)
+  - 처음부터 모든 데이터를 다시 복사
+  - 느린 복구 (수십분~수시간)
 
 #### 7.2.2 지연된 할당으로 불필요한 복구 방지
 
@@ -1220,12 +1273,14 @@ public Decision canAllocate(ShardRouting shardRouting, RoutingNode node, Routing
 ```
 
 **지연된 할당의 이점:**
+
 - **불필요한 복구 방지**: 재부팅이나 일시적 네트워크 장애 시 복구 작업 생략
 - **리소스 절약**: 네트워크 대역폭과 디스크 I/O 절약
 - **성능 보호**: 복구 중 성능 저하 방지
 - **자동 복귀**: 노드가 돌아오면 즉시 정상 서비스 재개
 
 **지연 할당 제어 설정:**
+
 ```json
 PUT /_all/_settings
 {
@@ -1262,17 +1317,20 @@ public class SequenceNumbers {
 ```
 
 **시퀀스 번호 시스템의 역할:**
+
 - **순서 보장**: 모든 작업에 단조 증가하는 번호 부여
 - **복구 기준점**: 어디서부터 복구해야 하는지 정확한 지점 제공
 - **일관성 검증**: 레플리카 간 데이터 일치 여부 확인
 - **충돌 해결**: 동시 작업 시 순서 결정
 
 **글로벌 체크포인트의 의미:**
+
 - 모든 인-싱크 샤드가 공통으로 보유한 최신 시퀀스 번호
 - 이 지점까지의 데이터는 영구적으로 안전하게 저장됨
 - 복구 시 이 지점부터 누락된 작업들만 복제하면 됨
 
 **복제 일관성 제어 설정:**
+
 ```json
 PUT /_cluster/settings
 {
@@ -1298,8 +1356,9 @@ PUT /_cluster/settings
 복제본 승격(Replica Promotion)은 프라이머리 샤드가 사용 불가능해졌을 때, 해당 샤드의 복제본(레플리카) 중 하나를 새로운 프라이머리로 승격시키는 과정이다.
 
 **승격 트리거 조건:**
+
 - 프라이머리 샤드가 위치한 노드의 하드웨어 장애
-- 네트워크 분할로 인한 프라이머리 샤드 격리  
+- 네트워크 분할로 인한 프라이머리 샤드 격리
 - 프라이머리 샤드 데이터 손상
 - 계획된 노드 재시작 또는 강제 종료
 - 클러스터 설정 변경으로 인한 샤드 이동
@@ -1311,6 +1370,7 @@ PUT /_cluster/settings
 엘라스틱서치는 데이터 안전성을 최우선으로 하여 **오직 In-Sync 상태의 레플리카만이 프라이머리로 승격**될 수 있다.
 
 **In-Sync 조건:**
+
 - 프라이머리와 데이터 동기화가 유지된 레플리카
 - 글로벌 체크포인트 이상의 시퀀스 번호를 보유
 - 최근까지 복제 작업에 성공적으로 응답한 레플리카
@@ -1373,16 +1433,19 @@ private int compareNodePerformance(String nodeId1, String nodeId2) {
 #### 8.2.2 선택 우선순위의 상세 설명
 
 **1순위: 시퀀스 번호 (Sequence Number)**
+
 - 가장 높은 로컬 체크포인트를 가진 레플리카 선택
 - 최신 데이터를 보유하여 데이터 손실을 최소화
 - 몇 개의 작업 차이라도 중요한 데이터일 수 있음
 
-**2순위: 할당 ID (Allocation ID)**  
+**2순위: 할당 ID (Allocation ID)**
+
 - 동일한 시퀀스 번호인 경우 할당 ID의 사전 순서로 선택
 - 결정론적 선택으로 split-brain 상황 방지
 - 모든 마스터 노드가 동일한 결정을 내리도록 보장
 
 **3순위: 노드 특성**
+
 - 노드의 현재 부하 상태 (CPU, 메모리, 디스크)
 - 하드웨어 성능과 네트워크 상태
 - 클러스터 전체 균형을 위한 배치 최적화
@@ -1523,6 +1586,7 @@ private void performQuickRecovery(IndexShard shard, long targetCheckpoint) {
 승격 시 데이터 손실을 방지하기 위해, 새 프라이머리는 엄격한 일관성 검사를 수행한다:
 
 **글로벌 체크포인트 관리:**
+
 ```java
 // 글로벌 체크포인트 계산 로직
 private long calculateGlobalCheckpoint() {
@@ -1535,6 +1599,7 @@ private long calculateGlobalCheckpoint() {
 ```
 
 **데이터 일관성 원칙:**
+
 - 새 프라이머리는 자신의 로컬 체크포인트 이후의 작업만 수락
 - 승격 전까지의 모든 작업은 이미 글로벌 체크포인트로 보장됨
 - 데이터 손실 없이 승격 완료 보장
@@ -1575,6 +1640,7 @@ public boolean isValidPromotionState(long currentStateVersion,
 #### 8.5.1 정상적인 승격 케이스
 
 **시나리오: 3노드 클러스터에서 1개 노드 장애**
+
 ```
 초기 상태:
 Node A: P0(프라이머리), R1(레플리카)
@@ -1589,6 +1655,7 @@ Node C: R0(레플리카), R1(레플리카)
 ```
 
 **승격 소요 시간:**
+
 - 장애 감지: 1-3초 (헬스체크 주기)
 - 승격 결정: 1초 이내 (마스터 노드 처리)
 - 승격 실행: 1-2초 (네트워크 + 처리)
@@ -1597,6 +1664,7 @@ Node C: R0(레플리카), R1(레플리카)
 #### 8.5.2 승격 실패 시 대응 방안
 
 **케이스 1: 승격 후보가 있는 경우**
+
 ```bash
 # 클러스터 상태 확인
 GET /_cluster/health?pretty
@@ -1614,6 +1682,7 @@ PUT /_cluster/settings
 ```
 
 **케이스 2: 모든 복제본 손실 (최악의 상황)**
+
 ```bash
 # 데이터 손실을 감수하고 빈 프라이머리 샤드 강제 할당
 POST /_cluster/reroute
@@ -1632,6 +1701,7 @@ POST /_cluster/reroute
 **주의: 이 명령은 해당 샤드의 모든 데이터를 삭제하고 빈 샤드를 생성한다.**
 
 **케이스 3: 손상된 데이터로 복구 시도**
+
 ```bash
 # 손상되었지만 일부 데이터라도 복구 시도
 POST /_cluster/reroute
@@ -1652,6 +1722,7 @@ POST /_cluster/reroute
 #### 8.6.1 승격 이벤트 확인
 
 **로그 패턴 모니터링:**
+
 ```bash
 # 승격 관련 로그 검색
 grep -i "promoted.*primary" /var/log/elasticsearch/*.log
@@ -1666,6 +1737,7 @@ grep -i "cluster state updated" /var/log/elasticsearch/*.log
 ```
 
 **API를 통한 모니터링:**
+
 ```bash
 # 현재 진행 중인 복구 작업 확인
 GET /_recovery?active_only=true
@@ -1682,6 +1754,7 @@ GET /_cluster/allocation/explain
 #### 8.6.2 승격 최적화 설정
 
 **프라이머리 복구 속도 향상:**
+
 ```json
 PUT /_cluster/settings
 {
@@ -1695,6 +1768,7 @@ PUT /_cluster/settings
 ```
 
 **지연 할당으로 불필요한 승격 방지:**
+
 ```json
 PUT /my_index/_settings
 {
@@ -1703,6 +1777,7 @@ PUT /my_index/_settings
 ```
 
 **승격 관련 알림 설정:**
+
 ```json
 PUT /_watcher/watch/shard_promotion_alert
 {
@@ -1805,18 +1880,19 @@ public class ShardSizeCalculator {
 
 **권장 기준표:**
 
-| 데이터 특성 | 샤드 크기 | 샤드 수 계산 | 고려사항 |
-|------------|----------|-------------|----------|
-| 로그 데이터 | 20-30GB | 시간 기반 분할 | 빠른 인덱싱, 시간 범위 쿼리 |
-| 검색 데이터 | 30-40GB | QPS 기반 | 복잡한 쿼리, 응답 시간 |
-| 분석 데이터 | 40-50GB | 집계 성능 중심 | 대용량 스캔, 메모리 사용량 |
-| 실시간 데이터 | 10-20GB | 인덱싱 속도 중심 | 높은 쓰기 부하, 짧은 보존 |
+| 데이터 특성  | 샤드 크기   | 샤드 수 계산   | 고려사항             |
+|---------|---------|-----------|------------------|
+| 로그 데이터  | 20-30GB | 시간 기반 분할  | 빠른 인덱싱, 시간 범위 쿼리 |
+| 검색 데이터  | 30-40GB | QPS 기반    | 복잡한 쿼리, 응답 시간    |
+| 분석 데이터  | 40-50GB | 집계 성능 중심  | 대용량 스캔, 메모리 사용량  |
+| 실시간 데이터 | 10-20GB | 인덱싱 속도 중심 | 높은 쓰기 부하, 짧은 보존  |
 
 ### 9.2 클러스터 상태 진단과 해결
 
 #### 9.2.1 상태별 대응 방안
 
 **🟢 Green 상태 유지 전략:**
+
 ```bash
 # 정기적인 클러스터 헬스 체크
 GET /_cluster/health?level=shards&timeout=30s
@@ -1837,6 +1913,7 @@ PUT /_cluster/settings
 ```
 
 **🟡 Yellow 상태 해결 프로세스:**
+
 ```bash
 # 1. 문제 상황 파악
 GET /_cluster/allocation/explain
@@ -1875,6 +1952,7 @@ PUT /_cluster/settings
 ```
 
 **🔴 Red 상태 긴급 대응:**
+
 ```bash
 # 1. 손실된 프라이머리 샤드 식별
 GET /_cat/shards?v&h=index,shard,prirep,state,node&s=state
@@ -1909,6 +1987,7 @@ POST /_cluster/reroute
 #### 9.2.2 할당 인식으로 가용성 향상
 
 **랙 인식 설정 (Rack Awareness):**
+
 ```yaml
 # elasticsearch.yml
 node.attr.rack_id: rack1
@@ -1926,6 +2005,7 @@ PUT /_cluster/settings
 ```
 
 **존 인식 설정 (Zone Awareness):**
+
 ```yaml
 # elasticsearch.yml (AWS 환경)
 node.attr.zone: us-east-1a
@@ -1933,6 +2013,7 @@ cluster.routing.allocation.awareness.attributes: zone
 ```
 
 **강제 인식으로 분산 보장:**
+
 ```json
 PUT /_cluster/settings
 {
@@ -1947,6 +2028,7 @@ PUT /_cluster/settings
 #### 9.3.1 인덱싱 최적화
 
 **대량 인덱싱을 위한 설정:**
+
 ```json
 PUT /my_index/_settings
 {
@@ -1967,6 +2049,7 @@ PUT /my_index/_settings
 ```
 
 **인덱싱 성능 모니터링:**
+
 ```bash
 # 인덱싱 통계 확인
 GET /_stats/indexing
@@ -1981,6 +2064,7 @@ GET /_stats/translog
 #### 9.3.2 검색 성능 향상
 
 **검색 최적화 설정:**
+
 ```json
 PUT /_cluster/settings
 {
@@ -1995,6 +2079,7 @@ PUT /_cluster/settings
 ```
 
 **검색 성능 튜닝:**
+
 ```bash
 # 동시 검색 요청 제한으로 부하 조절
 GET /my_index/_search?max_concurrent_shard_requests=3
@@ -2016,6 +2101,7 @@ GET /my_index/_search?routing=user123
 ```
 
 **성능 모니터링:**
+
 ```bash
 # 검색 성능 통계
 GET /_stats/search
@@ -2038,6 +2124,7 @@ PUT /_cluster/settings
 #### 9.4.1 노드 안전 제거 프로세스
 
 **계획된 노드 제거:**
+
 ```bash
 # 1. 새로운 데이터 할당 방지
 PUT /_cluster/settings
@@ -2067,6 +2154,7 @@ PUT /_cluster/settings
 ```
 
 **응급 노드 복구:**
+
 ```bash
 # 1. 장애 노드 상태 확인
 GET /_cat/nodes?v&h=name,heap.percent,ram.percent,cpu,load_1m,node.role,master
@@ -2087,6 +2175,7 @@ PUT /_cluster/settings
 #### 9.4.2 디스크 부족 대응
 
 **디스크 공간 확보:**
+
 ```bash
 # 1. 디스크 사용량 확인
 GET /_cat/allocation?v&h=node,disk.used_percent,disk.used,disk.avail
@@ -2112,6 +2201,7 @@ POST /_cluster/reroute
 ```
 
 **임계값 조정 (임시 대응):**
+
 ```json
 PUT /_cluster/settings
 {
@@ -2126,6 +2216,7 @@ PUT /_cluster/settings
 #### 9.4.3 메모리 부족 대응
 
 **힙 메모리 최적화:**
+
 ```bash
 # JVM 힙 사용량 확인
 GET /_nodes/stats/jvm
@@ -2138,6 +2229,7 @@ GET /_nodes/stats/breaker
 ```
 
 **메모리 사용량 제한:**
+
 ```json
 PUT /_cluster/settings
 {
@@ -2154,6 +2246,7 @@ PUT /_cluster/settings
 #### 9.5.1 핵심 지표 모니터링
 
 **클러스터 레벨 지표:**
+
 ```bash
 # 전체 상태 모니터링
 GET /_cluster/health
@@ -2167,6 +2260,7 @@ GET /_cat/nodes?v&h=name,heap.percent,ram.percent,cpu,load_1m,disk.used_percent
 ```
 
 **인덱스 레벨 지표:**
+
 ```bash
 # 인덱스 성능 통계
 GET /_stats/indices/my_index
@@ -2181,6 +2275,7 @@ GET /_stats/query_cache,request_cache,fielddata
 #### 9.5.2 자동화된 알림 설정
 
 **Watcher를 이용한 알림:**
+
 ```json
 PUT /_watcher/watch/cluster_health_alert
 {
@@ -2218,6 +2313,7 @@ PUT /_watcher/watch/cluster_health_alert
 ## 10. 참고 자료
 
 ### 10.1 공식 문서
+
 - [Elasticsearch Guide - Cluster-level shard allocation](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html)
 - [Search shard routing](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-shard-routing.html)
 - [_routing field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html)
@@ -2229,6 +2325,7 @@ PUT /_watcher/watch/cluster_health_alert
 - [Cluster allocation explain API](https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-cluster-allocation-explain)
 
 ### 10.2 기술 블로그 및 심화 자료
+
 - [Improving Response Latency with Adaptive Replica Selection](https://www.elastic.co/blog/improving-response-latency-in-elasticsearch-with-adaptive-replica-selection) - Elastic Blog
 - [Tracking in-sync shard copies](https://www.elastic.co/blog/tracking-in-sync-shard-copies) - Elastic Blog
 - [Demystifying Elasticsearch shard allocation](https://aws.amazon.com/blogs/opensource/open-distro-elasticsearch-shard-allocation/) - AWS Open Source Blog
@@ -2236,6 +2333,7 @@ PUT /_watcher/watch/cluster_health_alert
 - [Promoting replica shards to primary in Elasticsearch](https://underthehood.meltwater.com/blog/2023/05/11/promoting-replica-shards-to-primary-in-elasticsearch-and-how-it-saves-us-12k-during-rolling-restarts/) - Meltwater Engineering Blog
 
 ### 10.3 GitHub 소스 코드
+
 - [BalancedShardsAllocator.java](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/allocator/BalancedShardsAllocator.java) - 샤드 할당 알고리즘
 - [AllocationDeciders.java](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/routing/allocation/decider/AllocationDeciders.java) - 할당 결정자 체인
 - [ReplicationOperation.java](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationOperation.java) - 복제 작업 처리
@@ -2244,10 +2342,12 @@ PUT /_watcher/watch/cluster_health_alert
 - [ShardStateAction.java](https://github.com/elastic/elasticsearch/blob/main/server/src/main/java/org/elasticsearch/cluster/action/shard/ShardStateAction.java) - 샤드 상태 관리
 
 ### 10.4 연구 논문
+
 - [PacificA: Replication in Log-Based Distributed Storage Systems](https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/) - Microsoft Research
 - [C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.cs.cmu.edu/~dga/papers/c3-nsdi2015.pdf) - CMU Research
 
 ### 10.5 GitHub 이슈 및 구현
+
 - [Adaptive replica selection implementation #24915](https://github.com/elastic/elasticsearch/issues/24915) - GitHub Issue
 - [Enable adaptive replica selection by default #26522](https://github.com/elastic/elasticsearch/pull/26522) - GitHub PR
 - [Balance step in BalancedShardsAllocator #21103](https://github.com/elastic/elasticsearch/pull/21103) - GitHub PR
@@ -2284,7 +2384,7 @@ PUT /_watcher/watch/cluster_health_alert
 
 - **해시 라우팅**: Murmur3 해시와 결정론적 공식으로 도큐먼트를 일관되게 특정 샤드에 배치
 - **가중치 알고리즘**: 전체 샤드 수(0.45) + 인덱스별 샤드 수(0.55) + 프라이머리 수(0.05)로 노드 부하 수치화하여 최적 배치
-- **동기식 복제**: 프라이머리가 모든 In-Sync 레플리카의 복제 완료를 기다려 일관성 보장  
+- **동기식 복제**: 프라이머리가 모든 In-Sync 레플리카의 복제 완료를 기다려 일관성 보장
 - **In-Sync 추적**: 글로벌 체크포인트 기반으로 동기화된 레플리카만 관리하여 데이터 안전성 확보
 - **즉시 승격**: 프라이머리 장애 감지 후 수초 내 최적 레플리카를 승격시켜 서비스 연속성 보장
 - **ARS 최적화**: 실시간 성능 메트릭(응답시간, 큐 크기, 부하)으로 C3 공식 기반 지능적 레플리카 선택

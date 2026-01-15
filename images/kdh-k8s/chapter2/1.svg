@@ -212,7 +212,9 @@
   <text x="470" y="1000" font-family="Arial" font-size="14" text-anchor="middle">알림 시스템</text>
 
   <rect x="100" y="1020" width="460" height="30" rx="5" ry="5" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
-  <text x="330" y="1040" font-family="Arial" font-size="14" text-anchor="middle">서비스 레벨 목표 (SLO) / 서비스 레벨 지표 (SLI) 모니터링</text>
+  <text x="330" y="1040" font-family="Arial" font-size="14" text-anchor="middle">서비스 레벨 목표 (SLO) / 서비스 레벨 지표 (SLI)
+    모니터링
+  </text>
 
   <!-- DevOps 및 CI/CD -->
   <rect x="620" y="900" width="520" height="160" rx="5" ry="5" fill="#ffffff" stroke="#9673a6" stroke-width="2"/>

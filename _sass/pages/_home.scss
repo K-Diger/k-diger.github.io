@@ -102,7 +102,9 @@
       }
     }
   }
-} /* #post-list */
+}
+
+/* #post-list */
 
 .pagination {
   color: var(--text-color);
@@ -160,7 +162,9 @@
         color: rgb(108 117 125 / 57%);
       }
     }
-  } /* .page-item */
+  }
+
+  /* .page-item */
 
   .page-index {
     @include bp.lg {

@@ -51,15 +51,17 @@ mermaid: true
 ### 처리량/지연시간 관련 옵션 사용 시 주의사항
 
 높은 처리량을 위해선 아래 주의사항을 고려해야한다.
+
 - batch.size, linger.ms의 값을 **크게 설정**하는 등 배치 전송의 옵션을 적절히 수정해야한다.
-    - 또한 buffer.memory가 커야 오랜시간동안 많은 배치 사이즈를 담아둘 수 있기 때문에 이점을 유의해아한다.
+  - 또한 buffer.memory가 커야 오랜시간동안 많은 배치 사이즈를 담아둘 수 있기 때문에 이점을 유의해아한다.
 
 - 즉, 기본 배치 사이즈가 16KB이고 파티션이 3개이면 최소 48KB를 할당해야한다.
-    - 그리고 압축 옵션으로 gzip, zstd를 선택하는 것이 도움이 된다.
+  - 그리고 압축 옵션으로 gzip, zstd를 선택하는 것이 도움이 된다.
 
 지연시간이 낮은 방식으로 사용하기 위해선 아래 주의사항을 고려해야한다.
+
 - batch.size, linger.ms의 값을 **작게 설정**하는 등 배치 전송의 옵션을 적절히 수정해야한다.
-    - 그리고 압축 옵션으로 lz4, snappy를 사용하면 도움이 된다.
+  - 그리고 압축 옵션으로 lz4, snappy를 사용하면 도움이 된다.
 
 또한 정답은 없기 때문에 옵션값을 조정해가며 판별하는 모니터링이 중요하다.
 
@@ -243,7 +245,7 @@ Record의 Serialized Size를 검사한 후 Serialized Size가 **max.request.size
 2. 해당 Deque의 Last에 접근하여 레코드 배치를 확인한 후 추가될 레코드를 저장할 공간이 있는지 확인한다.
 3. 여유 공간이 있으면 레코드를 RecordBatch에 추가한다.
 4. 여유 공간이 없으면 새로운 레코드 배치를 생성하고 Last에 저장한다.
-   5. 이 때 레코드 배치를 생성할 때 버퍼 풀에서 레코드 배치가 사용할 ByteBuffer를 받아온다. 버퍼풀에 여유가 있으면 최대 max.block.ms만큼 블락된다. 이 시간이 지나도 해결이 안되면 TimeoutException이 발생한다.
+  5. 이 때 레코드 배치를 생성할 때 버퍼 풀에서 레코드 배치가 사용할 ByteBuffer를 받아온다. 버퍼풀에 여유가 있으면 최대 max.block.ms만큼 블락된다. 이 시간이 지나도 해결이 안되면 TimeoutException이 발생한다.
 6. compression.type이 지정되어있으면 레코드가 레코드 배치로 삽입될 때 압축된다.
 
 ---
@@ -261,7 +263,7 @@ RecordAccumulator에 저장된 레코드를 실질적으로 브로커에 전송�
 1. drain()에서는 각 브로커 노드에 속한 TopicPartition 목록을 얻어온다.
 2. 그 후 각 노드가 속한 TopicPartition을 보면서 가장 앞에 있는 RecordBatch를 꺼낸다.
 3. 꺼낸 RecordBatch를 RecordBatch List에 추가한다.
-   4. 이 때 max.request.size가 넘지 않을 때 까지 모은다.
+  4. 이 때 max.request.size가 넘지 않을 때 까지 모은다.
 
 이렇게 하면 각 브로커 노드별의 RecordBatch List가 만들어진다.
 
@@ -355,6 +357,7 @@ services:
 ## Spring Boot에서 정확히 한 번 전송 사용하기 (Produce/Comsume)
 
 ### KafkaConfig.java
+
 ```java
 @EnableKafka
 @Configuration
@@ -544,6 +547,7 @@ public final class KafkaConstant {
 ```
 
 ### KafkaEvent
+
 ```java
 public interface KafkaEvent {
     String getTopic();
@@ -563,6 +567,7 @@ public record TestEvent(
 ```
 
 ### KafkaProducerImpl.java
+
 ```java
 @Component
 @RequiredArgsConstructor
@@ -614,6 +619,7 @@ public class KafkaProducerImpl implements KafkaProducer {
 ```
 
 ### KafkaConsumerImpl.java
+
 ```java
 @Component
 public class KafkaConsumerImpl {
@@ -651,6 +657,7 @@ public class KafkaConsumerImpl {
 ```
 
 ### KafkaDLTHandler.java
+
 ```java
 @Component
 @RequiredArgsConstructor

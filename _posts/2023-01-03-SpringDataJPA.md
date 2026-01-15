@@ -106,7 +106,7 @@ public class SimpleJpaRepository<T, ID> implements JpaRepositoryImplementation<T
     private final PersistenceProvider provider;
 
     private @Nullable CrudMethodMetadata metadata;
-    private EscapeCharacter escapeCharacter = EscapeCharacter.DEFAULT;
+    private final EscapeCharacter escapeCharacter = EscapeCharacter.DEFAULT;
 
     // ------------------- 생략 -------------------//
 
@@ -230,7 +230,6 @@ public class MemberRepository {
 
 이미 존재하는 엔티티일 경우에는 merge() 메서드를 호출한다.
 
-
 ```java
 @Repository
 @Transactional(readOnly = true)
@@ -263,7 +262,6 @@ public class SimpleJpaRepository<T, ID> implements JpaRepositoryImplementation<T
 - 식별자가 객체일 때 Null 검증, Null 일땐 새로운 엔티티로 판단한다.
 
 - 식별자가 기본 타입일 때 0이면 새로운 엔티티로 판단한다.
-
 
 이 전략을 알아둬야하는 이유가 있다.
 
@@ -305,7 +303,6 @@ isNew()메서드는 새로운 객체임을 인식하지 못한다. (Null이 아�
 따라서 merge를 하게되는 일이 발생하게 된다.
 
 Merge는 엔티티가 영속성 컨텍스트 생명주기에서 Detached 되었다가 다시 Attached 되는 상황이 아니라면 굳이 쓸 일도 이유도 없는 기능이다.
-
 
 그럼 위와 같은 상황은 어떻게 해결해야하는가??
 
