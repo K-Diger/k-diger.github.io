@@ -19,15 +19,9 @@
     addEventListener('message', (event) => {
       let newTheme;
 
-      {%
-        -comment - %
-      }
-      Credit
-      to < https
-    ://github.com/utterance/utterances/issues/170#issuecomment-594036347>
-      {%
-        -endcomment - %
-      }
+      {%- comment -%}
+        Credit to <https://github.com/utterance/utterances/issues/170#issuecomment-594036347>
+      {%- endcomment -%}
       if (event.source === window && event.data && event.data.id === Theme.ID) {
         newTheme = themeMapper[Theme.visualState];
 
