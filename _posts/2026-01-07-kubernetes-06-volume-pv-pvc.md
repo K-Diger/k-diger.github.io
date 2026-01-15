@@ -194,13 +194,41 @@ StorageClass는 **PV를 동적으로 생성하는 템플릿**이다. 클러스�
 
 **주요 구성 요소:**
 
-- **provisioner**: 스토리지를 프로비저닝할 플러그인 지정 (예: AWS EBS, GCE PD, Azure Disk)
+- **provisioner**: 스토리지를 프로비저닝할 플러그인 지정 (예: AWS EBS, GCE PD, Azure Disk, local-path 등)
 - **parameters**: provisioner에 전달될 매개변수 (스토리지 타입, IOPS 등)
 - **reclaimPolicy**: PV 회수 정책 (Delete 또는 Retain)
 - **allowVolumeExpansion**: 볼륨 확장 허용 여부
 - **volumeBindingMode**: PV 바인딩 시점 제어
   - **Immediate**: PVC 생성 즉시 PV 바인딩
-  - **WaitForFirstConsumer**: Pod가 스케줄링될 때까지 바인딩 지연 (토폴로지 제약 조건 고려)
+  - **WaitForFirstConsumer**: Pod가 스케줄링될 때까지 바인딩 지연 (토폴로지 제약 조건 고려, **CKA 시험에서 자주 출제됨**)
+
+**CKA Mock Exam에서 자주 나오는 패턴:**
+
+```bash
+# StorageClass 생성 명령어
+kubectl apply -f - <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-sc
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+EOF
+
+# StorageClass 확인
+kubectl get storageclass
+kubectl get sc
+
+# 기본 StorageClass 확인
+kubectl get sc -o jsonpath='{.items[?(@.metadata.annotations.storageclass\.kubernetes\.io/is-default-class=="true")].metadata.name}'
+
+# 기본 StorageClass 설정 변경
+kubectl patch storageclass <OLD_SC> -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl patch storageclass <NEW_SC> -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+```
 
 ```yaml
 apiVersion: storage.k8s.io/v1
@@ -403,6 +431,55 @@ PV와 PVC 바인딩
 Pod에서 PVC 사용
 ```
 
+**바인딩 조건:**
+
+PVC가 PV와 바인딩되려면 다음 조건을 모두 만족해야 합니다:
+
+1. **accessModes 일치**: PVC의 accessMode가 PV의 accessMode와 호환되어야 함
+2. **용량 만족**: PV의 용량이 PVC 요청량 이상이어야 함
+3. **storageClassName 일치**: PVC와 PV의 storageClassName이 동일해야 함 (또는 둘 다 비어있어야 함)
+4. **selector 만족**: PVC에 selector가 있으면 PV의 레이블이 일치해야 함
+
+**CKA Mock Exam - PVC 바인딩 문제 해결 (Mock Exam 3 - Q.8):**
+
+```bash
+# 문제: PVC가 PV에 바인딩되지 않는 경우
+
+# 1. PVC 상태 확인
+kubectl get pvc app-pvc -n storage-ns
+# STATUS가 Pending이면 바인딩 안 됨
+
+# 2. PVC 세부 정보 확인
+kubectl describe pvc app-pvc -n storage-ns
+# Events 섹션에서 바인딩 실패 원인 확인
+
+# 3. PV 세부 정보 확인
+kubectl describe pv app-pv
+# accessModes, capacity, storageClassName 확인
+
+# 4. 문제 해결 - accessModes 불일치 수정
+kubectl get pvc app-pvc -n storage-ns -o yaml > pvc.yaml
+# pvc.yaml 수정: accessModes를 PV와 일치하도록 변경
+# 예: ReadWriteMany → ReadWriteOnce
+
+# 5. PVC 재생성
+kubectl delete pvc app-pvc -n storage-ns
+kubectl apply -f pvc.yaml
+
+# 6. 바인딩 확인
+kubectl get pvc app-pvc -n storage-ns
+# STATUS가 Bound이면 성공
+```
+
+**일반적인 바인딩 실패 원인:**
+
+| 원인 | 증상 | 해결 방법 |
+|------|------|----------|
+| **accessModes 불일치** | PVC Pending | PVC의 accessModes를 PV와 일치시킴 |
+| **용량 부족** | PVC Pending | 더 큰 PV 생성 또는 PVC 요청량 감소 |
+| **storageClassName 불일치** | PVC Pending | PVC와 PV의 storageClassName 일치시킴 |
+| **PV 이미 바인딩됨** | PVC Pending | 사용 가능한 PV 확인 및 생성 |
+
 **사용 예:**
 
 ```yaml
@@ -428,50 +505,50 @@ spec:
 ## 실습 과제
 
 1. **emptyDir Volume 실습**
-   ```bash
-   # emptyDir Pod 생성
-   kubectl apply -f emptydir-example.yaml
+```bash
+# emptyDir Pod 생성
+kubectl apply -f emptydir-example.yaml
 
-   # writer 컨테이너 로그 확인
-   kubectl logs emptydir-example -c writer
+# writer 컨테이너 로그 확인
+kubectl logs emptydir-example -c writer
 
-   # reader 컨테이너 로그 확인
-   kubectl logs emptydir-example -c reader
-   ```
+# reader 컨테이너 로그 확인
+kubectl logs emptydir-example -c reader
+```
 
 2. **PV와 PVC 실습**
-   ```bash
-   # PV 생성
-   kubectl apply -f my-pv.yaml
+```bash
+# PV 생성
+kubectl apply -f my-pv.yaml
 
-   # PV 확인
-   kubectl get pv
+# PV 확인
+kubectl get pv
 
-   # PVC 생성
-   kubectl apply -f my-pvc.yaml
+# PVC 생성
+kubectl apply -f my-pvc.yaml
 
-   # PVC 상태 확인 (Bound 확인)
-   kubectl get pvc
+# PVC 상태 확인 (Bound 확인)
+kubectl get pvc
 
-   # PVC를 사용하는 Pod 생성
-   kubectl apply -f mysql-pod.yaml
+# PVC를 사용하는 Pod 생성
+kubectl apply -f mysql-pod.yaml
 
-   # Pod에서 마운트 확인
-   kubectl exec mysql-pod -- df -h
-   ```
+# Pod에서 마운트 확인
+kubectl exec mysql-pod -- df -h
+```
 
 3. **StorageClass와 동적 프로비저닝**
-   ```bash
-   # StorageClass 확인
-   kubectl get storageclass
+```bash
+# StorageClass 확인
+kubectl get storageclass
 
-   # PVC 생성 (StorageClass 지정)
-   kubectl apply -f dynamic-pvc.yaml
+# PVC 생성 (StorageClass 지정)
+kubectl apply -f dynamic-pvc.yaml
 
-   # 자동으로 PV 생성되는지 확인
-   kubectl get pv
-   kubectl get pvc
-   ```
+# 자동으로 PV 생성되는지 확인
+kubectl get pv
+kubectl get pvc
+```
 
 ---
 

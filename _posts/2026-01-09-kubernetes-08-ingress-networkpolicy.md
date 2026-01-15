@@ -365,51 +365,51 @@ spec:
 **세부 규칙 옵션:**
 
 1. **podSelector**: 같은 Namespace의 특정 Pod에서만 허용
-   ```yaml
-   from:
-     - podSelector:
-         matchLabels:
-           role: frontend
-   ```
+```yaml
+from:
+  - podSelector:
+      matchLabels:
+        role: frontend
+```
 
 2. **namespaceSelector**: 특정 Namespace의 모든 Pod에서 허용
-   ```yaml
-   from:
-     - namespaceSelector:
-         matchLabels:
-           environment: production
-   ```
+```yaml
+from:
+  - namespaceSelector:
+      matchLabels:
+        environment: production
+```
 
 3. **podSelector + namespaceSelector**: 특정 Namespace의 특정 Pod에서만 허용 (AND 조건)
-   ```yaml
-   from:
-     - namespaceSelector:
-         matchLabels:
-           environment: production
-       podSelector:
-         matchLabels:
-           role: frontend
-   ```
+```yaml
+from:
+  - namespaceSelector:
+      matchLabels:
+        environment: production
+    podSelector:
+      matchLabels:
+        role: frontend
+```
 
 4. **여러 소스 허용** (OR 조건):
-   ```yaml
-   from:
-     - podSelector:  # 같은 Namespace의 frontend OR
-         matchLabels:
-           role: frontend
-     - namespaceSelector:  # monitoring Namespace의 모든 Pod
-         matchLabels:
-           name: monitoring
-   ```
+```yaml
+from:
+  - podSelector:  # 같은 Namespace의 frontend OR
+      matchLabels:
+        role: frontend
+  - namespaceSelector:  # monitoring Namespace의 모든 Pod
+      matchLabels:
+        name: monitoring
+```
 
 5. **IP 블록 기반 허용**:
-   ```yaml
-   from:
-     - ipBlock:
-         cidr: 192.168.1.0/24
-         except:
-           - 192.168.1.5/32
-   ```
+```yaml
+from:
+  - ipBlock:
+      cidr: 192.168.1.0/24
+      except:
+        - 192.168.1.5/32
+```
 
 **복합 예제:**
 
@@ -534,6 +534,14 @@ spec:
 
 ### 22.4 정책 예제
 
+**CKA Mock Exam 핵심 팁:**
+
+1. **podSelector 이해**: NetworkPolicy가 적용될 대상 Pod 선택
+2. **policyTypes 명시**: Ingress, Egress 또는 둘 다 지정
+3. **from/to 구조**: podSelector, namespaceSelector, ipBlock 조합
+4. **ports 정의**: protocol과 port 명시
+5. **DNS 허용 필수**: Egress 정책 시 UDP 53 포트 허용 필수
+
 **1. 모든 트래픽 차단 (기본 거부 정책):**
 
 ```yaml
@@ -550,6 +558,62 @@ spec:
 ```
 
 이 정책을 적용하면 해당 Namespace의 모든 Pod는 명시적으로 허용된 트래픽만 송수신 가능하다.
+
+**CKA Mock Exam - Q.6 (NetworkPolicy Ingress):**
+
+```bash
+# 문제: np-test-1 Pod로의 Ingress 트래픽이 작동하지 않음.
+# NetworkPolicy를 생성하여 port 80으로의 Ingress 허용
+
+# 1. Pod 레이블 확인
+kubectl get pod np-test-1 --show-labels
+
+# 2. NetworkPolicy 생성
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-to-nptest
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      run: np-test-1
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 80
+EOF
+
+# 3. 테스트
+kubectl run test --image=busybox --rm -it -- wget -O- http://np-test-service
+```
+
+**CKA Mock Exam - Q.11 (가장 제한적인 정책 선택):**
+
+```bash
+# 문제: frontend namespace에서 backend namespace로의 접근만 허용,
+# databases namespace에서의 접근은 차단
+
+# 가장 제한적인 정책 (정확한 정책)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-frontend
+  namespace: backend
+spec:
+  podSelector: {}  # backend namespace의 모든 Pod
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: frontend  # frontend namespace만 허용
+      # databases namespace는 명시되지 않았으므로 차단됨
+```
 
 **2. Ingress만 차단:**
 
@@ -873,36 +937,36 @@ helm install cilium cilium/cilium --namespace kube-system
 ## 실습 과제
 
 1. **Ingress 설정**
-   ```bash
-   # Nginx Ingress Controller 설치
-   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
+```bash
+# Nginx Ingress Controller 설치
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
 
-   # 서비스 생성
-   kubectl create deployment web --image=nginx
-   kubectl expose deployment web --port=80
+# 서비스 생성
+kubectl create deployment web --image=nginx
+kubectl expose deployment web --port=80
 
-   # Ingress 생성
-   kubectl apply -f ingress.yaml
+# Ingress 생성
+kubectl apply -f ingress.yaml
 
-   # 확인
-   kubectl get ingress
-   ```
+# 확인
+kubectl get ingress
+```
 
 2. **NetworkPolicy 실습**
-   ```bash
-   # Backend Pod 생성
-   kubectl run backend --image=nginx --labels=app=backend
+```bash
+# Backend Pod 생성
+kubectl run backend --image=nginx --labels=app=backend
 
-   # Frontend Pod 생성
-   kubectl run frontend --image=nginx --labels=app=frontend
+# Frontend Pod 생성
+kubectl run frontend --image=nginx --labels=app=frontend
 
-   # NetworkPolicy 적용 (backend는 frontend에서만 접근 가능)
-   kubectl apply -f network-policy.yaml
+# NetworkPolicy 적용 (backend는 frontend에서만 접근 가능)
+kubectl apply -f network-policy.yaml
 
-   # 테스트
-   kubectl exec frontend -- wget -O- http://backend  # 성공
-   kubectl run test --image=nginx --rm -it -- wget -O- http://backend  # 실패
-   ```
+# 테스트
+kubectl exec frontend -- wget -O- http://backend  # 성공
+kubectl run test --image=nginx --rm -it -- wget -O- http://backend  # 실패
+```
 
 ---
 

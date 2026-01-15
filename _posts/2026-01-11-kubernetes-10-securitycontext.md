@@ -117,54 +117,54 @@ metadata:
 ## 실습 과제
 
 1. **SecurityContext 설정**
-   ```yaml
-   apiVersion: v1
-   kind: Pod
-   metadata:
-     name: secure-pod
-   spec:
-     securityContext:
-       runAsNonRoot: true
-       runAsUser: 1000
-       fsGroup: 2000
-     containers:
-       - name: app
-         image: nginx
-         securityContext:
-           allowPrivilegeEscalation: false
-           capabilities:
-             drop:
-               - ALL
-           readOnlyRootFilesystem: true
-         volumeMounts:
-           - name: cache
-             mountPath: /var/cache/nginx
-           - name: run
-             mountPath: /var/run
-     volumes:
-       - name: cache
-         emptyDir: {}
-       - name: run
-         emptyDir: {}
-   ```
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-pod
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 2000
+  containers:
+    - name: app
+      image: nginx
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+      volumeMounts:
+        - name: cache
+          mountPath: /var/cache/nginx
+        - name: run
+          mountPath: /var/run
+  volumes:
+    - name: cache
+      emptyDir: {}
+    - name: run
+      emptyDir: {}
+```
 
-   ```bash
-   kubectl apply -f secure-pod.yaml
-   kubectl exec secure-pod -- id
-   ```
+```bash
+kubectl apply -f secure-pod.yaml
+kubectl exec secure-pod -- id
+```
 
 2. **Pod Security Standards 적용**
-   ```bash
-   # Namespace 생성 (restricted 정책)
-   kubectl create namespace production
-   kubectl label namespace production pod-security.kubernetes.io/enforce=restricted
+```bash
+# Namespace 생성 (restricted 정책)
+kubectl create namespace production
+kubectl label namespace production pod-security.kubernetes.io/enforce=restricted
 
-   # Restricted 정책 위반하는 Pod 생성 시도 (실패)
-   kubectl run nginx --image=nginx -n production
+# Restricted 정책 위반하는 Pod 생성 시도 (실패)
+kubectl run nginx --image=nginx -n production
 
-   # 정책 준수하는 Pod 생성 (성공)
-   kubectl apply -f secure-pod.yaml -n production
-   ```
+# 정책 준수하는 Pod 생성 (성공)
+kubectl apply -f secure-pod.yaml -n production
+```
 
 ---
 

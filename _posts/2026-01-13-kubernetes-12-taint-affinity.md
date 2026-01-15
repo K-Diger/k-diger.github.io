@@ -214,25 +214,74 @@ Taint/Toleration은 Node Affinity와 반대 개념이다:
 - Node Affinity: Pod가 특정 노드를 선택
 - Taint/Toleration: 노드가 특정 Pod만 허용
 
+**Taint 문법:**
+
+```bash
+kubectl taint nodes <NODE_NAME> <KEY>=<VALUE>:<EFFECT>
+```
+
+- **KEY**: Taint 식별자
+- **VALUE**: Taint 값 (선택사항)
+- **EFFECT**: NoSchedule, PreferNoSchedule, NoExecute 중 하나
+
 **Taint 추가:**
 
 ```bash
+# 기본 형식
 kubectl taint nodes node01 key=value:NoSchedule
+
+# GPU 노드 전용화
 kubectl taint nodes node01 gpu=true:NoSchedule
+
+# 특정 팀 전용
+kubectl taint nodes node01 env_type=production:NoSchedule
+
+# 유지보수 모드
 kubectl taint nodes node01 dedicated=special-workload:NoExecute
 ```
 
 **Taint 확인:**
 
 ```bash
+# Node의 모든 Taint 확인
 kubectl describe node node01 | grep Taint
+
+# 또는
+kubectl get node node01 -o jsonpath='{.spec.taints}'
+
+# 모든 노드의 Taint 확인
+kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
 ```
 
 **Taint 제거:**
 
 ```bash
+# KEY=VALUE:EFFECT 형식으로 제거
 kubectl taint nodes node01 key=value:NoSchedule-
-kubectl taint nodes node01 gpu-  # key만으로도 제거 가능
+
+# KEY만으로도 제거 가능 (해당 키의 모든 Taint 제거)
+kubectl taint nodes node01 gpu-
+
+# CKA Mock Exam 예시 - 특정 Taint 제거
+kubectl taint nodes node01 env_type=production:NoSchedule-
+```
+
+**CKA Mock Exam 예시:**
+
+```bash
+# Mock Exam 3 - Q.7: 노드 Taint 설정 및 Toleration
+# 1. node01을 Unschedulable로 Taint 설정
+kubectl taint nodes node01 env_type=production:NoSchedule
+
+# 2. dev-redis Pod 생성 (Toleration 없음 - 다른 노드에 배치됨)
+kubectl run dev-redis --image=redis:alpine
+
+# 3. prod-redis Pod 생성 (Toleration 있음 - node01에 배치 가능)
+kubectl run prod-redis --image=redis:alpine --dry-run=client -o yaml > prod-redis.yaml
+# YAML에 tolerations 추가 후 apply
+
+# 배치 확인
+kubectl get pods -o wide
 ```
 
 **Taint Effect:**

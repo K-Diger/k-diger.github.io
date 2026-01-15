@@ -21,6 +21,29 @@ mermaid: true
 - 환경 변수
 - 설정 파일
 
+**ConfigMap 생성 방법:**
+
+```bash
+# 1. literal 값으로 생성
+kubectl create configmap app-config \
+  --from-literal=ENV=production \
+  --from-literal=LOG_LEVEL=info
+
+# 2. 파일에서 생성
+kubectl create configmap app-config \
+  --from-file=app.properties \
+  --from-file=config/
+
+# 3. env 파일에서 생성
+kubectl create configmap app-config \
+  --from-env-file=.env.production
+
+# 4. YAML로 생성
+kubectl apply -f configmap.yaml
+```
+
+**ConfigMap YAML 예시:**
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -31,6 +54,8 @@ data:
   # Key-value 형식
   server.port: "8080"
   server.timeout: "30"
+  ENV: "production"
+  LOG_LEVEL: "info"
   # 파일 형식
   application.yaml: |
     server:
@@ -39,6 +64,36 @@ data:
     database:
       host: localhost
       port: 5432
+```
+
+**CKA Mock Exam - Q.4 (ConfigMap 생성 및 Deployment 업데이트):**
+
+```bash
+# 문제: ConfigMap을 생성하고 Deployment의 환경 변수로 설정
+
+# 1. ConfigMap 생성
+kubectl create configmap app-config -n cm-namespace \
+  --from-literal=ENV=production \
+  --from-literal=LOG_LEVEL=info
+
+# 2. ConfigMap 확인
+kubectl get configmap app-config -n cm-namespace -o yaml
+
+# 3. Deployment에 ConfigMap 적용 (kubectl set env 사용)
+kubectl set env deployment/cm-webapp -n cm-namespace \
+  --from=configmap/app-config
+
+# 또는 직접 수정
+kubectl edit deployment cm-webapp -n cm-namespace
+# spec.template.spec.containers[].envFrom에 추가:
+#   - configMapRef:
+#       name: app-config
+
+# 4. Rollout 상태 확인
+kubectl rollout status deployment/cm-webapp -n cm-namespace
+
+# 5. Pod에서 환경 변수 확인
+kubectl exec -n cm-namespace deployment/cm-webapp -- env | grep -E 'ENV|LOG_LEVEL'
 ```
 
 ### 15.2 Secret (민감 정보 관리)
@@ -142,60 +197,60 @@ containers:
 ## 실습 과제
 
 1. **ConfigMap 생성 및 사용**
-   ```bash
-   # ConfigMap 생성 (명령형)
-   kubectl create configmap app-config \
-     --from-literal=server.port=8080 \
-     --from-literal=server.timeout=30
+```bash
+# ConfigMap 생성 (명령형)
+kubectl create configmap app-config \
+  --from-literal=server.port=8080 \
+  --from-literal=server.timeout=30
 
-   # ConfigMap 확인
-   kubectl get configmap app-config -o yaml
+# ConfigMap 확인
+kubectl get configmap app-config -o yaml
 
-   # ConfigMap을 환경 변수로 사용
-   kubectl run nginx --image=nginx --env=SERVER_PORT=configMap:app-config:server.port
-   ```
+# ConfigMap을 환경 변수로 사용
+kubectl run nginx --image=nginx --env=SERVER_PORT=configMap:app-config:server.port
+```
 
 2. **Secret 생성 및 사용**
-   ```bash
-   # Secret 생성 (명령형)
-   kubectl create secret generic db-secret \
-     --from-literal=username=admin \
-     --from-literal=password=securepassword
+```bash
+# Secret 생성 (명령형)
+kubectl create secret generic db-secret \
+  --from-literal=username=admin \
+  --from-literal=password=securepassword
 
-   # Secret 확인 (base64 인코딩됨)
-   kubectl get secret db-secret -o yaml
+# Secret 확인 (base64 인코딩됨)
+kubectl get secret db-secret -o yaml
 
-   # Secret 디코딩
-   kubectl get secret db-secret -o jsonpath='{.data.password}' | base64 -d
-   ```
+# Secret 디코딩
+kubectl get secret db-secret -o jsonpath='{.data.password}' | base64 -d
+```
 
 3. **ConfigMap을 파일로 마운트**
-   ```yaml
-   apiVersion: v1
-   kind: Pod
-   metadata:
-     name: configmap-pod
-   spec:
-     containers:
-       - name: nginx
-         image: nginx
-         volumeMounts:
-           - name: config
-             mountPath: /etc/config
-     volumes:
-       - name: config
-         configMap:
-           name: app-config
-   ```
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-pod
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+      volumeMounts:
+        - name: config
+          mountPath: /etc/config
+  volumes:
+    - name: config
+      configMap:
+        name: app-config
+```
 
-   ```bash
-   # Pod 생성
-   kubectl apply -f configmap-pod.yaml
+```bash
+# Pod 생성
+kubectl apply -f configmap-pod.yaml
 
-   # 마운트된 파일 확인
-   kubectl exec configmap-pod -- ls /etc/config
-   kubectl exec configmap-pod -- cat /etc/config/server.port
-   ```
+# 마운트된 파일 확인
+kubectl exec configmap-pod -- ls /etc/config
+kubectl exec configmap-pod -- cat /etc/config/server.port
+```
 
 ---
 
