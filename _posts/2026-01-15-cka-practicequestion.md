@@ -7,6 +7,12 @@ layout: post
 toc: true
 ---
 
+### Video
+
+- https://www.youtube.com/playlist?list=PLkDZsCgo3Isr4NB5cmyqG7OZwYEx5XOjM
+
+---
+
 ### Q. 1 Install ArgoCD using Helm
 **Task:** Install ArgoCD in a Kubernetes cluster using Helm while ensuring that CRDs are not installed.
 - Add the official ArgoCD repository with the name `argo` (URL: `https://argoproj.github.io/argo-helm`).
