@@ -206,7 +206,7 @@ helm repo remove bitnami
 - **실전 팁**: "Chart를 찾을 수 없다"는 에러가 나면 `helm repo update`를 먼저 실행
 
 **4. `helm search repo <CHART>`**
-- **용도**: 등록된 Repository에서 Chart 검색
+- **용도**: 로컬에 추가한 Repository에서 Chart 검색
 - **사용사례**:
   - 설치 가능한 Chart가 있는지 확인할 때
   - 특정 Chart의 사용 가능한 버전을 확인할 때
@@ -227,6 +227,114 @@ helm repo remove bitnami
 - **실전 팁**:
   - 문제에서 특정 버전을 요구하면 `--versions`로 해당 버전이 있는지 먼저 확인
   - Chart 이름은 `<repo명>/<chart명>` 형식으로 사용 (예: `bitnami/nginx`)
+
+**`helm search repo` vs `helm search hub`**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     helm search repo                            │
+│  (로컬에 추가한 Repository에서만 검색)                            │
+│                                                                 │
+│  [로컬 환경]                                                     │
+│  ┌──────────────┐                                              │
+│  │ helm 클라이언트 │                                              │
+│  │              │                                              │
+│  │ 등록된 repo:  │                                              │
+│  │ - bitnami    │  ← 이 목록에서만 검색                          │
+│  │ - argo       │                                              │
+│  └──────────────┘                                              │
+│                                                                 │
+│  예시: helm search repo nginx                                   │
+│  결과: bitnami/nginx, 다른 로컬 repo의 nginx만 검색              │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                     helm search hub                             │
+│  (Artifact Hub - 전 세계 공개 Repository 검색)                   │
+│                                                                 │
+│  [로컬 환경]           [인터넷]        [Artifact Hub]           │
+│  ┌──────────────┐     ───>      ┌─────────────────────┐       │
+│  │ helm 클라이언트 │              │  https://           │       │
+│  │              │              │  artifacthub.io     │       │
+│  └──────────────┘              │                     │       │
+│                                │ - bitnami charts    │       │
+│                                │ - stable charts     │       │
+│                                │ - prometheus charts │       │
+│                                │ - 수천 개의 charts... │       │
+│                                └─────────────────────┘       │
+│                                                                 │
+│  예시: helm search hub nginx                                    │
+│  결과: 전 세계 모든 공개 repo의 nginx 검색                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**비교표:**
+
+| 특징 | `helm search repo` | `helm search hub` |
+|------|-------------------|-------------------|
+| **검색 범위** | 로컬에 추가한 Repository만 | Artifact Hub의 모든 공개 Repository |
+| **인터넷 필요** | 불필요 (로컬 캐시 검색) | 필요 |
+| **사전 작업** | `helm repo add` 필수 | 불필요 |
+| **검색 속도** | 빠름 | 느림 (네트워크 요청) |
+| **결과 양** | 적음 (추가한 repo만) | 많음 (수천 개) |
+| **사용 시기** | 이미 알고 있는 repo에서 Chart 찾을 때 | 새로운 Chart 발견할 때 |
+
+**실제 사용 예시:**
+
+```bash
+# 1. helm search repo (로컬 검색)
+# 먼저 repo를 추가해야 함
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# 로컬에 추가한 repo에서만 검색
+helm search repo nginx
+# 출력:
+# NAME                CHART VERSION   APP VERSION     DESCRIPTION
+# bitnami/nginx       15.0.0          1.21.0          NGINX Open Source...
+
+# 2. helm search hub (전역 검색)
+# repo 추가 없이 바로 검색 가능
+helm search hub nginx
+# 출력:
+# URL                                                     CHART VERSION   APP VERSION     DESCRIPTION
+# https://artifacthub.io/packages/helm/bitnami/nginx      15.0.0          1.21.0          NGINX Open Source...
+# https://artifacthub.io/packages/helm/stable/nginx       12.0.0          1.19.0          ...
+# https://artifacthub.io/packages/helm/nginx-inc/nginx    1.0.0           ...             ...
+# ... (수십 개의 결과)
+```
+
+**활용:**
+
+**상황 1: 특정 Chart 설치 (repo를 알고 있을 때)**
+```bash
+# 빠르고 정확한 방법
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+helm search repo bitnami/nginx --versions
+helm install my-nginx bitnami/nginx --version 15.0.0
+```
+
+**상황 2: 어떤 Chart가 있는지 탐색**
+```bash
+# 먼저 hub에서 검색해서 어떤 repo가 좋은지 확인
+helm search hub prometheus
+
+# 출력에서 적절한 repo 찾기
+# URL: https://artifacthub.io/packages/helm/prometheus-community/prometheus
+
+# 해당 repo 추가
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# 이후 로컬에서 빠르게 검색
+helm search repo prometheus-community/prometheus
+```
+
+**CKA 시험에서:**
+- `helm search repo` 사용 (시험 환경에서 인터넷 제한적)
+- Repository URL은 문제에서 제공됨
+- 순서: `helm repo add` → `helm repo update` → `helm search repo`
 
 **5. `helm repo remove <REPO_NAME>`**
 - **용도**: 등록된 Repository 제거
