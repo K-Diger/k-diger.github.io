@@ -1,6 +1,6 @@
 ---
 title: "CKA Lightning Lab"
-date: 2026-01-13
+date: 2026-01-30
 categories: [Kubernetes, CKA]
 tags: [kubernetes, cka, kubeadm, upgrade, etcd, troubleshooting, deployment, persistent-volume, secrets]
 description: "CKA 시험 대비 Lightning Lab 실전 문제 7개 - 클러스터 업그레이드, 트러블슈팅, ETCD 백업, PV/PVC, Secret 관리"
