@@ -6,28 +6,27 @@ categories: [Kubernetes]
 tags: [kubernetes, admission-controller, webhook, security, cka, cks]
 ---
 
+> **원문 ([kubernetes.io - Admission Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)):**
+> An admission controller is a piece of code that intercepts requests to the Kubernetes API server prior to persistence of the object, but after the request is authenticated and authorized.
+
+**번역:** Admission Controller는 객체가 저장되기 전에, 그러나 요청이 인증되고 권한이 부여된 후에 Kubernetes API 서버로의 요청을 가로채는 코드이다.
+
 **Admission Controller**는 API 요청이 etcd에 저장되기 전에 요청을 검증하거나 변형하는 게이트키퍼 역할을 한다. 인증(Authentication)과 인가(Authorization) 이후, 영속화 직전에 실행된다.
 
 ## API 요청 흐름
 
-```
-클라이언트 요청
-     ↓
-┌─────────────┐
-│ API Server  │
-├─────────────┤
-│ Authentication (인증)
-│ - 누구인가?
-├─────────────┤
-│ Authorization (인가)
-│ - 권한이 있는가? (RBAC)
-├─────────────┤
-│ Admission Controller  ← 여기서 동작
-│ - Mutating (변형)
-│ - Validating (검증)
-├─────────────┤
-│ etcd (저장)
-└─────────────┘
+```mermaid
+flowchart TB
+    req["클라이언트 요청"]
+
+    subgraph api["API Server"]
+        auth["Authentication (인증)<br/>누구인가?"]
+        authz["Authorization (인가)<br/>권한이 있는가? (RBAC)"]
+        admission["Admission Controller ⬅ 여기서 동작<br/>- Mutating (변형)<br/>- Validating (검증)"]
+        etcd[("etcd (저장)")]
+    end
+
+    req --> auth --> authz --> admission --> etcd
 ```
 
 ## Admission Controller 종류
@@ -102,21 +101,24 @@ spec:
 
 ### 개념
 
+> **원문 ([kubernetes.io - Dynamic Admission Control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)):**
+> Admission webhooks are HTTP callbacks that receive admission requests and do something with them. You can define two types of admission webhooks: validating admission webhook and mutating admission webhook.
+
+**번역:** Admission 웹훅은 admission 요청을 받아 처리하는 HTTP 콜백이다. 두 가지 유형의 admission 웹훅을 정의할 수 있다: validating admission webhook과 mutating admission webhook.
+
 **Webhook**은 외부 서비스를 호출하여 Admission 로직을 확장한다.
 
-```
-API 요청
-    ↓
-API Server
-    ↓ HTTPS 호출
-┌─────────────────┐
-│ Webhook Service │  ← 사용자 정의 로직
-│  (Pod/외부)     │
-└─────────────────┘
-    ↓ 응답
-API Server
-    ↓
-etcd 저장
+```mermaid
+sequenceDiagram
+    participant Client as API 요청
+    participant API as API Server
+    participant Webhook as Webhook Service<br/>(사용자 정의 로직)
+    participant etcd as etcd
+
+    Client->>API: 요청
+    API->>Webhook: HTTPS 호출
+    Webhook->>API: 응답
+    API->>etcd: 저장
 ```
 
 ### MutatingWebhookConfiguration
@@ -442,6 +444,16 @@ kubectl get pods -n <webhook-namespace>
 # 3. 로그 확인
 kubectl logs -n <webhook-namespace> <webhook-pod>
 ```
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Admission Controllers Reference](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)
+- [Dynamic Admission Control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)
+- [ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/)
 
 ## 다음 단계
 

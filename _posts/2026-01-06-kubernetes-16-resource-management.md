@@ -10,6 +10,11 @@ Kubernetes에서 리소스 관리는 클러스터 안정성과 애플리케이�
 
 ## 리소스 요청(Requests)과 제한(Limits)
 
+> **원문 ([kubernetes.io - Resource Management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)):**
+> When you specify a Pod, you can optionally specify how much of each resource a container needs. The most common resources to specify are CPU and memory (RAM).
+
+**번역:** Pod를 지정할 때 선택적으로 각 컨테이너에 필요한 리소스 양을 지정할 수 있다. 지정하는 가장 일반적인 리소스는 CPU와 메모리(RAM)이다.
+
 ### 기본 개념
 
 ```yaml
@@ -101,6 +106,11 @@ spec:
 - Total limits: 384Mi memory, 300m CPU
 
 ## QoS (Quality of Service) 클래스
+
+> **원문 ([kubernetes.io - Pod QoS Classes](https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/)):**
+> Kubernetes classifies Pods into one of three QoS classes: Guaranteed, Burstable, and BestEffort. The QoS class of a Pod is determined by the resource requests and limits of its containers.
+
+**번역:** Kubernetes는 Pod를 세 가지 QoS 클래스 중 하나로 분류한다: Guaranteed, Burstable, BestEffort. Pod의 QoS 클래스는 컨테이너의 리소스 requests와 limits에 의해 결정된다.
 
 Pod의 requests와 limits 설정에 따라 QoS 클래스가 결정된다.
 
@@ -589,6 +599,18 @@ spec:
     limits.memory: "4Gi"
     pods: "10"
 ```
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Managing Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+- [Resource Quotas](https://kubernetes.io/docs/concepts/policy/resource-quotas/)
+- [Limit Ranges](https://kubernetes.io/docs/concepts/policy/limit-range/)
+- [Pod Quality of Service Classes](https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/)
+- [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
 
 ## 다음 단계
 

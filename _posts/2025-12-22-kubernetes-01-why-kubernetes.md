@@ -296,7 +296,15 @@ flowchart TB
 
 ### 3.1 Kubernetes란?
 
-**Kubernetes(K8s)**는 컨테이너화된 애플리케이션의 배포, 확장, 관리를 자동화하는 오픈소스 플랫폼이다.
+> **원문 ([kubernetes.io - What is Kubernetes?](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/)):**
+> Kubernetes is a portable, extensible, open source platform for managing containerized workloads and services, that facilitates both declarative configuration and automation.
+
+**번역:** Kubernetes는 컨테이너화된 워크로드와 서비스를 관리하기 위한 이식 가능하고 확장 가능한 오픈 소스 플랫폼으로, 선언적 구성과 자동화를 모두 용이하게 한다.
+
+> **원문 ([kubernetes.io - What is Kubernetes?](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/)):**
+> Kubernetes provides you with a framework to run distributed systems resiliently. It takes care of scaling and failover for your application, provides deployment patterns, and more.
+
+**번역:** Kubernetes는 분산 시스템을 탄력적으로 실행하기 위한 프레임워크를 제공한다. 애플리케이션의 스케일링과 장애 조치를 처리하고, 배포 패턴 등을 제공한다.
 
 > 이름의 유래: 그리스어로 "조타수(helmsman)" 또는 "파일럿"을 의미한다. K8s는 K와 s 사이에 8글자가 있어서 붙여진 약어다.
 
@@ -581,6 +589,7 @@ minikube   Ready    control-plane   1m    v1.28.0
 ## 참고 자료
 
 - [Kubernetes 공식 문서 - 개요](https://kubernetes.io/docs/concepts/overview/)
+- [What is Kubernetes?](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/)
 - [Borg, Omega, and Kubernetes (Google 논문)](https://research.google/pubs/pub44843/)
 - [CNCF Kubernetes 프로젝트](https://www.cncf.io/projects/kubernetes/)
 

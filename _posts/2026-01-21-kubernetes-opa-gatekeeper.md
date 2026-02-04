@@ -14,19 +14,16 @@ tags: [kubernetes, opa, gatekeeper, policy, security]
 
 OPA는 **정책을 코드로 관리**하는 오픈소스 정책 엔진이다.
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                         OPA                                 │
-├────────────────────────────────────────────────────────────┤
-│                                                             │
-│   Input (JSON)     Policy (Rego)      Output (Decision)    │
-│                                                             │
-│   ┌──────────┐     ┌──────────┐       ┌──────────┐        │
-│   │ 요청 데이터│ + │ 정책 코드 │ ───→ │ allow:   │        │
-│   │ (Pod Spec)│    │ (Rego)   │       │ true/false│        │
-│   └──────────┘     └──────────┘       └──────────┘        │
-│                                                             │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph OPA["OPA Engine"]
+        direction LR
+        input["Input (JSON)<br/>요청 데이터<br/>(Pod Spec)"]
+        policy["Policy (Rego)<br/>정책 코드"]
+        output["Output<br/>allow:<br/>true/false"]
+
+        input --> |"+"| policy --> output
+    end
 ```
 
 **특징**:
@@ -71,33 +68,20 @@ containers := pod.spec.containers
 
 Gatekeeper는 **OPA를 Kubernetes Admission Controller로 통합**한 것이다.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Gatekeeper Architecture                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  API Request                                                 │
-│       │                                                      │
-│       ▼                                                      │
-│  ┌──────────────┐                                           │
-│  │  API Server  │                                           │
-│  └──────┬───────┘                                           │
-│         │ Admission Webhook                                  │
-│         ▼                                                    │
-│  ┌──────────────┐     ┌──────────────────────┐             │
-│  │  Gatekeeper  │────→│ ConstraintTemplate   │             │
-│  │  Controller  │     │ (정책 템플릿)        │             │
-│  └──────────────┘     └──────────────────────┘             │
-│         │                      │                            │
-│         │             ┌───────▼────────┐                   │
-│         │             │   Constraint    │                   │
-│         │             │   (정책 인스턴스)│                   │
-│         │             └────────────────┘                    │
-│         ▼                                                    │
-│  ┌──────────────┐                                           │
-│  │ Allow/Deny   │                                           │
-│  └──────────────┘                                           │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    request["API Request"]
+    apiserver["API Server"]
+    gatekeeper["Gatekeeper<br/>Controller"]
+    template["ConstraintTemplate<br/>(정책 템플릿)"]
+    constraint["Constraint<br/>(정책 인스턴스)"]
+    decision["Allow / Deny"]
+
+    request --> apiserver
+    apiserver -->|"Admission Webhook"| gatekeeper
+    gatekeeper --> template
+    template --> constraint
+    gatekeeper --> decision
 ```
 
 **주요 개념**:

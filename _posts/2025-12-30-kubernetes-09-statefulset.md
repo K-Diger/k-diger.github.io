@@ -13,7 +13,10 @@ mermaid: true
 
 ### 1.1 StatefulSet이란?
 
-StatefulSet은 **상태가 있는(Stateful) 애플리케이션**을 위한 워크로드 컨트롤러다.
+> **원문 ([kubernetes.io - StatefulSets](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)):**
+> StatefulSet is the workload API object used to manage stateful applications. It manages the deployment and scaling of a set of Pods, and provides guarantees about the ordering and uniqueness of these Pods.
+
+**번역:** StatefulSet은 상태 저장 애플리케이션을 관리하는 데 사용되는 워크로드 API 객체이다. Pod 집합의 배포와 스케일링을 관리하고 이러한 Pod의 순서와 고유성에 대한 보장을 제공한다.
 
 **Deployment vs StatefulSet:**
 
@@ -166,22 +169,29 @@ spec:
 
 ### 2.1 DaemonSet이란?
 
-DaemonSet은 **모든(또는 일부) 노드에 Pod을 하나씩 실행**하는 컨트롤러다.
+> **원문 ([kubernetes.io - DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/)):**
+> A DaemonSet ensures that all (or some) Nodes run a copy of a Pod. As nodes are added to the cluster, Pods are added to them. As nodes are removed from the cluster, those Pods are garbage collected.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Kubernetes Cluster                      │
-│                                                             │
-│  Node 1         Node 2         Node 3         Node 4        │
-│  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐     │
-│  │DaemonSet│   │DaemonSet│   │DaemonSet│   │DaemonSet│     │
-│  │Pod (log │   │Pod (log │   │Pod (log │   │Pod (log │     │
-│  │collector)│   │collector)│   │collector)│   │collector)│     │
-│  └─────────┘   └─────────┘   └─────────┘   └─────────┘     │
-│                                                             │
-│  새 노드가 추가되면 자동으로 DaemonSet Pod 생성              │
-│  노드가 제거되면 해당 노드의 DaemonSet Pod도 삭제            │
-└─────────────────────────────────────────────────────────────┘
+**번역:** DaemonSet은 모든(또는 일부) 노드가 Pod의 복사본을 실행하도록 보장한다. 노드가 클러스터에 추가되면 Pod가 추가된다. 노드가 클러스터에서 제거되면 해당 Pod는 가비지 수집된다.
+
+```mermaid
+flowchart TB
+    subgraph cluster["Kubernetes Cluster"]
+        subgraph node1["Node 1"]
+            ds1["DaemonSet Pod<br/>(log collector)"]
+        end
+        subgraph node2["Node 2"]
+            ds2["DaemonSet Pod<br/>(log collector)"]
+        end
+        subgraph node3["Node 3"]
+            ds3["DaemonSet Pod<br/>(log collector)"]
+        end
+        subgraph node4["Node 4"]
+            ds4["DaemonSet Pod<br/>(log collector)"]
+        end
+    end
+
+    note["새 노드 추가 → 자동으로 DaemonSet Pod 생성<br/>노드 제거 → 해당 노드의 DaemonSet Pod 삭제"]
 ```
 
 ### 2.2 DaemonSet 사용 사례
@@ -373,6 +383,8 @@ spec:
 │ │ │ │ │
 * * * * *
 ```
+
+> 참고: Cron 스케줄 형식은 텍스트 기반의 간결한 표현이므로 ASCII 다이어그램으로 유지.
 
 | 예시 | 설명 |
 |------|------|

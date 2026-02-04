@@ -8,26 +8,34 @@ tags: [kubernetes, ingress, nginx, traefik, networking, tls, cka]
 
 Service의 NodePort나 LoadBalancer는 L4(TCP/UDP) 수준에서 동작한다. 웹 애플리케이션에서 URL 경로나 호스트 기반 라우팅, TLS 종료 등 L7(HTTP/HTTPS) 기능이 필요할 때 **Ingress**를 사용한다.
 
+> **원문 ([kubernetes.io - Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)):**
+> Ingress exposes HTTP and HTTPS routes from outside the cluster to services within the cluster. Traffic routing is controlled by rules defined on the Ingress resource.
+
+**번역:** Ingress는 클러스터 외부에서 클러스터 내의 서비스로 HTTP 및 HTTPS 경로를 노출한다. 트래픽 라우팅은 Ingress 리소스에 정의된 규칙에 의해 제어된다.
+
+> **원문 ([kubernetes.io - Ingress Controllers](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/)):**
+> You must have an Ingress controller to satisfy an Ingress. Only creating an Ingress resource has no effect.
+
+**번역:** Ingress를 충족하려면 Ingress 컨트롤러가 있어야 한다. Ingress 리소스만 생성하면 아무 효과가 없다.
+
 ## Ingress의 필요성
 
 ### Service만으로 부족한 경우
 
-```
-LoadBalancer Service만 사용할 때:
-┌──────────────────────────────────────┐
-│ app1.example.com → LoadBalancer1 ($) │
-│ app2.example.com → LoadBalancer2 ($) │
-│ app3.example.com → LoadBalancer3 ($) │
-└──────────────────────────────────────┘
-→ 서비스마다 별도 LB, 비용 증가
+```mermaid
+flowchart LR
+    subgraph before["LoadBalancer만 사용 (비용 증가)"]
+        app1_b["app1.example.com"] --> lb1["LB1 $"]
+        app2_b["app2.example.com"] --> lb2["LB2 $"]
+        app3_b["app3.example.com"] --> lb3["LB3 $"]
+    end
 
-Ingress 사용 시:
-┌──────────────────────────────────────┐
-│ app1.example.com ─┐                  │
-│ app2.example.com ─┼→ Ingress → LB ($)│
-│ app3.example.com ─┘                  │
-└──────────────────────────────────────┘
-→ 하나의 LB로 여러 서비스 라우팅
+    subgraph after["Ingress 사용 (비용 절감)"]
+        app1_a["app1.example.com"] --> ingress["Ingress"]
+        app2_a["app2.example.com"] --> ingress
+        app3_a["app3.example.com"] --> ingress
+        ingress --> lb["LB $"]
+    end
 ```
 
 ### Ingress가 제공하는 기능
@@ -43,20 +51,14 @@ Ingress 사용 시:
 **Ingress**는 라우팅 규칙을 정의하는 Kubernetes 리소스이다.
 **Ingress Controller**는 Ingress 규칙을 실제로 구현하는 컴포넌트이다.
 
-```
-┌────────────────┐
-│  Ingress 리소스 │  ← 라우팅 규칙 정의 (선언적)
-└───────┬────────┘
-        │ 감시(watch)
-        ▼
-┌────────────────────┐
-│ Ingress Controller │  ← 실제 구현 (nginx, traefik 등)
-└───────┬────────────┘
-        │ 설정 적용
-        ▼
-┌────────────────────┐
-│   로드밸런서/프록시  │  ← 실제 트래픽 처리
-└────────────────────┘
+```mermaid
+flowchart TB
+    ingress["Ingress 리소스<br/>(라우팅 규칙 정의)"]
+    controller["Ingress Controller<br/>(nginx, traefik 등)"]
+    lb["로드밸런서/프록시<br/>(실제 트래픽 처리)"]
+
+    ingress -->|"감시(watch)"| controller
+    controller -->|"설정 적용"| lb
 ```
 
 **중요**: Ingress 리소스만 생성해서는 아무 일도 일어나지 않는다. 반드시 Ingress Controller가 설치되어 있어야 한다.
@@ -753,6 +755,15 @@ spec:
             port:
               number: 80
 ```
+
+---
+
+## 참고 자료
+
+- [Kubernetes Ingress 공식 문서](https://kubernetes.io/docs/concepts/services-networking/ingress/)
+- [Ingress Controllers](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/)
+- [Gateway API (Ingress의 차세대 버전)](https://gateway-api.sigs.k8s.io/)
+- [NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx/)
 
 ## 다음 단계
 

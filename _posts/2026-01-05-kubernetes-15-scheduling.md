@@ -12,22 +12,14 @@ Kubernetes 스케줄러는 Pod가 실행될 노드를 결정한다. 기본적으
 
 ### kube-scheduler의 동작
 
-```
-1. 새 Pod 감지 (nodeName이 없는 Pod)
-      ↓
-2. Filtering (필터링)
-   - 요구사항을 만족하는 노드만 선별
-   - CPU/메모리 가용성
-   - nodeSelector, affinity 조건
-   - taints/tolerations
-      ↓
-3. Scoring (점수화)
-   - 남은 노드들에 점수 부여
-   - 리소스 균형, 데이터 locality 등
-      ↓
-4. Binding (바인딩)
-   - 가장 높은 점수의 노드에 Pod 할당
-   - pod.spec.nodeName 설정
+```mermaid
+flowchart TB
+    detect["1. 새 Pod 감지<br/>(nodeName이 없는 Pod)"]
+    filter["2. Filtering (필터링)<br/>- 요구사항을 만족하는 노드만 선별<br/>- CPU/메모리 가용성<br/>- nodeSelector, affinity 조건<br/>- taints/tolerations"]
+    score["3. Scoring (점수화)<br/>- 남은 노드들에 점수 부여<br/>- 리소스 균형, 데이터 locality 등"]
+    bind["4. Binding (바인딩)<br/>- 가장 높은 점수의 노드에 Pod 할당<br/>- pod.spec.nodeName 설정"]
+
+    detect --> filter --> score --> bind
 ```
 
 ### 스케줄링되지 않는 Pod
@@ -48,6 +40,11 @@ kubectl describe pod <pod-name>
 - PVC 바인딩 대기
 
 ## nodeSelector
+
+> **원문 ([kubernetes.io - Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)):**
+> nodeSelector is the simplest recommended form of node selection constraint. You can add the nodeSelector field to your Pod specification and specify the node labels you want the target node to have.
+
+**번역:** nodeSelector는 노드 선택 제약의 가장 간단한 권장 형태이다. Pod 명세에 nodeSelector 필드를 추가하고 대상 노드에 원하는 노드 라벨을 지정할 수 있다.
 
 가장 간단한 노드 선택 방법이다. **노드 Label을 기준**으로 필터링한다.
 
@@ -321,6 +318,11 @@ spec:
 ```
 
 ## Taints와 Tolerations
+
+> **원문 ([kubernetes.io - Taints and Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)):**
+> Taints allow a node to repel a set of pods. Tolerations are applied to pods, and allow (but do not require) the pods to schedule onto nodes with matching taints.
+
+**번역:** Taint는 노드가 Pod 집합을 거부할 수 있게 한다. Toleration은 Pod에 적용되며, Pod가 일치하는 taint가 있는 노드에 스케줄되는 것을 허용한다(필수는 아님).
 
 **Taint**는 노드가 특정 Pod를 거부하게 한다.
 **Toleration**은 Pod가 Taint를 무시하고 해당 노드에 스케줄될 수 있게 한다.
@@ -684,6 +686,18 @@ spec:
       - name: web
         image: nginx
 ```
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)
+- [Taints and Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
+- [Pod Priority and Preemption](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/)
+- [Pod Topology Spread Constraints](https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/)
+- [Scheduler Configuration](https://kubernetes.io/docs/reference/scheduling/config/)
 
 ## 다음 단계
 

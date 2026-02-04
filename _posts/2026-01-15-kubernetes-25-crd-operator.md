@@ -12,6 +12,11 @@ Kubernetes는 **Custom Resource Definition(CRD)**를 통해 API를 확장할 수
 
 ### 개념
 
+> **원문 ([kubernetes.io - Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)):**
+> A custom resource is an extension of the Kubernetes API that is not necessarily available in a default Kubernetes installation. Custom resources let you store and retrieve structured data.
+
+**번역:** 커스텀 리소스는 기본 Kubernetes 설치에서 반드시 사용 가능하지 않은 Kubernetes API의 확장이다. 커스텀 리소스를 사용하면 구조화된 데이터를 저장하고 검색할 수 있다.
+
 CRD를 사용하면 Kubernetes API에 **새로운 리소스 타입**을 추가할 수 있다.
 
 ```
@@ -159,21 +164,22 @@ versions:
 
 ### 개념
 
+> **원문 ([kubernetes.io - Operator Pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)):**
+> Operators are software extensions to Kubernetes that make use of custom resources to manage applications and their components. Operators follow Kubernetes principles, notably the control loop.
+
+**번역:** Operator는 애플리케이션과 그 컴포넌트를 관리하기 위해 커스텀 리소스를 사용하는 Kubernetes 소프트웨어 확장이다. Operator는 Kubernetes 원칙, 특히 컨트롤 루프를 따른다.
+
 Operator는 **CRD + Controller**의 조합으로, 애플리케이션의 운영 지식을 코드화한다.
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                      Operator Pattern                       │
-├────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Custom Resource ──────→ Controller ──────→ Managed        │
-│  (원하는 상태)           (조정 로직)         Resources       │
-│                                                             │
-│  예: Database CR    →  DB Operator   →  Pod, Service,      │
-│      replicas: 3                        StatefulSet,       │
-│      engine: postgres                   ConfigMap...       │
-│                                                             │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph operator["Operator Pattern"]
+        cr["Custom Resource<br/>(원하는 상태)<br/><br/>예: Database CR<br/>replicas: 3<br/>engine: postgres"]
+        ctrl["Controller<br/>(조정 로직)<br/><br/>DB Operator"]
+        managed["Managed Resources<br/><br/>Pod, Service,<br/>StatefulSet,<br/>ConfigMap..."]
+
+        cr --> ctrl --> managed
+    end
 ```
 
 **Operator가 하는 일**:
@@ -340,14 +346,13 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 CRD의 대안으로, **자체 API Server**를 추가할 수 있다.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    kube-apiserver                            │
-├─────────────────────────────────────────────────────────────┤
-│  /api/v1             → core API                             │
-│  /apis/apps/v1       → apps API                             │
-│  /apis/custom.io/v1  → Aggregated API Server (Extension)    │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph apiserver["kube-apiserver"]
+        core["/api/v1 → core API"]
+        apps["/apis/apps/v1 → apps API"]
+        custom["/apis/custom.io/v1 → Aggregated API Server (Extension)"]
+    end
 ```
 
 **CRD vs Aggregated API**:
@@ -432,7 +437,18 @@ kubectl describe <resource-name> <name>
 kubectl delete <resource-name> <name>
 ```
 
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
+- [CustomResourceDefinitions](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)
+- [Operator Pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+- [API Aggregation Layer](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/apiserver-aggregation/)
+
 ## 다음 단계
 
-- [Kubernetes - CKA 시험 대비](/kubernetes/kubernetes-25-cka-prep)
-- [Kubernetes - 보안 심화 (TLS/PKI)](/kubernetes/kubernetes-26-security-deep-dive)
+- [Kubernetes - CKA 시험 대비](/kubernetes/kubernetes-26-cka-prep)
+- [Kubernetes - 보안 심화 (TLS/PKI)](/kubernetes/kubernetes-27-security-tls)

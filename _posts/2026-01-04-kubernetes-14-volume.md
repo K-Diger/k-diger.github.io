@@ -179,7 +179,12 @@ spec:
 
 ## PersistentVolume (PV)
 
-**PV는 클러스터 레벨의 스토리지 리소스**이다. 관리자가 프로비저닝하거나 StorageClass를 통해 동적으로 생성된다.
+> **원문 ([kubernetes.io - Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)):**
+> A PersistentVolume (PV) is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes.
+
+**번역:** PersistentVolume(PV)은 관리자가 프로비저닝했거나 Storage Class를 사용하여 동적으로 프로비저닝된 클러스터의 스토리지 조각이다.
+
+즉, **PV는 클러스터 레벨의 스토리지 리소스**이다. 관리자가 프로비저닝하거나 StorageClass를 통해 동적으로 생성된다.
 
 ### PV 정의
 
@@ -239,7 +244,12 @@ spec:
 
 ## PersistentVolumeClaim (PVC)
 
-**PVC는 사용자의 스토리지 요청**이다. Pod는 PVC를 통해 PV를 사용한다.
+> **원문 ([kubernetes.io - Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)):**
+> A PersistentVolumeClaim (PVC) is a request for storage by a user. It is similar to a Pod. Pods consume node resources and PVCs consume PV resources.
+
+**번역:** PersistentVolumeClaim(PVC)은 사용자의 스토리지 요청이다. Pod와 유사하다. Pod는 노드 리소스를 소비하고 PVC는 PV 리소스를 소비한다.
+
+즉, **PVC는 사용자의 스토리지 요청**이다. Pod는 PVC를 통해 PV를 사용한다.
 
 ### PVC 정의
 
@@ -629,6 +639,18 @@ spec:
     persistentVolumeClaim:
       claimName: pvc-storage
 ```
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Persistent Volumes 공식 문서](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+- [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/)
+- [Volume Snapshots](https://kubernetes.io/docs/concepts/storage/volume-snapshots/)
+- [CSI Drivers 목록](https://kubernetes-csi.github.io/docs/drivers.html)
+- [Dynamic Volume Provisioning](https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/)
 
 ## 다음 단계
 

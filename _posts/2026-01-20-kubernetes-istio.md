@@ -18,38 +18,35 @@ tags: [kubernetes, istio, service-mesh, envoy, microservices]
 - 관측성 (메트릭, 트레이싱, 로깅)
 - 장애 복구 (재시도, 서킷 브레이커)
 
-```
-Service Mesh 없이:
-┌─────────────────────────────────────────────────────────┐
-│  각 서비스에서 직접 구현해야 함                          │
-│                                                          │
-│  ┌────────┐     ┌────────┐     ┌────────┐              │
-│  │Service │────→│Service │────→│Service │              │
-│  │   A    │     │   B    │     │   C    │              │
-│  │ +retry │     │ +retry │     │ +retry │              │
-│  │ +mTLS  │     │ +mTLS  │     │ +mTLS  │              │
-│  │ +trace │     │ +trace │     │ +trace │              │
-│  └────────┘     └────────┘     └────────┘              │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph without["Service Mesh 없이 (각 서비스에서 직접 구현)"]
+        direction LR
+        a1["Service A<br/>+retry +mTLS +trace"] --> b1["Service B<br/>+retry +mTLS +trace"] --> c1["Service C<br/>+retry +mTLS +trace"]
+    end
 
-Service Mesh 사용:
-┌─────────────────────────────────────────────────────────┐
-│  인프라 레이어에서 처리                                  │
-│                                                          │
-│  ┌────────┐     ┌────────┐     ┌────────┐              │
-│  │Service │     │Service │     │Service │              │
-│  │   A    │     │   B    │     │   C    │              │
-│  └───┬────┘     └───┬────┘     └───┬────┘              │
-│      │              │              │                    │
-│  ┌───▼────┐     ┌───▼────┐     ┌───▼────┐              │
-│  │ Proxy  │────→│ Proxy  │────→│ Proxy  │ (Sidecar)   │
-│  │(Envoy) │     │(Envoy) │     │(Envoy) │              │
-│  └────────┘     └────────┘     └────────┘              │
-│        ↓              ↓              ↓                  │
-│  ┌──────────────────────────────────────────┐          │
-│  │           Control Plane (Istio)          │          │
-│  └──────────────────────────────────────────┘          │
-└─────────────────────────────────────────────────────────┘
+    subgraph with["Service Mesh 사용 (인프라 레이어에서 처리)"]
+        direction TB
+        subgraph apps["Applications"]
+            a2["Service A"]
+            b2["Service B"]
+            c2["Service C"]
+        end
+
+        subgraph sidecars["Sidecar Proxies"]
+            pa["Envoy"]
+            pb["Envoy"]
+            pc["Envoy"]
+        end
+
+        cp["Control Plane (Istio)"]
+
+        a2 --> pa
+        b2 --> pb
+        c2 --> pc
+        pa <--> pb <--> pc
+        pa & pb & pc --> cp
+    end
 ```
 
 ### Service Mesh 솔루션 비교
@@ -63,30 +60,38 @@ Service Mesh 사용:
 
 ## Istio 아키텍처
 
-### 핵심 컴포넌트
+### 주요 컴포넌트
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Istio Architecture                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  Data Plane                                                  │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  Pod A              Pod B              Pod C          │   │
-│  │  ┌─────┐ ┌─────┐   ┌─────┐ ┌─────┐   ┌─────┐ ┌─────┐│   │
-│  │  │ App │ │Envoy│   │ App │ │Envoy│   │ App │ │Envoy││   │
-│  │  └─────┘ └──┬──┘   └─────┘ └──┬──┘   └─────┘ └──┬──┘│   │
-│  └─────────────┼─────────────────┼─────────────────┼────┘   │
-│                │                 │                 │         │
-│  Control Plane │                 │                 │         │
-│  ┌─────────────▼─────────────────▼─────────────────▼────┐   │
-│  │                        istiod                         │   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐           │   │
-│  │  │  Pilot   │  │ Citadel  │  │  Galley  │           │   │
-│  │  │(트래픽)  │  │(보안/인증)│  │(설정검증) │           │   │
-│  │  └──────────┘  └──────────┘  └──────────┘           │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph CP["Control Plane"]
+        subgraph istiod["istiod"]
+            pilot["Pilot<br/>(트래픽 관리)"]
+            citadel["Citadel<br/>(보안/인증)"]
+            galley["Galley<br/>(설정 검증)"]
+        end
+    end
+
+    subgraph DP["Data Plane"]
+        subgraph podA["Pod A"]
+            appA["App"]
+            envoyA["Envoy"]
+        end
+        subgraph podB["Pod B"]
+            appB["App"]
+            envoyB["Envoy"]
+        end
+        subgraph podC["Pod C"]
+            appC["App"]
+            envoyC["Envoy"]
+        end
+    end
+
+    appA --> envoyA
+    appB --> envoyB
+    appC --> envoyC
+    envoyA <--> envoyB <--> envoyC
+    envoyA & envoyB & envoyC --> istiod
 ```
 
 **istiod**: 통합 Control Plane

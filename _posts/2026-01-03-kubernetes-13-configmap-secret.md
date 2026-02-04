@@ -8,6 +8,16 @@ tags: [kubernetes, configmap, secret, configuration, cka]
 
 애플리케이션 설정을 컨테이너 이미지에 하드코딩하면 환경별로 다른 이미지를 만들어야 한다. Kubernetes는 **ConfigMap**과 **Secret**을 통해 설정을 컨테이너와 분리하여 이식성과 보안성을 높인다.
 
+> **원문 ([kubernetes.io - ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/)):**
+> A ConfigMap is an API object used to store non-confidential data in key-value pairs. Pods can consume ConfigMaps as environment variables, command-line arguments, or as configuration files in a volume.
+
+**번역:** ConfigMap은 비밀이 아닌 데이터를 키-값 쌍으로 저장하는 데 사용되는 API 객체이다. Pod는 ConfigMap을 환경 변수, 명령줄 인수 또는 볼륨의 구성 파일로 사용할 수 있다.
+
+> **원문 ([kubernetes.io - Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)):**
+> A Secret is an object that contains a small amount of sensitive data such as a password, a token, or a key. Using a Secret means that you don't need to include confidential data in your application code.
+
+**번역:** Secret은 비밀번호, 토큰 또는 키와 같은 소량의 민감한 데이터를 포함하는 객체이다. Secret을 사용하면 애플리케이션 코드에 기밀 데이터를 포함할 필요가 없다.
+
 ## ConfigMap과 Secret의 차이
 
 | 구분 | ConfigMap | Secret |
@@ -677,6 +687,15 @@ spec:
       - key: nginx.conf
         path: default.conf
 ```
+
+---
+
+## 참고 자료
+
+- [ConfigMaps 공식 문서](https://kubernetes.io/docs/concepts/configuration/configmap/)
+- [Secrets 공식 문서](https://kubernetes.io/docs/concepts/configuration/secret/)
+- [Encrypting Secret Data at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
+- [Secret 사용 모범 사례](https://kubernetes.io/docs/concepts/security/secrets-good-practices/)
 
 ## 다음 단계
 

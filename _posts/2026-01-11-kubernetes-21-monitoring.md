@@ -12,16 +12,21 @@ Kubernetes 클러스터 운영에서 **모니터링**과 **로깅**은 문제 �
 
 ### Kubernetes 모니터링 아키텍처
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                     Metrics Pipeline                        │
-├────────────────────────────────────────────────────────────┤
-│  cAdvisor → kubelet → Metrics Server → kubectl top        │
-│     │                      │                               │
-│     │                      └→ HPA (Auto Scaling)           │
-│     │                                                      │
-│     └→ Prometheus → Grafana (상세 모니터링)                 │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph pipeline["Metrics Pipeline"]
+        cadvisor["cAdvisor"]
+        kubelet["kubelet"]
+        metrics["Metrics Server"]
+        top["kubectl top"]
+        hpa["HPA<br/>(Auto Scaling)"]
+        prom["Prometheus"]
+        grafana["Grafana<br/>(상세 모니터링)"]
+
+        cadvisor --> kubelet --> metrics --> top
+        metrics --> hpa
+        cadvisor --> prom --> grafana
+    end
 ```
 
 **핵심 컴포넌트**:
@@ -33,6 +38,11 @@ Kubernetes 클러스터 운영에서 **모니터링**과 **로깅**은 문제 �
 ## Metrics Server
 
 ### 개념
+
+> **원문 ([kubernetes.io - Metrics Server](https://github.com/kubernetes-sigs/metrics-server)):**
+> Metrics Server is a scalable, efficient source of container resource metrics for Kubernetes built-in autoscaling pipelines. Metrics Server collects resource metrics from Kubelets and exposes them in Kubernetes apiserver.
+
+**번역:** Metrics Server는 Kubernetes 내장 오토스케일링 파이프라인을 위한 확장 가능하고 효율적인 컨테이너 리소스 메트릭 소스이다. Metrics Server는 Kubelet에서 리소스 메트릭을 수집하고 Kubernetes apiserver에서 노출한다.
 
 Metrics Server는 **Resource Metrics API**를 제공하는 클러스터 컴포넌트이다.
 
@@ -90,6 +100,11 @@ kubectl edit deployment metrics-server -n kube-system
 ```
 
 ## 로깅
+
+> **원문 ([kubernetes.io - Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/)):**
+> Kubernetes logging is decoupled from cluster components, meaning that Kubernetes itself does not determine where logs are stored; it expects each application to write logs to standard output or standard error streams.
+
+**번역:** Kubernetes 로깅은 클러스터 컴포넌트와 분리되어 있다. 이는 Kubernetes 자체가 로그가 저장되는 위치를 결정하지 않으며, 각 애플리케이션이 표준 출력 또는 표준 오류 스트림에 로그를 작성할 것으로 예상한다.
 
 ### 컨테이너 로그 조회
 
@@ -167,24 +182,16 @@ containerLogMaxFiles: 5       # 파일 개수
 
 **일반적인 아키텍처**:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    로깅 아키텍처                         │
-├─────────────────────────────────────────────────────────┤
-│  Pod Logs                                               │
-│     │                                                   │
-│     ↓                                                   │
-│  Node Agent (DaemonSet)                                │
-│  - Fluentd / Fluent Bit / Filebeat                     │
-│     │                                                   │
-│     ↓                                                   │
-│  Log Aggregator                                        │
-│  - Elasticsearch / Loki                                │
-│     │                                                   │
-│     ↓                                                   │
-│  Visualization                                         │
-│  - Kibana / Grafana                                    │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph logging["로깅 아키텍처"]
+        pods["Pod Logs"]
+        agent["Node Agent (DaemonSet)<br/>Fluentd / Fluent Bit / Filebeat"]
+        aggregator["Log Aggregator<br/>Elasticsearch / Loki"]
+        viz["Visualization<br/>Kibana / Grafana"]
+
+        pods --> agent --> aggregator --> viz
+    end
 ```
 
 **EFK Stack (Elasticsearch, Fluentd, Kibana)**:
@@ -409,6 +416,18 @@ kubectl get events -A --sort-by='.lastTimestamp' | tail -20
 kubectl top nodes
 kubectl describe node <node> | grep -A5 "Allocated resources"
 ```
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Tools for Monitoring Resources](https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-usage-monitoring/)
+- [Metrics For The Kubernetes Control Plane](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/)
+- [Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/)
+- [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
+- [Debug Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/)
 
 ## 다음 단계
 

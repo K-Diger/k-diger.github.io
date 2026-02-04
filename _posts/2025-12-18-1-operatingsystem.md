@@ -6802,3 +6802,136 @@ cat /sys/fs/cgroup/mygroup/memory.pressure
 **Namespaces + Cgroups = 컨테이너**
 
 Docker와 Kubernetes는 이 두 기술을 조합하여 안전하고 격리된 컨테이너 환경을 제공한다.
+
+---
+
+## 기술 면접 대비
+
+### Q1: 프로세스와 스레드의 차이점은?
+
+**A:** 프로세스는 독립된 메모리 공간을 가진 실행 단위이고, 스레드는 프로세스 내에서 메모리를 공유하는 실행 단위입니다.
+
+| 항목 | 프로세스 | 스레드 |
+|------|---------|--------|
+| 메모리 | 독립된 주소 공간 | 힙/데이터 영역 공유 |
+| 통신 | IPC 필요 (pipe, socket 등) | 직접 메모리 공유 |
+| 생성 비용 | 높음 (fork) | 낮음 (clone) |
+| 컨텍스트 스위칭 | 느림 | 빠름 |
+
+**꼬리 질문**: "컨테이너는 프로세스인가요, 스레드인가요?"
+→ **컨테이너는 격리된 프로세스**입니다. Namespace로 자원을 격리하지만 호스트 커널을 공유합니다.
+
+### Q2: 가상 메모리란 무엇이고 왜 필요한가요?
+
+**A:** 물리적 메모리보다 큰 프로그램을 실행할 수 있게 해주는 메모리 관리 기법입니다.
+
+**필요한 이유:**
+1. 메모리 확장: 물리 메모리보다 큰 프로그램 실행
+2. 메모리 보호: 프로세스 간 메모리 격리
+3. 메모리 공유: 라이브러리 공유 가능
+4. 주소 공간 독립성: 각 프로세스가 0번지부터 시작
+
+**동작 원리:**
+- MMU(Memory Management Unit)가 가상 주소를 물리 주소로 변환
+- 페이지 폴트 발생 시 디스크에서 페이지 로드
+- TLB(Translation Lookaside Buffer)로 변환 속도 향상
+
+### Q3: 컨테이너 기술에서 cgroups와 namespace의 역할은?
+
+**A:**
+
+| 기술 | 역할 | 예시 |
+|------|------|------|
+| **Namespace** | 격리 (무엇을 볼 수 있는가) | PID, Network, Mount, UTS, IPC, User, Cgroup |
+| **Cgroup** | 제한 (얼마나 사용할 수 있는가) | CPU, Memory, I/O, PID 수 |
+
+**Kubernetes에서의 활용:**
+- `resources.requests/limits`는 Cgroup으로 구현
+- Pod 네트워크 격리는 Network Namespace로 구현
+- Container 파일시스템 격리는 Mount Namespace로 구현
+
+### Q4: OOM Killer는 어떻게 동작하나요?
+
+**A:** 메모리 부족 시 `oom_score`가 가장 높은 프로세스를 종료합니다.
+
+**OOM Score 계산:**
+```
+oom_score = (메모리 사용량 / 전체 메모리) * 1000 + oom_score_adj
+```
+
+**Kubernetes에서의 활용:**
+- QoS 클래스별 `oom_score_adj` 설정
+  - Guaranteed: -997 (거의 안 죽음)
+  - Burstable: 2~999
+  - BestEffort: 1000 (가장 먼저 죽음)
+
+```bash
+# 프로세스의 OOM score 확인
+cat /proc/<PID>/oom_score
+cat /proc/<PID>/oom_score_adj
+
+# OOM 이벤트 확인
+dmesg | grep -i "oom\|killed"
+```
+
+### Q5: systemd와 SysVinit의 차이점은?
+
+**A:**
+
+| 항목 | SysVinit | systemd |
+|------|----------|---------|
+| 부팅 방식 | 순차적 | 병렬 |
+| 의존성 관리 | 런레벨 기반 | 유닛 간 의존성 |
+| 서비스 활성화 | 소켓/타이머 불가 | 소켓/타이머 활성화 |
+| 로그 관리 | syslog | journald (구조화) |
+| 프로세스 관리 | PID 파일 | cgroup 기반 |
+
+**Kubernetes 관점:**
+- kubelet은 systemd로 관리됨
+- Container runtime(containerd)도 systemd 서비스
+- systemd는 cgroup을 활용하여 서비스의 모든 하위 프로세스 관리
+
+```bash
+# kubelet 상태 확인
+systemctl status kubelet
+
+# containerd 로그 확인
+journalctl -u containerd -f
+```
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Linux man pages](https://man7.org/linux/man-pages/)
+- [cgroups v2 Documentation](https://docs.kernel.org/admin-guide/cgroup-v2.html)
+- [Namespaces in operation (LWN)](https://lwn.net/Articles/531114/)
+- [The Linux Kernel Documentation](https://www.kernel.org/doc/html/latest/)
+- [systemd Documentation](https://systemd.io/)
+
+### 주요 개념 원문
+
+> **원문 ([Linux Kernel Documentation - cgroups](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html)):**
+> Control Groups provide a mechanism for aggregating/partitioning sets of tasks, and all their future children, into hierarchical groups with specialized behaviour.
+
+**번역:**
+Control Groups는 작업 집합과 그 모든 미래의 자식들을 특수화된 동작을 가진 계층적 그룹으로 집계/분할하는 메커니즘을 제공한다.
+
+> **원문 ([Linux Kernel Documentation - namespaces](https://www.kernel.org/doc/html/latest/admin-guide/namespaces/index.html)):**
+> Namespaces are a feature of the Linux kernel that partitions kernel resources such that one set of processes sees one set of resources while another set of processes sees a different set of resources.
+
+**번역:**
+네임스페이스는 하나의 프로세스 집합이 하나의 리소스 집합을 보고 다른 프로세스 집합은 다른 리소스 집합을 보도록 커널 리소스를 분할하는 Linux 커널의 기능이다.
+
+> **원문 ([systemd.io](https://systemd.io/)):**
+> systemd is a suite of basic building blocks for a Linux system. It provides a system and service manager that runs as PID 1 and starts the rest of the system.
+
+**번역:**
+systemd는 Linux 시스템을 위한 기본 구성 요소 모음이다. PID 1로 실행되며 시스템의 나머지 부분을 시작하는 시스템 및 서비스 관리자를 제공한다.
+
+## 다음 단계
+
+- [네트워크 기초](/network/network-basics) - 컨테이너 네트워킹의 기반
+- [컨테이너 기초](/container/container-basics) - 컨테이너 기술 심화

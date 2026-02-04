@@ -12,23 +12,20 @@ Kubernetes 애플리케이션 배포에서 여러 YAML 파일을 관리하는 �
 
 ### Helm 개요
 
+> **원문 ([helm.sh](https://helm.sh/)):**
+> Helm is the package manager for Kubernetes. Helm Charts help you define, install, and upgrade even the most complex Kubernetes application.
+
+**번역:** Helm은 Kubernetes를 위한 패키지 관리자이다. Helm Charts는 가장 복잡한 Kubernetes 애플리케이션도 정의, 설치 및 업그레이드하는 데 도움이 된다.
+
 Helm은 Kubernetes의 **패키지 관리자**이다.
 
-```
-┌─────────────────────────────────────────────┐
-│                   Helm                       │
-├─────────────────────────────────────────────┤
-│  Chart                                       │
-│  - Kubernetes 리소스들의 패키지             │
-│  - 템플릿 + 기본값 + 메타데이터             │
-│                                             │
-│  Release                                     │
-│  - Chart의 설치된 인스턴스                  │
-│  - 같은 Chart로 여러 Release 가능           │
-│                                             │
-│  Repository                                  │
-│  - Chart 저장소                             │
-└─────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph helm["Helm"]
+        chart["Chart<br/>Kubernetes 리소스들의 패키지<br/>템플릿 + 기본값 + 메타데이터"]
+        release["Release<br/>Chart의 설치된 인스턴스<br/>같은 Chart로 여러 Release 가능"]
+        repo["Repository<br/>Chart 저장소"]
+    end
 ```
 
 **주요 개념**:
@@ -240,6 +237,11 @@ helm dependency update ./mychart
 ## Kustomize
 
 ### Kustomize 개요
+
+> **원문 ([kustomize.io](https://kustomize.io/)):**
+> Kustomize traverses a Kubernetes manifest to add, remove or update configuration options without forking. It is available both as a standalone binary and as a native feature of kubectl.
+
+**번역:** Kustomize는 포크 없이 구성 옵션을 추가, 제거 또는 업데이트하기 위해 Kubernetes 매니페스트를 순회한다. 독립 실행형 바이너리와 kubectl의 기본 기능으로 모두 사용할 수 있다.
 
 Kustomize는 **템플릿 없이** YAML을 커스터마이징한다.
 
@@ -484,6 +486,18 @@ helm upgrade <release> <chart>
 helm list
 helm uninstall <release>
 ```
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Helm Documentation](https://helm.sh/docs/)
+- [Helm Charts](https://helm.sh/docs/topics/charts/)
+- [Kustomize](https://kustomize.io/)
+- [Kustomize Documentation](https://kubectl.docs.kubernetes.io/references/kustomize/)
+- [Managing Kubernetes Objects Using Kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
 
 ## 다음 단계
 

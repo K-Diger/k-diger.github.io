@@ -11,6 +11,11 @@ mermaid: true
 
 ## 1. kubectl 기본 구조
 
+> **원문 ([kubernetes.io - kubectl Overview](https://kubernetes.io/docs/reference/kubectl/)):**
+> kubectl is a command line tool for communicating with a Kubernetes cluster's control plane, using the Kubernetes API. For configuration, kubectl looks for a file named config in the $HOME/.kube directory.
+
+**번역:** kubectl은 Kubernetes API를 사용하여 Kubernetes 클러스터의 컨트롤 플레인과 통신하기 위한 명령줄 도구이다. 구성을 위해 kubectl은 $HOME/.kube 디렉토리에서 config라는 파일을 찾는다.
+
 ### 1.1 명령어 형식
 
 ```bash
@@ -257,6 +262,11 @@ kubectl cp nginx:/tmp/file.txt ./file.txt -c container-name
 CKA 시험에서는 시간이 중요하므로 명령형 명령어를 숙지해야 한다.
 
 ### 3.1 Pod 생성
+
+> **원문 ([kubernetes.io - kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)):**
+> Use --dry-run=client flag to preview the object that would be sent to your cluster without actually sending it. Use -o yaml to output the object as YAML format.
+
+**번역:** --dry-run=client 플래그를 사용하여 실제로 전송하지 않고 클러스터로 전송될 객체를 미리 볼 수 있다. -o yaml을 사용하여 객체를 YAML 형식으로 출력한다.
 
 ```bash
 # 기본 Pod 생성
@@ -707,4 +717,5 @@ kubectl uncordon node-1
 - [kubectl 공식 치트시트](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
 - [kubectl 명령어 레퍼런스](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands)
 - [jsonpath 문법](https://kubernetes.io/docs/reference/kubectl/jsonpath/)
+- [kubectl Overview](https://kubernetes.io/docs/reference/kubectl/)
 

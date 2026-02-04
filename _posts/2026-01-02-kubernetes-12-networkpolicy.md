@@ -8,6 +8,16 @@ tags: [kubernetes, networkpolicy, security, networking, calico, cka]
 
 기본적으로 Kubernetes 클러스터 내의 모든 Pod는 서로 자유롭게 통신할 수 있다. 이는 마이크로서비스 간 통신에 편리하지만, 보안 관점에서는 위험할 수 있다. **NetworkPolicy**는 Pod 수준에서 네트워크 트래픽을 제어하는 방화벽 역할을 한다.
 
+> **원문 ([kubernetes.io - Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)):**
+> NetworkPolicies are an application-centric construct which allow you to specify how a pod is allowed to communicate with various network "entities" over the network.
+
+**번역:** NetworkPolicy는 Pod가 네트워크를 통해 다양한 네트워크 "엔티티"와 어떻게 통신할 수 있는지 지정할 수 있게 해주는 애플리케이션 중심 구성이다.
+
+> **원문 ([kubernetes.io - Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)):**
+> By default, a pod is non-isolated for egress; all outbound connections are allowed. By default, a pod is non-isolated for ingress; all inbound connections are allowed.
+
+**번역:** 기본적으로 Pod는 egress에 대해 격리되지 않는다; 모든 아웃바운드 연결이 허용된다. 기본적으로 Pod는 ingress에 대해 격리되지 않는다; 모든 인바운드 연결이 허용된다.
+
 ## NetworkPolicy의 필요성
 
 ### 기본 네트워크 동작
@@ -24,20 +34,21 @@ Kubernetes의 기본 네트워크 모델:
 
 ### NetworkPolicy의 역할
 
-```
-NetworkPolicy 없이:
-┌─────────────────────────────────────────┐
-│  Frontend ←→ Backend ←→ Database        │
-│      ↕          ↕          ↕            │
-│  (모든 Pod가 모든 Pod와 통신 가능)       │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph without["NetworkPolicy 없이"]
+        direction LR
+        f1["Frontend"] <--> b1["Backend"] <--> d1["Database"]
+        f1 <--> d1
+        note1["모든 Pod가 모든 Pod와 통신 가능"]
+    end
 
-NetworkPolicy 적용 후:
-┌─────────────────────────────────────────┐
-│  Frontend → Backend → Database          │
-│             (단방향, 필요한 통신만)       │
-│  Frontend ✗→ Database (직접 접근 차단)   │
-└─────────────────────────────────────────┘
+    subgraph with["NetworkPolicy 적용 후"]
+        direction LR
+        f2["Frontend"] --> b2["Backend"] --> d2["Database"]
+        f2 -.-x d2
+        note2["단방향, 필요한 통신만<br/>Frontend → Database 직접 접근 차단"]
+    end
 ```
 
 ## NetworkPolicy 지원
@@ -781,6 +792,15 @@ spec:
     - protocol: UDP
       port: 53
 ```
+
+---
+
+## 참고 자료
+
+- [Network Policies 공식 문서](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+- [Declare Network Policy](https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/)
+- [Network Policy Editor (시각적 도구)](https://editor.networkpolicy.io/)
+- [Calico Network Policy](https://docs.projectcalico.org/security/calico-network-policy)
 
 ## 다음 단계
 

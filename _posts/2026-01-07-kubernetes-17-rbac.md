@@ -10,21 +10,31 @@ Kubernetes의 **RBAC(Role-Based Access Control)**은 "누가" "무엇을" "어�
 
 ## RBAC 기본 개념
 
-### 핵심 구성 요소
+> **원문 ([kubernetes.io - Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)):**
+> Role-based access control (RBAC) is a method of regulating access to computer or network resources based on the roles of individual users within your organization.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         RBAC                                │
-├─────────────────────────────────────────────────────────────┤
-│  Subject          Role/ClusterRole      RoleBinding/       │
-│  (누가)     +     (무엇을)         +    ClusterRoleBinding │
-│                                          (연결)             │
-│  - User                                                     │
-│  - Group           - rules:                                 │
-│  - ServiceAccount    - apiGroups                           │
-│                      - resources                            │
-│                      - verbs                                │
-└─────────────────────────────────────────────────────────────┘
+**번역:** 역할 기반 접근 제어(RBAC)는 조직 내 개별 사용자의 역할에 따라 컴퓨터 또는 네트워크 리소스에 대한 접근을 규제하는 방법이다.
+
+### 주요 구성 요소
+
+```mermaid
+flowchart LR
+    subgraph subject["Subject (누가)"]
+        user["User"]
+        group["Group"]
+        sa["ServiceAccount"]
+    end
+
+    subgraph role["Role/ClusterRole (무엇을)"]
+        rules["rules:<br/>- apiGroups<br/>- resources<br/>- verbs"]
+    end
+
+    subgraph binding["RoleBinding/<br/>ClusterRoleBinding (연결)"]
+        bind["Subject + Role 연결"]
+    end
+
+    subject --> binding
+    role --> binding
 ```
 
 **Subject**: 권한을 부여받는 대상
@@ -41,6 +51,11 @@ Kubernetes의 **RBAC(Role-Based Access Control)**은 "누가" "무엇을" "어�
 - ClusterRoleBinding: 클러스터 전체 권한 부여
 
 ## Role과 ClusterRole
+
+> **원문 ([kubernetes.io - Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)):**
+> An RBAC Role or ClusterRole contains rules that represent a set of permissions. A RoleBinding grants the permissions defined in a role to a user or set of users.
+
+**번역:** RBAC Role 또는 ClusterRole은 권한 집합을 나타내는 규칙을 포함한다. RoleBinding은 역할에 정의된 권한을 사용자 또는 사용자 집합에 부여한다.
 
 ### Role (Namespace 범위)
 
@@ -527,6 +542,18 @@ A: 특정 동작에 대한 권한이 있는지 확인한다. 현재 사용자의
 **Q: 최소 권한 원칙(Principle of Least Privilege)을 RBAC에서 어떻게 적용하는가?**
 
 A: 필요한 권한만 부여한다. 넓은 범위의 기본 ClusterRole(cluster-admin, admin) 대신 필요한 리소스와 동작만 포함한 커스텀 Role을 만든다. ClusterRole 대신 Role, ClusterRoleBinding 대신 RoleBinding을 사용하여 범위를 제한한다. resourceNames로 특정 리소스만 지정할 수 있다.
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+- [Role and ClusterRole](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-and-clusterrole)
+- [RoleBinding and ClusterRoleBinding](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#rolebinding-and-clusterrolebinding)
+- [Authenticating](https://kubernetes.io/docs/reference/access-authn-authz/authentication/)
+- [Configure Service Accounts for Pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
 
 ## CKA 시험 대비 필수 명령어
 

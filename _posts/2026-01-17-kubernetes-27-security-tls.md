@@ -64,36 +64,24 @@ A가 메시지를 B에게:
 해커는 서버의 개인키가 없으므로 서명할 수 없다.
 ```
 
-**핵심**: TLS에서는 **암호화**와 **인증** 모두 사용한다.
+**주요 포인트**: TLS에서는 **암호화**와 **인증** 모두 사용한다.
 
 ## TLS 핸드셰이크 과정
 
 TLS는 **인증 → 키 교환 → 암호화 통신** 순서로 동작한다.
 
-```
-┌──────────────┐                    ┌──────────────┐
-│   Client     │                    │    Server    │
-└──────┬───────┘                    └──────┬───────┘
-       │                                   │
-       │ ── 1. ClientHello ──────────────→│
-       │    (지원하는 암호화 방식 목록)      │
-       │                                   │
-       │←── 2. ServerHello ───────────────│
-       │    (선택된 암호화 방식)            │
-       │                                   │
-       │←── 3. Certificate ───────────────│
-       │    (서버 인증서 + 공개키)          │
-       │                                   │
-       │    4. 인증서 검증 (CA 확인)        │
-       │                                   │
-       │ ── 5. Key Exchange ─────────────→│
-       │    (Pre-master secret, 서버 공개키로 암호화)
-       │                                   │
-       │    6. 양쪽에서 세션키 생성         │
-       │    (대칭키로 이후 통신 암호화)     │
-       │                                   │
-       │←─────── 암호화된 통신 ───────────→│
-       │                                   │
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+
+    C->>S: 1. ClientHello<br/>(지원하는 암호화 방식 목록)
+    S->>C: 2. ServerHello<br/>(선택된 암호화 방식)
+    S->>C: 3. Certificate<br/>(서버 인증서 + 공개키)
+    Note over C: 4. 인증서 검증 (CA 확인)
+    C->>S: 5. Key Exchange<br/>(Pre-master secret,<br/>서버 공개키로 암호화)
+    Note over C,S: 6. 양쪽에서 세션키 생성<br/>(대칭키로 이후 통신 암호화)
+    C<<->>S: 암호화된 통신
 ```
 
 ### 각 단계 상세 설명
@@ -208,6 +196,11 @@ openssl x509 -in server.crt -noout -text
 
 ## Kubernetes PKI 구조
 
+> **원문 ([kubernetes.io - PKI certificates and requirements](https://kubernetes.io/docs/setup/best-practices/certificates/)):**
+> Kubernetes requires PKI certificates for authentication over TLS. If you install Kubernetes with kubeadm, the certificates that your cluster requires are automatically generated.
+
+**번역:** Kubernetes는 TLS를 통한 인증을 위해 PKI 인증서가 필요하다. kubeadm으로 Kubernetes를 설치하면 클러스터에 필요한 인증서가 자동으로 생성된다.
+
 ### Kubernetes 인증서 종류
 
 ```
@@ -291,6 +284,11 @@ openssl x509 -req -in server.csr \
 ```
 
 ## Kubernetes 인증 방식
+
+> **원문 ([kubernetes.io - Authenticating](https://kubernetes.io/docs/reference/access-authn-authz/authentication/)):**
+> Kubernetes uses client certificates, bearer tokens, or an authenticating proxy to authenticate API requests through authentication plugins.
+
+**번역:** Kubernetes는 인증 플러그인을 통해 API 요청을 인증하기 위해 클라이언트 인증서, 베어러 토큰 또는 인증 프록시를 사용한다.
 
 ### 인증서 기반 (X.509)
 
@@ -383,6 +381,17 @@ A: API Server 인증서가 만료되면 kubectl 명령이 동작하지 않는다
 **Q: CA(Certificate Authority)의 역할은?**
 
 A: CA는 인증서를 발급하고 서명하는 신뢰된 기관이다. 클라이언트는 CA를 신뢰하고, CA가 서명한 인증서도 신뢰한다. 이를 통해 서버의 신원을 검증할 수 있다. Kubernetes는 자체 CA를 사용하여 클러스터 내 모든 인증서를 발급한다.
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [PKI certificates and requirements](https://kubernetes.io/docs/setup/best-practices/certificates/)
+- [Certificate Management with kubeadm](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/)
+- [Manage TLS Certificates in a Cluster](https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/)
+- [Authenticating](https://kubernetes.io/docs/reference/access-authn-authz/authentication/)
 
 ## 다음 단계
 

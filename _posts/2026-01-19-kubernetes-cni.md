@@ -14,20 +14,22 @@ Kubernetes 네트워킹은 **CNI(Container Network Interface)** 플러그인이 
 
 CNI는 컨테이너 네트워킹을 위한 **표준 인터페이스**이다.
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                    Kubernetes                               │
-├────────────────────────────────────────────────────────────┤
-│  kubelet                                                    │
-│     │                                                       │
-│     ├──→ CNI Plugin (Calico, Cilium, Flannel, ...)         │
-│     │       │                                               │
-│     │       ├── Pod Network 설정                            │
-│     │       ├── IP 할당                                     │
-│     │       └── 라우팅 규칙                                 │
-│     │                                                       │
-│     └──→ Container Runtime (containerd)                    │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph k8s["Kubernetes"]
+        kubelet["kubelet"]
+
+        subgraph cni["CNI Plugin (Calico, Cilium, Flannel, ...)"]
+            network["Pod Network 설정"]
+            ip["IP 할당"]
+            routing["라우팅 규칙"]
+        end
+
+        runtime["Container Runtime<br/>(containerd)"]
+    end
+
+    kubelet --> cni
+    kubelet --> runtime
 ```
 
 **CNI의 역할**:
@@ -266,26 +268,21 @@ cilium status
 
 ### eBPF 기반 아키텍처
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     Cilium Architecture                  │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│   User Space                                             │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│   │ Cilium   │  │ Hubble   │  │ Operator │             │
-│   │ Agent    │  │ (관측성) │  │          │             │
-│   └────┬─────┘  └──────────┘  └──────────┘             │
-│        │                                                 │
-│   Kernel Space (eBPF)                                   │
-│   ┌──────────────────────────────────────────────┐      │
-│   │  eBPF Programs                                │      │
-│   │  - Packet filtering                          │      │
-│   │  - Load balancing (kube-proxy 대체)          │      │
-│   │  - Network policy                            │      │
-│   │  - L7 visibility                             │      │
-│   └──────────────────────────────────────────────┘      │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph cilium["Cilium Architecture"]
+        subgraph userspace["User Space"]
+            agent["Cilium Agent"]
+            hubble["Hubble<br/>(관측성)"]
+            operator["Operator"]
+        end
+
+        subgraph kernel["Kernel Space (eBPF)"]
+            ebpf["eBPF Programs<br/>- Packet filtering<br/>- Load balancing (kube-proxy 대체)<br/>- Network policy<br/>- L7 visibility"]
+        end
+
+        agent --> kernel
+    end
 ```
 
 ### L7 NetworkPolicy
@@ -382,29 +379,22 @@ kubectl create secret -n kube-system generic weave-passwd \
 
 ### 선택 기준
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     CNI 선택 플로우차트                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  NetworkPolicy 필요?                                        │
-│       │                                                      │
-│       ├── No  → Flannel (간단함)                            │
-│       │                                                      │
-│       └── Yes                                                │
-│             │                                                │
-│             ├── L7 정책 필요?                               │
-│             │       │                                        │
-│             │       └── Yes → Cilium                        │
-│             │                                                │
-│             └── 고성능/대규모?                               │
-│                     │                                        │
-│                     ├── Yes → Calico (BGP)                  │
-│                     │         또는 Cilium (eBPF)            │
-│                     │                                        │
-│                     └── No  → Calico 또는 Weave             │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    start["NetworkPolicy 필요?"]
+    noPolicy["Flannel (간단함)"]
+    l7["L7 정책 필요?"]
+    cilium["Cilium"]
+    scale["고성능/대규모?"]
+    highPerf["Calico (BGP)<br/>또는 Cilium (eBPF)"]
+    normal["Calico 또는 Weave"]
+
+    start -->|No| noPolicy
+    start -->|Yes| l7
+    l7 -->|Yes| cilium
+    l7 -->|No| scale
+    scale -->|Yes| highPerf
+    scale -->|No| normal
 ```
 
 ### 환경별 추천

@@ -65,6 +65,11 @@ spec:
 
 ### 2.1 Control Loop란?
 
+> **원문 ([kubernetes.io - Controllers](https://kubernetes.io/docs/concepts/architecture/controller/)):**
+> In Kubernetes, controllers are control loops that watch the state of your cluster, then make or request changes where needed. Each controller tries to move the current cluster state closer to the desired state.
+
+**번역:** Kubernetes에서 컨트롤러는 클러스터의 상태를 관찰한 다음 필요한 곳에서 변경을 수행하거나 요청하는 제어 루프이다. 각 컨트롤러는 현재 클러스터 상태를 원하는 상태에 더 가깝게 이동하려고 한다.
+
 Control Loop는 시스템의 현재 상태를 지속적으로 관찰하고, 원하는 상태와 비교하여 차이가 있으면 조정 작업을 수행하는 패턴이다.
 
 ```mermaid
@@ -572,6 +577,7 @@ kubectl logs -n kube-system kube-controller-manager-<node> | grep -E "deployment
 ## 참고 자료
 
 - [Kubernetes Controller 개발 가이드](https://kubernetes.io/docs/concepts/architecture/controller/)
+- [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/)
 - [client-go 라이브러리](https://github.com/kubernetes/client-go)
 - [Sample Controller](https://github.com/kubernetes/sample-controller)
 

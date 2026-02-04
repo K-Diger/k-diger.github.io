@@ -12,6 +12,11 @@ Kubernetes에서 Pod와 컨테이너의 보안 설정은 **SecurityContext**와 
 
 ### 개념
 
+> **원문 ([kubernetes.io - Security Context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)):**
+> A security context defines privilege and access control settings for a Pod or Container. Security context settings include discretionary access control, SELinux, running as privileged or unprivileged, Linux Capabilities, and more.
+
+**번역:** 보안 컨텍스트는 Pod 또는 컨테이너에 대한 권한 및 접근 제어 설정을 정의한다. 보안 컨텍스트 설정에는 임의 접근 제어, SELinux, 권한/비권한 실행, Linux Capabilities 등이 포함된다.
+
 SecurityContext는 **Pod와 컨테이너의 권한 및 접근 제어 설정**을 정의한다.
 
 ```yaml
@@ -210,6 +215,11 @@ spec:
 ## Pod Security Admission (PSA)
 
 ### 개념
+
+> **원문 ([kubernetes.io - Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)):**
+> Pod Security Standards define three different policies to broadly cover the security spectrum. These policies are cumulative and range from highly-permissive to highly-restrictive.
+
+**번역:** Pod Security Standards는 보안 스펙트럼을 광범위하게 다루는 세 가지 정책을 정의한다. 이러한 정책은 누적되며 매우 허용적인 것부터 매우 제한적인 것까지 범위가 있다.
 
 **Pod Security Admission**은 Kubernetes 1.25+에서 기본으로 활성화된 Admission Controller이다. PodSecurityPolicy(PSP)를 대체한다.
 
@@ -471,6 +481,17 @@ A: 공격자가 컨테이너에 침투해도 파일시스템에 악성 파일을
 **Q: Linux Capabilities를 drop: ALL 후 add하는 이유는?**
 
 A: 최소 권한 원칙을 적용하기 위해서다. 기본적으로 컨테이너는 많은 capabilities를 가지고 있어 불필요한 권한이 포함된다. 모두 제거한 후 꼭 필요한 것만 추가하면 공격 표면을 최소화할 수 있다.
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
+- [Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/)
+- [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
+- [Set capabilities for a Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container)
 
 ## CKA 시험 대비 필수 명령어
 

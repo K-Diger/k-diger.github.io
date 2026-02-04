@@ -13,7 +13,12 @@ mermaid: true
 
 ### 1.1 Label이란?
 
-Label은 **키-값 쌍**으로 Kubernetes 리소스에 부착되는 메타데이터다. 리소스를 분류하고 선택하는 데 사용되며, Kubernetes의 주요 조직화 메커니즘이다.
+> **원문 ([kubernetes.io - Labels and Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)):**
+> Labels are key/value pairs that are attached to objects, such as pods. Labels are intended to be used to specify identifying attributes of objects that are meaningful and relevant to users.
+
+**번역:** Label은 Pod와 같은 객체에 연결되는 키/값 쌍이다. Label은 사용자에게 의미 있고 관련 있는 객체의 식별 속성을 지정하는 데 사용된다.
+
+Label은 리소스를 분류하고 선택하는 데 사용되며, Kubernetes의 주요 조직화 메커니즘이다.
 
 ```yaml
 metadata:
@@ -325,7 +330,12 @@ spec:
 
 ### 4.1 Annotation이란?
 
-Annotation은 **비식별 메타데이터**로, 리소스에 추가 정보를 저장한다. Label과 달리 **Selector로 선택하는 데 사용되지 않는다.**
+> **원문 ([kubernetes.io - Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)):**
+> Unlike labels, annotations are not used to identify and select objects. The metadata in an annotation can be small or large, structured or unstructured.
+
+**번역:** Label과 달리 annotation은 객체를 식별하고 선택하는 데 사용되지 않는다. annotation의 메타데이터는 작거나 크고, 구조화되거나 비구조화될 수 있다.
+
+Annotation은 리소스에 추가 정보를 저장하는 **비식별 메타데이터**이다.
 
 ```yaml
 metadata:

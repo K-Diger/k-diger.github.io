@@ -13,24 +13,22 @@ mermaid: true
 
 ### 1.1 ReplicaSet이란?
 
-ReplicaSet은 **지정된 수의 Pod 복제본을 항상 유지**하는 컨트롤러다.
+> **원문 ([kubernetes.io - ReplicaSet](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/)):**
+> A ReplicaSet's purpose is to maintain a stable set of replica Pods running at any given time. As such, it is often used to guarantee the availability of a specified number of identical Pods.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      ReplicaSet                              │
-│                                                             │
-│  spec.replicas: 3                                           │
-│                                                             │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐                     │
-│  │  Pod 1  │  │  Pod 2  │  │  Pod 3  │                     │
-│  │  app=   │  │  app=   │  │  app=   │                     │
-│  │  nginx  │  │  nginx  │  │  nginx  │                     │
-│  └─────────┘  └─────────┘  └─────────┘                     │
-│                                                             │
-│  Controller: 항상 3개의 Pod 유지                            │
-│  - Pod이 죽으면 자동 생성                                   │
-│  - Pod이 더 있으면 삭제                                     │
-└─────────────────────────────────────────────────────────────┘
+**번역:** ReplicaSet의 목적은 언제든지 안정적인 복제본 Pod 집합을 유지하는 것이다. 따라서 지정된 수의 동일한 Pod의 가용성을 보장하는 데 자주 사용된다.
+
+```mermaid
+flowchart TB
+    subgraph rs["ReplicaSet (spec.replicas: 3)"]
+        pod1["Pod 1<br/>app=nginx"]
+        pod2["Pod 2<br/>app=nginx"]
+        pod3["Pod 3<br/>app=nginx"]
+    end
+
+    controller["Controller: 항상 3개 유지<br/>- Pod 죽으면 자동 생성<br/>- Pod 초과 시 삭제"]
+
+    rs --> controller
 ```
 
 ### 1.2 ReplicaSet 동작
@@ -82,25 +80,23 @@ Deployment가 제공하는 기능:
 
 ### 2.1 Deployment란?
 
+> **원문 ([kubernetes.io - Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)):**
+> A Deployment provides declarative updates for Pods and ReplicaSets. You describe a desired state in a Deployment, and the Deployment Controller changes the actual state to the desired state at a controlled rate.
+
+**번역:** Deployment는 Pod와 ReplicaSet에 대한 선언적 업데이트를 제공한다. Deployment에서 원하는 상태를 설명하면 Deployment Controller가 제어된 속도로 실제 상태를 원하는 상태로 변경한다.
+
 Deployment는 **ReplicaSet을 관리하면서 선언적 업데이트를 제공**하는 상위 컨트롤러다.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Deployment                              │
-│                                                             │
-│  ┌───────────────────────────────────────────────────────┐ │
-│  │                    ReplicaSet                          │ │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐               │ │
-│  │  │  Pod    │  │  Pod    │  │  Pod    │               │ │
-│  │  └─────────┘  └─────────┘  └─────────┘               │ │
-│  └───────────────────────────────────────────────────────┘ │
-│                                                             │
-│  Deployment가 제공하는 기능:                                │
-│  - 롤링 업데이트 / 롤백                                     │
-│  - 일시 중지 / 재개                                         │
-│  - 스케일링                                                 │
-│  - 리비전 히스토리                                          │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph deploy["Deployment"]
+        subgraph rs["ReplicaSet"]
+            pod1["Pod"]
+            pod2["Pod"]
+            pod3["Pod"]
+        end
+        features["<b>제공 기능</b><br/>- 롤링 업데이트 / 롤백<br/>- 일시 중지 / 재개<br/>- 스케일링<br/>- 리비전 히스토리"]
+    end
 ```
 
 ### 2.2 Deployment 정의
@@ -138,27 +134,36 @@ spec:
 
 ### 2.3 Deployment 계층 구조
 
-```
-Deployment (nginx-deployment)
-    │
-    └── ReplicaSet (nginx-deployment-6b9f7c8d5)
-            │
-            ├── Pod (nginx-deployment-6b9f7c8d5-abc12)
-            ├── Pod (nginx-deployment-6b9f7c8d5-def34)
-            └── Pod (nginx-deployment-6b9f7c8d5-ghi56)
+```mermaid
+flowchart TB
+    deploy["Deployment<br/>(nginx-deployment)"]
+    rs["ReplicaSet<br/>(nginx-deployment-6b9f7c8d5)"]
+    pod1["Pod<br/>(nginx-deployment-6b9f7c8d5-abc12)"]
+    pod2["Pod<br/>(nginx-deployment-6b9f7c8d5-def34)"]
+    pod3["Pod<br/>(nginx-deployment-6b9f7c8d5-ghi56)"]
+
+    deploy --> rs
+    rs --> pod1
+    rs --> pod2
+    rs --> pod3
 ```
 
 이미지가 변경되면 새 ReplicaSet이 생성된다:
-```
-Deployment (nginx-deployment)
-    │
-    ├── ReplicaSet (nginx-deployment-6b9f7c8d5) [구버전, replicas=0]
-    │
-    └── ReplicaSet (nginx-deployment-7c9a8d6e4) [신버전, replicas=3]
-            │
-            ├── Pod (...)
-            ├── Pod (...)
-            └── Pod (...)
+
+```mermaid
+flowchart TB
+    deploy["Deployment<br/>(nginx-deployment)"]
+    rsOld["ReplicaSet (구버전)<br/>(nginx-deployment-6b9f7c8d5)<br/>replicas=0"]
+    rsNew["ReplicaSet (신버전)<br/>(nginx-deployment-7c9a8d6e4)<br/>replicas=3"]
+    pod1["Pod (...)"]
+    pod2["Pod (...)"]
+    pod3["Pod (...)"]
+
+    deploy --> rsOld
+    deploy --> rsNew
+    rsNew --> pod1
+    rsNew --> pod2
+    rsNew --> pod3
 ```
 
 ---
@@ -169,22 +174,33 @@ Deployment (nginx-deployment)
 
 롤링 업데이트는 **기존 Pod을 순차적으로 새 Pod으로 교체**하는 배포 방식이다. 서비스 중단 없이 배포할 수 있다.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Rolling Update 과정                                        │
-│                                                             │
-│  Step 1: v1 (3개)                                          │
-│  [v1] [v1] [v1]                                             │
-│                                                             │
-│  Step 2: v2 1개 생성, v1 1개 삭제                          │
-│  [v1] [v1] [v2]                                             │
-│                                                             │
-│  Step 3: v2 2개, v1 1개                                    │
-│  [v1] [v2] [v2]                                             │
-│                                                             │
-│  Step 4: v2 (3개) 완료                                     │
-│  [v2] [v2] [v2]                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph step1["Step 1: v1 (3개)"]
+        s1p1["v1"]
+        s1p2["v1"]
+        s1p3["v1"]
+    end
+
+    subgraph step2["Step 2: v2 생성, v1 삭제"]
+        s2p1["v1"]
+        s2p2["v1"]
+        s2p3["v2"]
+    end
+
+    subgraph step3["Step 3"]
+        s3p1["v1"]
+        s3p2["v2"]
+        s3p3["v2"]
+    end
+
+    subgraph step4["Step 4: v2 완료"]
+        s4p1["v2"]
+        s4p2["v2"]
+        s4p3["v2"]
+    end
+
+    step1 --> step2 --> step3 --> step4
 ```
 
 ### 3.2 업데이트 전략 설정

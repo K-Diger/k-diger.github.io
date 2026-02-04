@@ -12,23 +12,25 @@ Kubernetes 트러블슈팅은 체계적인 접근이 필요하다. 문제가 발
 
 ### 계층별 점검
 
-```
-┌────────────────────────────────────────┐
-│ 1. 애플리케이션 계층                    │
-│    - 애플리케이션 로그, 설정           │
-├────────────────────────────────────────┤
-│ 2. Pod 계층                            │
-│    - Pod 상태, 이벤트, 리소스          │
-├────────────────────────────────────────┤
-│ 3. 노드 계층                           │
-│    - kubelet, 컨테이너 런타임          │
-├────────────────────────────────────────┤
-│ 4. 클러스터 계층                       │
-│    - Control Plane 컴포넌트            │
-└────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph layers["트러블슈팅 계층"]
+        direction TB
+        app["1. 애플리케이션 계층<br/>애플리케이션 로그, 설정"]
+        pod["2. Pod 계층<br/>Pod 상태, 이벤트, 리소스"]
+        node["3. 노드 계층<br/>kubelet, 컨테이너 런타임"]
+        cluster["4. 클러스터 계층<br/>Control Plane 컴포넌트"]
+
+        app --> pod --> node --> cluster
+    end
 ```
 
 ## Pod 문제 해결
+
+> **원문 ([kubernetes.io - Debug Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/)):**
+> When debugging a pod that is not starting correctly, you should first examine the pod's status and events. The events are recorded in the Kubernetes API and can be retrieved using kubectl describe.
+
+**번역:** 올바르게 시작되지 않는 Pod를 디버깅할 때 먼저 Pod의 상태와 이벤트를 검사해야 한다. 이벤트는 Kubernetes API에 기록되며 kubectl describe를 사용하여 검색할 수 있다.
 
 ### Pod 상태별 진단
 
@@ -160,6 +162,11 @@ cat /etc/resolv.conf
 ```
 
 ## Service 문제 해결
+
+> **원문 ([kubernetes.io - Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/)):**
+> The first step in debugging a Service is to check that the Service has endpoints. You can do this by checking if the Service has any endpoints in the Kubernetes API.
+
+**번역:** Service 디버깅의 첫 번째 단계는 Service에 endpoints가 있는지 확인하는 것이다. Kubernetes API에서 Service에 endpoints가 있는지 확인하여 이를 수행할 수 있다.
 
 ### Service 연결 문제
 
@@ -495,6 +502,18 @@ A: kubectl describe node로 Conditions를 확인한다. 노드에서 sudo system
 **Q: kubectl 명령이 API Server에 연결되지 않을 때?**
 
 A: kubeconfig 설정(~/.kube/config)을 확인하고, API Server 주소와 인증 정보가 올바른지 확인한다. Master 노드에서 직접 kubectl cluster-info를 실행해본다. API Server Pod 상태와 로그를 확인한다. 인증서 만료 여부도 점검한다.
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Troubleshooting Applications](https://kubernetes.io/docs/tasks/debug/debug-application/)
+- [Troubleshooting Clusters](https://kubernetes.io/docs/tasks/debug/debug-cluster/)
+- [Debug Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/)
+- [Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/)
+- [Debug Running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/)
 
 ## CKA 시험 대비 필수 명령어
 

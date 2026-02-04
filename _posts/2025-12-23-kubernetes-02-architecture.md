@@ -11,6 +11,16 @@ mermaid: true
 
 ## 1. Kubernetes 클러스터 전체 아키텍처
 
+> **원문 ([kubernetes.io - Cluster Architecture](https://kubernetes.io/docs/concepts/architecture/)):**
+> A Kubernetes cluster consists of a set of worker machines, called nodes, that run containerized applications. Every cluster has at least one worker node.
+
+**번역:** Kubernetes 클러스터는 컨테이너화된 애플리케이션을 실행하는 노드라고 불리는 워커 머신 집합으로 구성된다. 모든 클러스터에는 최소한 하나의 워커 노드가 있다.
+
+> **원문 ([kubernetes.io - Cluster Architecture](https://kubernetes.io/docs/concepts/architecture/)):**
+> The control plane manages the worker nodes and the Pods in the cluster. In production environments, the control plane usually runs across multiple computers and a cluster usually runs multiple nodes, providing fault-tolerance and high availability.
+
+**번역:** 컨트롤 플레인은 클러스터의 워커 노드와 Pod를 관리한다. 프로덕션 환경에서 컨트롤 플레인은 일반적으로 여러 컴퓨터에서 실행되며 클러스터는 일반적으로 여러 노드를 실행하여 내결함성과 고가용성을 제공한다.
+
 ```mermaid
 flowchart TB
     subgraph Cluster["Kubernetes Cluster"]
@@ -790,7 +800,8 @@ CRI 덕분에 Kubernetes는 특정 Container Runtime에 종속되지 않고, 다
 
 ## 참고 자료
 
-- [Kubernetes Components 공식 문서](https://kubernetes.io/docs/concepts/overview/components/)
+- [Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/)
+- [Cluster Architecture](https://kubernetes.io/docs/concepts/architecture/)
 - [etcd 공식 문서](https://etcd.io/docs/)
 - [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
 

@@ -13,28 +13,33 @@ mermaid: true
 
 ### 1.1 Pod란?
 
-Pod는 Kubernetes에서 **배포 가능한 최소 단위**다. Kubernetes는 컨테이너를 직접 실행하지 않고, 항상 Pod 안에 컨테이너를 감싸서 실행한다.
+> **원문 ([kubernetes.io - Pods](https://kubernetes.io/docs/concepts/workloads/pods/)):**
+> Pods are the smallest deployable units of computing that you can create and manage in Kubernetes. A Pod is a group of one or more containers, with shared storage and network resources, and a specification for how to run the containers.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                           Pod                               │
-│  ┌─────────────────┐  ┌─────────────────┐                   │
-│  │   Container 1   │  │   Container 2   │  (선택적)           │
-│  │                 │  │                 │                   │
-│  │   - 프로세스      │  │   - 프로세스       │                   │
-│  │   - 파일시스템     │  │   - 파일시스템     │                   │
-│  └─────────────────┘  └─────────────────┘                   │
-│                                                             │
-│  공유:                                                       │
-│  - 네트워크 네임스페이스 (같은 IP, localhost 통신)                  │
-│  - IPC 네임스페이스                                             │
-│  - 볼륨                                                       │
-│                                                             │
-│  IP: 10.244.1.5                                             │
-└─────────────────────────────────────────────────────────────┘
+**번역:** Pod는 Kubernetes에서 만들고 관리할 수 있는 배포 가능한 컴퓨팅의 가장 작은 단위이다. Pod는 공유 스토리지와 네트워크 리소스, 그리고 컨테이너 실행 방법에 대한 명세를 가진 하나 이상의 컨테이너 그룹이다.
+
+즉, Kubernetes는 컨테이너를 직접 실행하지 않고 항상 Pod 안에 컨테이너를 감싸서 실행한다.
+
+```mermaid
+flowchart TB
+    subgraph pod["Pod (IP: 10.244.1.5)"]
+        subgraph c1["Container 1"]
+            p1["프로세스"]
+            f1["파일시스템"]
+        end
+        subgraph c2["Container 2 (선택적)"]
+            p2["프로세스"]
+            f2["파일시스템"]
+        end
+        shared["<b>공유 리소스</b><br/>- 네트워크 네임스페이스 (같은 IP, localhost 통신)<br/>- IPC 네임스페이스<br/>- 볼륨"]
+    end
+
+    c1 <-.-> c2
+    c1 --- shared
+    c2 --- shared
 ```
 
-**핵심 특징:**
+**주요 특징:**
 - 1개 이상의 컨테이너 포함 (일반적으로 1개)
 - 컨테이너 간 네트워크 네임스페이스 공유 (같은 IP)
 - 같은 Pod 내 컨테이너는 localhost로 통신
@@ -82,26 +87,16 @@ Pod은 다음 Phase 중 하나의 상태를 가진다:
 | **Failed** | 모든 컨테이너가 종료되었고, 하나 이상이 실패 (exit code ≠ 0) |
 | **Unknown** | Pod 상태를 확인할 수 없음 (노드 통신 문제) |
 
-```
-                    ┌───────────┐
-                    │  Pending  │
-                    └─────┬─────┘
-                          │
-              스케줄 완료, 컨테이너 시작
-                          │
-                          ▼
-                    ┌───────────┐
-                    │  Running  │
-                    └─────┬─────┘
-                          │
-            ┌─────────────┴─────────────┐
-            │                           │
-    모든 컨테이너 성공 종료      하나 이상 실패 종료
-            │                           │
-            ▼                           ▼
-     ┌───────────┐               ┌───────────┐
-     │ Succeeded │               │  Failed   │
-     └───────────┘               └───────────┘
+```mermaid
+flowchart TB
+    pending["Pending"]
+    running["Running"]
+    succeeded["Succeeded"]
+    failed["Failed"]
+
+    pending -->|"스케줄 완료,<br/>컨테이너 시작"| running
+    running -->|"모든 컨테이너<br/>성공 종료"| succeeded
+    running -->|"하나 이상<br/>실패 종료"| failed
 ```
 
 ### 2.2 Container States
@@ -166,21 +161,20 @@ spec:
 
 메인 애플리케이션을 **보조**하는 컨테이너를 함께 실행한다.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                           Pod                               │
-│  ┌─────────────────┐  ┌─────────────────┐                   │
-│  │   Main App      │  │   Sidecar       │                   │
-│  │                 │  │   (Log Shipper) │                   │
-│  │  로그 파일 작성     │──│  로그 수집/전송    │                   │
-│  │                 │  │                 │                   │
-│  └────────┬────────┘  └────────┬────────┘                   │
-│           │                    │                            │
-│           └────────┬───────────┘                            │
-│                    │                                        │
-│              Shared Volume                                  │
-│              /var/log                                       │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph pod["Pod"]
+        subgraph main["Main App"]
+            mainContent["로그 파일 작성"]
+        end
+        subgraph sidecar["Sidecar (Log Shipper)"]
+            sidecarContent["로그 수집/전송"]
+        end
+        volume["Shared Volume<br/>/var/log"]
+
+        main <--> volume
+        sidecar <--> volume
+    end
 ```
 
 **사용 사례:**
@@ -216,19 +210,19 @@ spec:
 
 외부 서비스와의 통신을 **대행**하는 프록시 컨테이너를 둔다.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                           Pod                                │
-│  ┌─────────────────┐  ┌─────────────────┐                   │
-│  │   Main App      │  │   Ambassador    │                   │
-│  │                 │  │   (DB Proxy)    │                   │
-│  │ localhost:5432 ─│──│─ 실제 DB 연결     │                   │
-│  │                 │  │                 │                   │
-│  └─────────────────┘  └─────────────────┘                   │
-│                              │                              │
-│                              │ 외부 DB (복잡한 연결 로직)    │
-│                              ▼                              │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph pod["Pod"]
+        subgraph main["Main App"]
+            mainContent["localhost:5432"]
+        end
+        subgraph ambassador["Ambassador (DB Proxy)"]
+            ambContent["실제 DB 연결"]
+        end
+        main <--> ambassador
+    end
+    db["외부 DB<br/>(복잡한 연결 로직)"]
+    ambassador --> db
 ```
 
 **사용 사례:**
@@ -261,16 +255,19 @@ spec:
 
 메인 애플리케이션의 출력을 **표준 형식으로 변환**한다.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                           Pod                                │
-│  ┌─────────────────┐  ┌─────────────────┐                   │
-│  │   Main App      │  │    Adapter      │                   │
-│  │                 │  │                 │                   │
-│  │ 자체 메트릭 형식 │──│─ Prometheus     │──▶ :9090/metrics  │
-│  │                 │  │   형식 변환     │                   │
-│  └─────────────────┘  └─────────────────┘                   │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph pod["Pod"]
+        subgraph main["Main App"]
+            mainContent["자체 메트릭 형식"]
+        end
+        subgraph adapter["Adapter"]
+            adapterContent["Prometheus<br/>형식 변환"]
+        end
+        main --> adapter
+    end
+    metrics[":9090/metrics"]
+    adapter --> metrics
 ```
 
 **사용 사례:**
@@ -286,21 +283,18 @@ spec:
 
 Init Container는 **메인 컨테이너 실행 전에 초기화 작업을 수행**한다.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Pod 시작 순서                              │
-│                                                             │
-│  1. Init Container 1 실행 → 완료                            │
-│          │                                                  │
-│          ▼                                                  │
-│  2. Init Container 2 실행 → 완료                            │
-│          │                                                  │
-│          ▼                                                  │
-│  3. 메인 컨테이너들 시작 (동시)                              │
-│     ┌─────────────┐  ┌─────────────┐                       │
-│     │ Container 1 │  │ Container 2 │                       │
-│     └─────────────┘  └─────────────┘                       │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph sequence["Pod 시작 순서"]
+        init1["1. Init Container 1 실행 → 완료"]
+        init2["2. Init Container 2 실행 → 완료"]
+        subgraph main["3. 메인 컨테이너들 시작 (동시)"]
+            c1["Container 1"]
+            c2["Container 2"]
+        end
+
+        init1 --> init2 --> main
+    end
 ```
 
 **특징:**
@@ -394,6 +388,11 @@ spec:
 
 Probe는 컨테이너의 상태를 주기적으로 확인하여 자동 복구를 수행하는 메커니즘이다.
 
+> **원문 ([kubernetes.io - Configure Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)):**
+> The kubelet uses liveness probes to know when to restart a container. The kubelet uses readiness probes to know when a container is ready to start accepting traffic.
+
+**번역:** kubelet은 컨테이너를 언제 재시작해야 하는지 알기 위해 liveness probe를 사용한다. kubelet은 컨테이너가 트래픽 수신을 시작할 준비가 되었는지 알기 위해 readiness probe를 사용한다.
+
 ### 5.1 세 가지 Probe 종류
 
 | Probe | 목적 | 실패 시 동작 |
@@ -402,24 +401,16 @@ Probe는 컨테이너의 상태를 주기적으로 확인하여 자동 복구를
 | **Readiness** | 트래픽을 받을 준비가 되었는지 확인 | Endpoint에서 제거 (트래픽 차단) |
 | **Startup** | 애플리케이션이 시작되었는지 확인 | 실패 동안 Liveness/Readiness 비활성화 |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Probe 동작 흐름                           │
-│                                                             │
-│  Pod 시작                                                   │
-│      │                                                      │
-│      ▼                                                      │
-│  Startup Probe (있는 경우)                                  │
-│      │ 성공할 때까지 Liveness/Readiness 비활성화             │
-│      ▼                                                      │
-│  ┌────────────────────┬────────────────────┐               │
-│  │ Liveness Probe     │ Readiness Probe    │               │
-│  │ (주기적 실행)       │ (주기적 실행)       │               │
-│  │                    │                    │               │
-│  │ 실패 → 재시작      │ 실패 → Endpoint    │               │
-│  │                    │        에서 제거   │               │
-│  └────────────────────┴────────────────────┘               │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    start["Pod 시작"]
+    startup["Startup Probe (있는 경우)<br/>성공할 때까지 Liveness/Readiness 비활성화"]
+    subgraph probes["주기적 실행"]
+        liveness["Liveness Probe<br/>실패 → 재시작"]
+        readiness["Readiness Probe<br/>실패 → Endpoint에서 제거"]
+    end
+
+    start --> startup --> probes
 ```
 
 ### 5.2 Liveness Probe

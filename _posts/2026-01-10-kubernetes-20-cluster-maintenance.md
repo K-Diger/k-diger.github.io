@@ -53,6 +53,11 @@ kubectl uncordon <node-name>
 
 ### drain
 
+> **원문 ([kubernetes.io - Safely Drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/)):**
+> You can use kubectl drain to safely evict all of your pods from a node before you perform maintenance on the node. Safe evictions allow the pod's containers to gracefully terminate.
+
+**번역:** kubectl drain을 사용하여 노드에 유지보수를 수행하기 전에 모든 Pod를 안전하게 축출할 수 있다. 안전한 축출은 Pod의 컨테이너가 정상적으로 종료되도록 한다.
+
 **drain**: 노드의 모든 Pod를 안전하게 축출하고 스케줄 불가로 설정.
 
 ```bash
@@ -240,6 +245,11 @@ kubectl uncordon <worker-node>
 ## etcd 백업과 복원
 
 ### etcd 개요
+
+> **원문 ([etcd.io](https://etcd.io/docs/)):**
+> etcd is a strongly consistent, distributed key-value store that provides a reliable way to store data that needs to be accessed by a distributed system or cluster of machines.
+
+**번역:** etcd는 분산 시스템이나 머신 클러스터에서 접근해야 하는 데이터를 저장하는 신뢰할 수 있는 방법을 제공하는 강력히 일관된 분산 키-값 저장소이다.
 
 etcd는 클러스터의 모든 상태 데이터를 저장하는 핵심 저장소이다.
 
@@ -441,6 +451,18 @@ A: etcd는 클러스터의 모든 상태(리소스 정의, Secret, ConfigMap 등
 **Q: kubeadm upgrade plan과 upgrade apply의 차이는?**
 
 A: upgrade plan은 현재 클러스터 상태를 분석하고 업그레이드 가능한 버전과 변경 사항을 보여주는 드라이런이다. 실제 변경은 없다. upgrade apply는 실제로 Control Plane 컴포넌트를 지정된 버전으로 업그레이드한다. 항상 plan으로 먼저 확인 후 apply를 실행하는 것이 안전하다.
+
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [Cluster Management - Safely Drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/)
+- [Upgrading kubeadm clusters](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/)
+- [Operating etcd clusters for Kubernetes](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/)
+- [Backing up an etcd cluster](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster)
+- [Specifying a Disruption Budget for your Application](https://kubernetes.io/docs/tasks/run-application/configure-pdb/)
 
 ## CKA 시험 대비 필수 명령어
 

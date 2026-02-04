@@ -13,26 +13,32 @@ mermaid: true
 
 ### 1.1 Namespace란?
 
-Namespace는 Kubernetes 클러스터 내에서 **리소스를 논리적으로 분리**하는 방법이다. 하나의 물리적 클러스터를 여러 개의 가상 클러스터처럼 사용할 수 있다.
+> **원문 ([kubernetes.io - Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)):**
+> Namespaces provide a mechanism for isolating groups of resources within a single cluster. Names of resources need to be unique within a namespace, but not across namespaces.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                        │
-│  ┌─────────────────┐  ┌─────────────────┐                   │
-│  │   Namespace:    │  │   Namespace:    │                   │
-│  │   development   │  │   production    │                   │
-│  │  ┌───────────┐  │  │  ┌───────────┐  │                   │
-│  │  │ Pod: web  │  │  │  │ Pod: web  │  │  (같은 이름 가능) │
-│  │  │ Pod: api  │  │  │  │ Pod: api  │  │                   │
-│  │  │ Svc: web  │  │  │  │ Svc: web  │  │                   │
-│  │  └───────────┘  │  │  └───────────┘  │                   │
-│  └─────────────────┘  └─────────────────┘                   │
-│  ┌─────────────────┐                                        │
-│  │   Namespace:    │                                        │
-│  │   kube-system   │                                        │
-│  │  (시스템 컴포넌트)│                                        │
-│  └─────────────────┘                                        │
-└─────────────────────────────────────────────────────────────┘
+**번역:** Namespace는 단일 클러스터 내에서 리소스 그룹을 격리하는 메커니즘을 제공한다. 리소스 이름은 namespace 내에서 고유해야 하지만 namespace 간에는 고유할 필요가 없다.
+
+즉, 하나의 물리적 클러스터를 여러 개의 가상 클러스터처럼 사용할 수 있다.
+
+```mermaid
+flowchart TB
+    subgraph cluster["Kubernetes Cluster"]
+        subgraph dev["Namespace: development"]
+            dev_web["Pod: web"]
+            dev_api["Pod: api"]
+            dev_svc["Svc: web"]
+        end
+        subgraph prod["Namespace: production"]
+            prod_web["Pod: web"]
+            prod_api["Pod: api"]
+            prod_svc["Svc: web"]
+        end
+        subgraph sys["Namespace: kube-system"]
+            sys_comp["시스템 컴포넌트"]
+        end
+    end
+
+    note["같은 이름의 리소스가<br/>다른 Namespace에 존재 가능"]
 ```
 
 **Namespace의 역할:**
@@ -140,23 +146,26 @@ kubectl delete namespace production
 
 ### 3.1 ResourceQuota란?
 
-ResourceQuota는 **Namespace 전체에서 사용할 수 있는 리소스의 총량을 제한**한다.
+> **원문 ([kubernetes.io - Resource Quotas](https://kubernetes.io/docs/concepts/policy/resource-quotas/)):**
+> A resource quota provides constraints that limit aggregate resource consumption per namespace. It can limit the quantity of objects that can be created in a namespace by type, as well as the total amount of compute resources.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│   Namespace: production                                      │
-│   ResourceQuota:                                            │
-│   - CPU 요청 합계: 최대 10 cores                            │
-│   - Memory 요청 합계: 최대 20Gi                             │
-│   - Pod 개수: 최대 100개                                    │
-│                                                             │
-│   현재 사용량:                                              │
-│   - CPU 요청: 5 cores                                       │
-│   - Memory 요청: 12Gi                                       │
-│   - Pod 개수: 42개                                          │
-│                                                             │
-│   → 초과하는 리소스 생성 시 거부됨                          │
-└─────────────────────────────────────────────────────────────┘
+**번역:** Resource quota는 namespace별 총 리소스 소비를 제한하는 제약 조건을 제공한다. namespace에서 유형별로 생성할 수 있는 객체 수와 총 컴퓨팅 리소스 양을 제한할 수 있다.
+
+```mermaid
+flowchart TB
+    subgraph ns["Namespace: production"]
+        subgraph quota["ResourceQuota (제한)"]
+            q1["CPU 요청 합계: 최대 10 cores"]
+            q2["Memory 요청 합계: 최대 20Gi"]
+            q3["Pod 개수: 최대 100개"]
+        end
+        subgraph usage["현재 사용량"]
+            u1["CPU 요청: 5 cores"]
+            u2["Memory 요청: 12Gi"]
+            u3["Pod 개수: 42개"]
+        end
+        note["⚠️ 초과하는 리소스 생성 시 거부됨"]
+    end
 ```
 
 ### 3.2 ResourceQuota 종류

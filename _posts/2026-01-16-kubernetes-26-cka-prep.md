@@ -6,20 +6,33 @@ categories: [Kubernetes]
 tags: [kubernetes, cka, certification, exam, tips]
 ---
 
-**CKA(Certified Kubernetes Administrator)**는 Kubernetes 관리 능력을 검증하는 실무 기반 시험이다. 이 장에서는 시험 형식, 핵심 주제, 시간 관리 전략, 필수 명령어를 정리한다.
+> **원문 ([CNCF - CKA Exam](https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/)):**
+> The CKA exam tests your ability to perform tasks and solve problems in a command line environment. The exam consists of performance-based tasks to be completed in a remote command line environment.
+
+**번역:** CKA 시험은 명령줄 환경에서 작업을 수행하고 문제를 해결하는 능력을 테스트한다. 시험은 원격 명령줄 환경에서 완료해야 하는 성능 기반 작업으로 구성된다.
+
+**CKA(Certified Kubernetes Administrator)**는 Kubernetes 관리 능력을 검증하는 실무 기반 시험이다. 이 장에서는 시험 형식, 주요 주제, 시간 관리 전략, 필수 명령어를 정리한다.
 
 ## 시험 개요
 
-### 시험 형식
+### 시험 형식 (2025년 기준)
 
 | 항목 | 내용 |
 |------|------|
 | 시간 | 2시간 |
 | 문제 수 | 15-20문제 |
 | 합격 점수 | 66% 이상 |
-| 형식 | 실습 (CLI 기반) |
-| 환경 | 웹 터미널 + 문서 접근 가능 |
+| 형식 | 실습 (CLI 기반, 성능 기반 테스트) |
+| 환경 | 웹 터미널 + 공식 문서 접근 가능 |
 | 재시험 | 1회 무료 재응시 포함 |
+| 유효기간 | 2년 |
+| 시험 비용 | $445 (재시험 1회 포함) |
+
+### 2025년 2월 주요 변경사항
+
+- **Gateway API** 시험 범위에 추가
+- **HPA Custom Metrics** 관련 문제 추가
+- Kubernetes 버전 분기별 업데이트 (최신 버전 기준)
 
 ### 허용 리소스
 
@@ -27,25 +40,33 @@ tags: [kubernetes, cka, certification, exam, tips]
 - kubernetes.io/docs
 - kubernetes.io/blog
 - helm.sh/docs
+- **gateway-api.sigs.k8s.io** (신규 추가)
 
 **북마크 추천**:
-- kubectl Cheat Sheet
-- API Reference
-- 각 리소스별 문서 페이지
+- [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+- [API Reference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/)
+- [Gateway API](https://gateway-api.sigs.k8s.io/)
+
+### Killer.sh 시뮬레이터
+
+시험 등록 시 **Killer.sh** 시뮬레이터 접근 권한이 제공된다:
+- 2회 시뮬레이션 시도 가능
+- 각 시도당 36시간 접근 가능
+- 실제 시험보다 어렵게 설계되어 있음
 
 ## 주제별 출제 비중
 
-### 시험 도메인 (2024 기준)
+### 시험 도메인 (2025년 기준)
 
 | 도메인 | 비중 |
 |--------|------|
-| Storage | 10% |
 | Troubleshooting | 30% |
-| Workloads & Scheduling | 15% |
 | Cluster Architecture, Installation & Configuration | 25% |
 | Services & Networking | 20% |
+| Workloads & Scheduling | 15% |
+| Storage | 10% |
 
-### 핵심 출제 주제
+### 주요 출제 주제
 
 **1. 클러스터 아키텍처 (25%)**
 - kubeadm으로 클러스터 업그레이드
@@ -57,16 +78,18 @@ tags: [kubernetes, cka, certification, exam, tips]
 - Pod 문제 진단 (CrashLoopBackOff, Pending 등)
 - 노드 문제 진단 (NotReady)
 - 네트워크 문제 진단
-- 로그 분석
+- 로그 분석 및 클러스터 컴포넌트 디버깅
 
 **3. 워크로드 & 스케줄링 (15%)**
 - Deployment 생성/수정
 - Pod 스케줄링 (nodeSelector, affinity, taints/tolerations)
 - 리소스 제한 (requests, limits)
 - ConfigMap, Secret
+- **HPA (Custom Metrics 포함)** - 신규
 
 **4. 서비스 & 네트워킹 (20%)**
-- Service 생성 (ClusterIP, NodePort)
+- Service 생성 (ClusterIP, NodePort, LoadBalancer)
+- **Gateway API (HTTPRoute, Gateway)** - 신규 추가
 - Ingress 설정
 - NetworkPolicy
 - DNS 트러블슈팅
@@ -459,7 +482,26 @@ kubectl get endpoints <svc>
 4. **시간 관리** - 어려운 문제에 매달리지 않기
 5. **컨텍스트 확인** - 매 문제마다 확인
 
+---
+
+## 참고 자료
+
+### 공식 자료
+
+- [CKA Exam Curriculum](https://github.com/cncf/curriculum)
+- [CKA Exam Information](https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/)
+- [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+
+### 권장 학습 경로
+
+1. Kubernetes 공식 튜토리얼 완료
+2. killer.sh 모의 시험 2회 이상
+3. kubectl 명령어 숙달
+4. etcd 백업/복원 실습
+5. 클러스터 업그레이드 실습
+
 ## 다음 단계
 
-- [Kubernetes - 보안 심화 (TLS/PKI)](/kubernetes/kubernetes-26-security-deep-dive)
+- [Kubernetes - 보안 심화 (TLS/PKI)](/kubernetes/kubernetes-27-security-tls)
 - [Kubernetes 생태계 - Helm, Istio, CNI 플러그인](/kubernetes/kubernetes-ecosystem)

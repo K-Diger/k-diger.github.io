@@ -8,6 +8,11 @@ tags: [kubernetes, service, clusterip, nodeport, loadbalancer, networking, cka]
 
 Kubernetes에서 Pod는 일시적(ephemeral)인 존재이다. Pod가 재시작되면 IP 주소가 변경되고, Deployment로 관리되는 Pod들은 언제든지 새로운 Pod로 교체될 수 있다. 이러한 환경에서 안정적인 네트워크 통신을 위해 **Service**라는 추상화 계층이 필요하다.
 
+> **원문 ([kubernetes.io - Service](https://kubernetes.io/docs/concepts/services-networking/service/)):**
+> In Kubernetes, a Service is a method for exposing a network application that is running as one or more Pods in your cluster. The Service API abstracts the way you access the workload from the underlying deployment.
+
+**번역:** Kubernetes에서 Service는 클러스터에서 하나 이상의 Pod로 실행되는 네트워크 애플리케이션을 노출하는 방법이다. Service API는 기본 배포에서 워크로드에 접근하는 방식을 추상화한다.
+
 ## Service의 필요성
 
 ### Pod IP의 한계
@@ -158,14 +163,14 @@ spec:
 ```
 
 **트래픽 흐름**:
-```
-외부 클라이언트
-      ↓
-NodeIP:30080 (어떤 노드든)
-      ↓
-ClusterIP:80
-      ↓
-Pod:8080
+```mermaid
+flowchart TB
+    client["외부 클라이언트"]
+    node["NodeIP:30080<br/>(어떤 노드든)"]
+    cluster["ClusterIP:80"]
+    pod["Pod:8080"]
+
+    client --> node --> cluster --> pod
 ```
 
 **특징**:
@@ -200,16 +205,15 @@ spec:
 ```
 
 **트래픽 흐름**:
-```
-인터넷
-   ↓
-Cloud Load Balancer (External IP)
-   ↓
-NodePort (자동 생성)
-   ↓
-ClusterIP
-   ↓
-Pod
+```mermaid
+flowchart TB
+    internet["인터넷"]
+    lb["Cloud Load Balancer<br/>(External IP)"]
+    nodeport["NodePort<br/>(자동 생성)"]
+    cluster["ClusterIP"]
+    pod["Pod"]
+
+    internet --> lb --> nodeport --> cluster --> pod
 ```
 
 **특징**:
@@ -503,20 +507,19 @@ spec:
 - Pod가 없는 노드에서는 연결 실패
 - 불균등한 로드밸런싱 가능
 
-```
-externalTrafficPolicy: Cluster
-┌─────────┐     ┌─────────┐     ┌─────────┐
-│ Node A  │────→│ Node B  │────→│  Pod    │
-│(request)│     │(forward)│     │(Node C) │
-└─────────┘     └─────────┘     └─────────┘
-Client IP가 SNAT됨
+```mermaid
+flowchart LR
+    subgraph clusterPolicy["externalTrafficPolicy: Cluster"]
+        direction LR
+        cA["Node A<br/>(request)"] --> cB["Node B<br/>(forward)"] --> cPod["Pod<br/>(Node C)"]
+        cNote["Client IP가 SNAT됨"]
+    end
 
-externalTrafficPolicy: Local
-┌─────────┐     ┌─────────┐
-│ Node A  │────→│  Pod    │
-│(request)│     │(Node A) │
-└─────────┘     └─────────┘
-Client IP 보존됨
+    subgraph localPolicy["externalTrafficPolicy: Local"]
+        direction LR
+        lA["Node A<br/>(request)"] --> lPod["Pod<br/>(Node A)"]
+        lNote["Client IP 보존됨"]
+    end
 ```
 
 ## Internal Traffic Policy
@@ -628,29 +631,75 @@ kubectl run test --rm -it --image=curlimages/curl -- curl web-service:80
 2. 보안 그룹(클라우드) 확인
 3. externalTrafficPolicy 설정 확인
 
-## 기술 면접 대비
+## 기술 면접 대비 (8년차 DevOps TL 관점)
 
-### 자주 묻는 질문
+### Q1: ClusterIP, NodePort, LoadBalancer의 차이점은?
 
-**Q: ClusterIP, NodePort, LoadBalancer의 차이점은?**
+**A:** ClusterIP는 클러스터 내부 통신 전용으로 가상 IP를 할당한다. NodePort는 각 노드의 특정 포트(30000-32767)를 열어 외부 접근을 허용하며, ClusterIP를 포함한다. LoadBalancer는 클라우드 환경에서 외부 로드밸런서를 프로비저닝하고, NodePort와 ClusterIP를 모두 포함한다. 계층적 구조로 LoadBalancer ⊃ NodePort ⊃ ClusterIP 관계이다.
 
-A: ClusterIP는 클러스터 내부 통신 전용으로 가상 IP를 할당한다. NodePort는 각 노드의 특정 포트(30000-32767)를 열어 외부 접근을 허용하며, ClusterIP를 포함한다. LoadBalancer는 클라우드 환경에서 외부 로드밸런서를 프로비저닝하고, NodePort와 ClusterIP를 모두 포함한다. 계층적 구조로 LoadBalancer ⊃ NodePort ⊃ ClusterIP 관계이다.
+**꼬리질문 1-1: NodePort 포트 범위가 30000-32767인 이유는? 변경할 수 있는가?**
 
-**Q: Headless Service는 무엇이고 언제 사용하는가?**
+A: 이 범위는 well-known ports(0-1023)와 registered ports(1024-49151)와의 충돌을 피하기 위함이다. kube-apiserver의 `--service-node-port-range` 플래그로 변경 가능하지만, 다른 서비스와 충돌하지 않도록 주의해야 한다.
 
-A: ClusterIP가 None인 Service로, DNS 조회 시 ClusterIP 대신 Pod IP 목록을 직접 반환한다. StatefulSet과 함께 개별 Pod에 직접 접근해야 할 때, 또는 클라이언트 사이드 로드밸런싱이 필요할 때 사용한다. 데이터베이스 클러스터에서 특정 마스터 노드에 연결해야 하는 경우가 대표적인 예이다.
+**꼬리질문 1-2: 프로덕션에서 NodePort를 직접 사용하면 안 되는 이유는?**
 
-**Q: Service는 어떻게 Pod를 선택하고 트래픽을 분산하는가?**
+A: 보안상 노드 IP가 직접 노출되고, 노드 장애 시 해당 엔드포인트로의 접근이 불가능해진다. 또한 포트 관리가 복잡해지고, SSL 종료나 고급 라우팅 기능이 없다. 대신 LoadBalancer나 Ingress를 통해 접근하는 것이 Best Practice이다.
 
-A: Service의 selector와 일치하는 Label을 가진 Pod들이 자동으로 Endpoints에 등록된다. kube-proxy가 각 노드에서 iptables/IPVS 규칙을 설정하여 실제 트래픽 라우팅을 수행한다. 기본적으로 라운드로빈 방식으로 분산되며, IPVS 모드에서는 다양한 알고리즘을 선택할 수 있다.
+---
 
-**Q: externalTrafficPolicy: Local의 장단점은?**
+### Q2: Headless Service는 무엇이고 언제 사용하는가?
 
-A: 장점은 클라이언트 IP 보존과 네트워크 홉 감소이다. 단점은 해당 노드에 Pod가 없으면 연결이 실패하고, Pod 분포에 따라 불균등한 로드밸런싱이 발생할 수 있다. 클라이언트 IP 기반 처리(로깅, 접근 제어)가 필요하거나 네트워크 지연을 최소화해야 할 때 사용한다.
+**A:** ClusterIP가 None인 Service로, DNS 조회 시 ClusterIP 대신 Pod IP 목록을 직접 반환한다. StatefulSet과 함께 개별 Pod에 직접 접근해야 할 때, 또는 클라이언트 사이드 로드밸런싱이 필요할 때 사용한다.
 
-**Q: Pod가 Ready 상태가 아니면 Service에서 어떻게 처리되는가?**
+**꼬리질문 2-1: Headless Service에서 DNS A 레코드와 SRV 레코드의 차이는?**
 
-A: Pod가 Ready 상태가 아니면(Readiness Probe 실패) Endpoints에서 자동으로 제거된다. 이를 통해 초기화 중이거나 장애 상태인 Pod로 트래픽이 전달되는 것을 방지한다. 이것이 Readiness Probe가 중요한 이유이다.
+A: A 레코드는 `service-name.namespace.svc.cluster.local`로 조회하면 모든 Pod IP를 반환한다. SRV 레코드는 포트 정보까지 포함하여 `_port-name._protocol.service-name.namespace.svc.cluster.local`로 조회한다. Kafka나 ZooKeeper같은 애플리케이션이 SRV 레코드를 사용하여 클러스터 멤버를 자동 발견한다.
+
+**꼬리질문 2-2: 그럼 StatefulSet 없이 일반 Deployment에서 Headless Service를 사용하면 어떻게 되는가?**
+
+A: 동작은 하지만, Pod 이름이 랜덤하므로 특정 Pod에 DNS로 접근할 수 없다. StatefulSet은 `pod-name.service-name.namespace.svc.cluster.local` 형태의 예측 가능한 DNS를 제공하지만, Deployment의 Pod는 개별 DNS 엔트리가 없다.
+
+---
+
+### Q3: Service는 어떻게 Pod를 선택하고 트래픽을 분산하는가?
+
+**A:** Service의 selector와 일치하는 Label을 가진 Pod들이 자동으로 Endpoints에 등록된다. kube-proxy가 각 노드에서 iptables/IPVS 규칙을 설정하여 실제 트래픽 라우팅을 수행한다.
+
+**꼬리질문 3-1: iptables 모드와 IPVS 모드의 차이는? 대규모 클러스터에서 어떤 것을 선택해야 하는가?**
+
+A: iptables 모드는 구현이 단순하고 널리 사용되지만, Service/Endpoints가 많아지면 규칙 수가 O(n)으로 증가하여 성능 저하가 발생한다. IPVS 모드는 해시 테이블 기반으로 O(1) 조회가 가능하고, round-robin 외에 least-connection, source-hashing 등 다양한 알고리즘을 지원한다. 1000개 이상의 Service가 있다면 IPVS를 권장한다.
+
+**꼬리질문 3-2: Endpoints가 아닌 EndpointSlice가 도입된 이유는?**
+
+A: 대규모 클러스터에서 수천 개의 Pod가 있으면 단일 Endpoints 객체가 너무 커져서 etcd와 API Server에 부담이 된다. EndpointSlice는 최대 100개씩 분할하여 변경 시 전체가 아닌 일부만 업데이트되도록 한다. Kubernetes 1.21부터 기본 활성화되었다.
+
+---
+
+### Q4: externalTrafficPolicy: Local의 장단점은?
+
+**A:** 장점은 클라이언트 IP 보존과 네트워크 홉 감소이다. 단점은 해당 노드에 Pod가 없으면 연결이 실패하고, Pod 분포에 따라 불균등한 로드밸런싱이 발생할 수 있다.
+
+**꼬리질문 4-1: Local 정책 사용 시 불균등 로드밸런싱 문제를 어떻게 해결하는가?**
+
+A: Pod Anti-Affinity로 Pod를 노드에 균등 분포시키거나, Topology Spread Constraints를 사용한다. 또는 클라우드 LB의 헬스체크와 연동하여 Pod가 없는 노드는 LB 백엔드에서 제외한다. AWS NLB는 이 기능을 자동으로 지원한다.
+
+**꼬리질문 4-2: internalTrafficPolicy도 있던데, 이건 언제 사용하는가?**
+
+A: Kubernetes 1.22에 도입된 기능으로, 클러스터 내부 트래픽에 대해 동일한 노드의 Pod만 선택하도록 설정한다. 노드 간 네트워크 트래픽을 줄이고 지연을 최소화할 때 유용하다. `internalTrafficPolicy: Local` 설정 시 같은 노드의 Endpoints만 사용한다.
+
+---
+
+### Q5: Pod가 Ready 상태가 아니면 Service에서 어떻게 처리되는가?
+
+**A:** Pod가 Ready 상태가 아니면(Readiness Probe 실패) Endpoints에서 자동으로 제거된다.
+
+**꼬리질문 5-1: Readiness Probe가 실패하는 동안에도 트래픽을 받고 싶다면?**
+
+A: `publishNotReadyAddresses: true` 설정을 사용한다. StatefulSet의 Headless Service에서 주로 사용하며, 클러스터 부트스트랩 시 모든 멤버를 알아야 할 때 유용하다.
+
+**꼬리질문 5-2: Terminating 상태의 Pod는 Endpoints에서 어떻게 처리되는가?**
+
+A: 기본적으로 Terminating Pod도 Endpoints에서 제거된다. 하지만 연결 드레이닝을 위해 `preStop` 훅과 `terminationGracePeriodSeconds`를 활용하여 기존 연결을 처리할 시간을 확보할 수 있다. 롤링 업데이트 시 5xx 에러를 방지하려면 이 설정이 중요하다.
 
 ## CKA 시험 대비 필수 명령어
 
@@ -824,6 +873,15 @@ spec:
   ports:
   - port: 3306
 ```
+
+---
+
+## 참고 자료
+
+- [Kubernetes Service 공식 문서](https://kubernetes.io/docs/concepts/services-networking/service/)
+- [DNS for Services and Pods](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
+- [EndpointSlices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/)
+- [Connecting Applications with Services](https://kubernetes.io/docs/tutorials/services/connect-applications-service/)
 
 ## 다음 단계
 

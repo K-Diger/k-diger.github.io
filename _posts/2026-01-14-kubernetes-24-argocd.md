@@ -7,9 +7,19 @@ tags: [kubernetes, argocd, gitops, cd, deployment]
 mermaid: true
 ---
 
+> **원문 ([argo-cd.readthedocs.io](https://argo-cd.readthedocs.io/en/stable/)):**
+> Argo CD is a declarative, GitOps continuous delivery tool for Kubernetes. Application definitions, configurations, and environments should be declarative and version controlled.
+
+**번역:** Argo CD는 Kubernetes를 위한 선언적 GitOps 지속적 배포 도구이다. 애플리케이션 정의, 구성 및 환경은 선언적이어야 하며 버전 제어되어야 한다.
+
 ArgoCD는 Kubernetes를 위한 **GitOps 기반 CD(Continuous Delivery)** 도구이다. Git 저장소를 "단일 진실 공급원(Single Source of Truth)"으로 삼아 클러스터 상태를 선언적으로 관리한다.
 
 ## GitOps란?
+
+> **원문 ([argo-cd.readthedocs.io](https://argo-cd.readthedocs.io/en/stable/)):**
+> GitOps is a way to do Kubernetes cluster management and application delivery. It works by using Git as a single source of truth for declarative infrastructure and applications.
+
+**번역:** GitOps는 Kubernetes 클러스터 관리 및 애플리케이션 전달을 수행하는 방법이다. 선언적 인프라 및 애플리케이션의 단일 진실 소스로 Git을 사용하여 작동한다.
 
 ### 전통적인 배포 vs GitOps
 
@@ -1092,6 +1102,18 @@ flowchart TB
 
 ---
 
+---
+
+## 참고 자료
+
+### 공식 문서
+
+- [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
+- [ArgoCD Getting Started](https://argo-cd.readthedocs.io/en/stable/getting_started/)
+- [Application CRD](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/)
+- [ApplicationSet Controller](https://argo-cd.readthedocs.io/en/stable/user-guide/application-set/)
+- [GitOps Engine](https://github.com/argoproj/gitops-engine)
+
 ## 마무리
 
 ArgoCD 사용 시 핵심 포인트:
@@ -1102,7 +1124,7 @@ ArgoCD 사용 시 핵심 포인트:
 4. **ApplicationSet** - 대규모 환경에서 템플릿 활용
 5. **App of Apps** - 전체 인프라를 코드로 관리
 
-**다음 단계**:
-- Helm/Kustomize와 함께 사용
-- CI 파이프라인과 통합 (이미지 태그 업데이트)
-- Notification 설정 (Slack, Teams 등)
+## 다음 단계
+
+- [Kubernetes - CRD와 Operator](/kubernetes/kubernetes-25-crd-operator)
+- [Kubernetes - CKA 시험 대비](/kubernetes/kubernetes-26-cka-prep)
