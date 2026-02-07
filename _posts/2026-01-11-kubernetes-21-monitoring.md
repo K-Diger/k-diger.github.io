@@ -13,20 +13,23 @@ Kubernetes 클러스터 운영에서 **모니터링**과 **로깅**은 문제 �
 ### Kubernetes 모니터링 아키텍처
 
 ```mermaid
-flowchart LR
-    subgraph pipeline["Metrics Pipeline"]
-        cadvisor["cAdvisor"]
-        kubelet["kubelet"]
-        metrics["Metrics Server"]
-        top["kubectl top"]
-        hpa["HPA<br/>(Auto Scaling)"]
-        prom["Prometheus"]
-        grafana["Grafana<br/>(상세 모니터링)"]
+flowchart TB
+    cadvisor["cAdvisor<br/>(컨테이너 메트릭 수집)"]
+    kubelet["kubelet"]
+    metrics["Metrics Server"]
+    prom["Prometheus"]
 
-        cadvisor --> kubelet --> metrics --> top
-        metrics --> hpa
-        cadvisor --> prom --> grafana
-    end
+    top["kubectl top"]
+    hpa["HPA (Auto Scaling)"]
+    grafana["Grafana (시각화)"]
+
+    cadvisor --> kubelet
+    kubelet --> metrics
+    kubelet --> prom
+
+    metrics --> top
+    metrics --> hpa
+    prom --> grafana
 ```
 
 **핵심 컴포넌트**:

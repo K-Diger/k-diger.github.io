@@ -15,15 +15,13 @@ tags: [kubernetes, opa, gatekeeper, policy, security]
 OPA는 **정책을 코드로 관리**하는 오픈소스 정책 엔진이다.
 
 ```mermaid
-flowchart LR
-    subgraph OPA["OPA Engine"]
-        direction LR
-        input["Input (JSON)<br/>요청 데이터<br/>(Pod Spec)"]
-        policy["Policy (Rego)<br/>정책 코드"]
-        output["Output<br/>allow:<br/>true/false"]
+flowchart TB
+    input["Input (JSON)<br/>요청 데이터 (Pod Spec)"]
+    policy["Policy (Rego)<br/>정책 코드"]
+    output["Output<br/>allow: true/false"]
 
-        input --> |"+"| policy --> output
-    end
+    input --> policy
+    policy --> output
 ```
 
 **특징**:

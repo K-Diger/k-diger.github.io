@@ -136,27 +136,12 @@ flowchart TB
 ### 캡슐화(Encapsulation)
 
 ```mermaid
-flowchart LR
-    subgraph Original["원본 패킷"]
-        direction LR
-        IP1["IP Header<br>Src: 10.244.0.5<br>Dst: 10.244.1.8"]
-        TCP1[TCP]
-        Data1[Data]
-        IP1 --- TCP1 --- Data1
-    end
+flowchart TB
+    Original["원본 패킷<br/>IP(10.244.0.5 → 10.244.1.8) + TCP + Data"]
 
-    subgraph Encapsulated["캡슐화 후"]
-        direction LR
-        OuterIP["Outer IP Header<br>Src: 192.168.1.10<br>Dst: 192.168.1.20"]
-        subgraph Inner["Inner Packet"]
-            IP2["IP Header<br>Src: 10.244.0.5<br>Dst: 10.244.1.8"]
-            TCP2[TCP]
-            Data2[Data]
-        end
-        OuterIP --- Inner
-    end
+    Encapsulated["캡슐화 후<br/>Outer IP(192.168.1.10 → 192.168.1.20)<br/>+ Inner IP(10.244.0.5 → 10.244.1.8) + TCP + Data"]
 
-    Original -->|"캡슐화"| Encapsulated
+    Original -->|캡슐화| Encapsulated
 ```
 
 ## VXLAN
@@ -183,24 +168,15 @@ flowchart TB
 ### VXLAN 패킷 구조
 
 ```mermaid
-flowchart LR
-    subgraph VXLANPacket["VXLAN 패킷 구조"]
-        direction LR
-        OE["Outer<br>Ethernet<br>Header"]
-        OI["Outer<br>IP<br>Header"]
-        UDP["UDP<br>(4789)<br>Header"]
-        VH["VXLAN<br>Header<br>(VNI)"]
-        OF["Original<br>Ethernet<br>Frame"]
+flowchart TB
+    subgraph packet["VXLAN 패킷 구조 (계층별)"]
+        OE["Outer Ethernet: 노드 간 물리 네트워크"]
+        OI["Outer IP: 노드 IP (192.168.1.10 → 192.168.1.20)"]
+        UDP["UDP: 포트 4789"]
+        VH["VXLAN Header: VNI (가상 네트워크 식별자)"]
+        OF["Original Ethernet Frame: 원본 Pod 패킷"]
 
-        OE --- OI --- UDP --- VH --- OF
-    end
-
-    subgraph Desc["설명"]
-        D1["Outer Ethernet: 노드 간 물리 네트워크"]
-        D2["Outer IP: 노드 IP (192.168.1.10 → 192.168.1.20)"]
-        D3["UDP: 포트 4789"]
-        D4["VXLAN Header: VNI (가상 네트워크 식별자)"]
-        D5["Original Frame: 원본 Pod 패킷"]
+        OE --> OI --> UDP --> VH --> OF
     end
 ```
 
@@ -350,17 +326,24 @@ flowchart TB
 iptables는 Linux 커널의 **패킷 필터링 프레임워크**이다.
 
 ```mermaid
-flowchart LR
-    subgraph IPTables["iptables 체인 - 패킷 흐름"]
-        IN[In] --> PREROUTING
-        PREROUTING -->|"라우팅 전 (DNAT)"| FORWARD
-        PREROUTING --> INPUT
-        INPUT -->|"로컬 프로세스로"| LP[Local Process]
-        LP --> OUTPUT
-        OUTPUT -->|"로컬에서 나감"| POSTROUTING
-        FORWARD -->|"다른 곳으로 전달"| POSTROUTING
-        POSTROUTING -->|"라우팅 후 (SNAT)"| OUT[Out]
-    end
+flowchart TB
+    IN[In]
+    PREROUTING["PREROUTING (라우팅 전, DNAT)"]
+    INPUT["INPUT (로컬 프로세스로)"]
+    FORWARD["FORWARD (다른 곳으로 전달)"]
+    LP[Local Process]
+    OUTPUT["OUTPUT (로컬에서 나감)"]
+    POSTROUTING["POSTROUTING (라우팅 후, SNAT)"]
+    OUT[Out]
+
+    IN --> PREROUTING
+    PREROUTING --> INPUT
+    PREROUTING --> FORWARD
+    INPUT --> LP
+    LP --> OUTPUT
+    OUTPUT --> POSTROUTING
+    FORWARD --> POSTROUTING
+    POSTROUTING --> OUT
 ```
 
 ### iptables 테이블

@@ -68,11 +68,11 @@ flowchart TB
 **역할**: Kubernetes의 관문(Gateway)이자 중앙 통신 허브다.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph APIServer["kube-apiserver"]
-        REST["REST API<br/>Endpoint"]
-        AUTH["인증/인가<br/>(AuthN/Z)"]
-        ADM["Admission<br/>Control"]
+        REST["REST API Endpoint"]
+        AUTH["인증/인가 (AuthN/Z)"]
+        ADM["Admission Control"]
         ETCD_COMM["etcd와 통신"]
     end
     REST --> AUTH --> ADM --> ETCD_COMM
@@ -120,16 +120,17 @@ kubectl logs -n kube-system kube-apiserver-<node-name>
 
 ```mermaid
 flowchart TB
-    subgraph ETCD["etcd"]
-        subgraph Data["Key-Value 저장소"]
-            D1["/registry/pods/default/nginx-xxx"]
-            D2["/registry/deployments/default/nginx"]
-            D3["/registry/services/default/nginx-svc"]
-            D4["/registry/secrets/default/db-secret"]
-            D5["/registry/configmaps/default/app-config"]
-        end
-        Features["특징:<br/>- Raft 합의 알고리즘 (분산 일관성)<br/>- Key-Value 저장소<br/>- Watch 기능 (변경 감지)"]
+    subgraph ETCD["etcd - Key-Value 저장소"]
+        D1["/registry/pods/default/nginx-xxx"]
+        D2["/registry/deployments/default/nginx"]
+        D3["/registry/services/default/nginx-svc"]
+        D4["/registry/secrets/default/db-secret"]
+        D5["/registry/configmaps/default/app-config"]
     end
+
+    Features["특징:<br/>- Raft 합의 알고리즘 (분산 일관성)<br/>- Watch 기능 (변경 감지)"]
+
+    ETCD -.-> Features
 ```
 
 **저장되는 데이터:**
@@ -141,15 +142,15 @@ flowchart TB
 **Raft 합의 알고리즘 (HA 구성 시):**
 
 ```mermaid
-flowchart LR
-    subgraph Raft["Raft 합의 알고리즘"]
-        L["etcd<br/>Leader"]
-        F1["etcd<br/>Follower"]
-        F2["etcd<br/>Follower"]
-    end
+flowchart TB
+    L["etcd Leader"]
+    F1["etcd Follower"]
+    F2["etcd Follower"]
+    Q["과반수(Quorum) 합의 필요<br/>쓰기 성공 = 과반수 노드에 복제 완료"]
+
     L --> F1
     L --> F2
-    L --> Q["과반수(Quorum) 합의 필요<br/>쓰기 성공 = 과반수 노드에 복제 완료"]
+    L --> Q
 ```
 
 **etcd 노드 수와 장애 허용:**
@@ -194,25 +195,17 @@ ETCDCTL_API=3 etcdctl snapshot restore snapshot.db \
 
 ```mermaid
 flowchart TB
-    subgraph Scheduler["kube-scheduler"]
-        Detect["새 Pod 감지<br/>(nodeName이 비어있는 Pod)"]
-        subgraph Filter["1. Filtering (필터링)"]
-            F1["리소스 충분한가?"]
-            F2["Taint/Toleration 만족하는가?"]
-            F3["NodeSelector 조건 만족하는가?"]
-            F4["Pod Affinity/Anti-Affinity 만족하는가?"]
-        end
-        subgraph Score["2. Scoring (점수 계산)"]
-            S1["리소스 균형"]
-            S2["이미지 존재 여부"]
-            S3["Node Affinity 가중치"]
-            S4["Pod 분산도"]
-        end
-        Bind["Pod의 nodeName 필드에 노드 이름 바인딩"]
-    end
+    Detect["새 Pod 감지<br/>(nodeName 비어있음)"]
+
+    Filter["1. Filtering<br/>리소스/Taint/NodeSelector/<br/>Affinity 체크"]
+
+    Score["2. Scoring<br/>리소스 균형/이미지 캐시/<br/>Pod 분산도 점수 계산"]
+
+    Bind["3. Binding<br/>최적 노드에 Pod 할당"]
+
     Detect --> Filter
-    Filter -->|실행 가능한 노드 목록| Score
-    Score -->|가장 높은 점수의 노드| Bind
+    Filter -->|실행 가능 노드| Score
+    Score -->|최고 점수 노드| Bind
 ```
 
 **스케줄링 고려 요소:**
@@ -241,20 +234,14 @@ kubectl describe pod <pod-name>
 
 ```mermaid
 flowchart TB
-    subgraph CM["kube-controller-manager"]
-        subgraph Row1[" "]
-            RS["ReplicaSet Controller<br/>replicas: 3 유지한다"]
-            DC["Deployment Controller<br/>롤링 업데이트 관리한다"]
-        end
-        subgraph Row2[" "]
-            NC["Node Controller<br/>노드 상태 모니터링"]
-            SAC["Service Account Controller<br/>SA 자동 생성"]
-        end
-        subgraph Row3[" "]
-            EC["Endpoint Controller<br/>Service와 Pod 연결"]
-            JC["Job Controller<br/>Job 완료 관리"]
-        end
-        More["... 그 외 다수의 컨트롤러"]
+    subgraph CM["kube-controller-manager - 주요 컨트롤러들"]
+        RS["ReplicaSet Controller<br/>Pod 복제본 수 유지"]
+        DC["Deployment Controller<br/>롤링 업데이트/롤백"]
+        NC["Node Controller<br/>노드 상태 모니터링"]
+        SAC["Service Account Controller<br/>SA 자동 생성"]
+        EC["Endpoint Controller<br/>Service-Pod 연결"]
+        JC["Job Controller<br/>Job 완료 관리"]
+        More["...그 외 다수"]
     end
 ```
 
@@ -309,19 +296,12 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph Kubelet["kubelet"]
-        Recv["API Server로부터 Pod Spec 수신"]
-        subgraph CR["Container Runtime (containerd, CRI-O)"]
-            Actions["컨테이너 생성/시작/중지/삭제"]
-        end
-        subgraph Monitor["상태 모니터링"]
-            M1["컨테이너 상태 확인"]
-            M2["Liveness/Readiness Probe 실행"]
-            M3["노드 리소스 보고"]
-        end
-        Report["API Server로 상태 보고"]
-    end
-    Recv --> CR --> Monitor --> Report
+    Recv["1. API Server로부터<br/>Pod Spec 수신"]
+    Runtime["2. Container Runtime에<br/>컨테이너 생성/시작/중지 요청"]
+    Monitor["3. 상태 모니터링<br/>(Liveness/Readiness Probe)"]
+    Report["4. API Server로<br/>상태 보고"]
+
+    Recv --> Runtime --> Monitor --> Report
 ```
 
 **주요 기능:**
@@ -334,12 +314,10 @@ flowchart TB
 
 **CRI (Container Runtime Interface):**
 ```mermaid
-flowchart LR
+flowchart TB
     K["kubelet"]
-    subgraph CR["Container Runtime"]
-        C1["containerd"]
-        C2["CRI-O"]
-    end
+    CR["Container Runtime<br/>(containerd, CRI-O)"]
+
     K <-->|CRI| CR
 ```
 
@@ -374,17 +352,15 @@ kubectl describe node <node-name>
 
 ```mermaid
 flowchart TB
-    subgraph KubeProxy["kube-proxy"]
-        Watch["Service 변경 감지<br/>(API Server Watch)"]
-        subgraph Rules["네트워크 규칙 관리"]
-            subgraph Modes["모드 선택"]
-                IPT["iptables<br/>(기본)"]
-                IPVS["IPVS<br/>(대규모)"]
-                US["userspace<br/>(레거시)"]
-            end
-        end
+    Watch["Service 변경 감지<br/>(API Server Watch)"]
+
+    subgraph Modes["네트워크 규칙 관리 모드"]
+        IPT["iptables (기본)"]
+        IPVS["IPVS (대규모)"]
+        US["userspace (레거시)"]
     end
-    Watch --> Rules
+
+    Watch --> Modes
 ```
 
 **동작 모드 비교:**
@@ -419,15 +395,15 @@ kubectl get cm kube-proxy -n kube-system -o yaml | grep mode
 
 ```mermaid
 flowchart TB
-    subgraph CRLayer["Container Runtime 계층"]
-        subgraph HighLevel["High-level (Kubernetes와 직접 통신)"]
-            CD["containerd"]
-            CRIO["CRI-O"]
-        end
-        subgraph LowLevel["Low-level (OCI 표준 준수)"]
-            RUNC["runc<br/>(또는 crun, gVisor, Kata Containers)"]
-        end
+    subgraph HighLevel["High-level Runtime<br/>(Kubernetes와 직접 통신)"]
+        CD["containerd"]
+        CRIO["CRI-O"]
     end
+
+    subgraph LowLevel["Low-level Runtime<br/>(OCI 표준 준수)"]
+        RUNC["runc / crun / gVisor / Kata"]
+    end
+
     CD --> RUNC
     CRIO --> RUNC
 ```
@@ -485,14 +461,15 @@ flowchart TB
 ### 4.2 Watch 메커니즘
 
 ```mermaid
-flowchart LR
-    subgraph Clients["Clients"]
-        C["Controller"]
-        S["Scheduler"]
-        K["kubelet"]
-    end
+flowchart TB
     API["API Server"]
-    API -->|Watch<br/>변경 사항 실시간 스트리밍| Clients
+    C["Controller"]
+    S["Scheduler"]
+    K["kubelet"]
+
+    API -->|Watch: 변경 사항 실시간 스트리밍| C
+    API -->|Watch: 변경 사항 실시간 스트리밍| S
+    API -->|Watch: 변경 사항 실시간 스트리밍| K
 ```
 
 **Watch의 장점:**
@@ -518,26 +495,9 @@ kubectl get events -w
 flowchart TB
     LB["Load Balancer"]
 
-    subgraph CP1["Control Plane 1"]
-        API1["API Server"]
-        SCHED1["Scheduler"]
-        CTRL1["Controller"]
-        ETCD1[("etcd")]
-    end
-
-    subgraph CP2["Control Plane 2"]
-        API2["API Server"]
-        SCHED2["Scheduler"]
-        CTRL2["Controller"]
-        ETCD2[("etcd")]
-    end
-
-    subgraph CP3["Control Plane 3"]
-        API3["API Server"]
-        SCHED3["Scheduler"]
-        CTRL3["Controller"]
-        ETCD3[("etcd")]
-    end
+    CP1["Control Plane 1<br/>API Server + Scheduler + Controller + etcd"]
+    CP2["Control Plane 2<br/>API Server + Scheduler + Controller + etcd"]
+    CP3["Control Plane 3<br/>API Server + Scheduler + Controller + etcd"]
 
     LB --> CP1
     LB --> CP2
@@ -576,23 +536,18 @@ kubectl get endpoints kube-controller-manager -n kube-system -o yaml
 
 ```mermaid
 flowchart TB
-    subgraph Stacked["Stacked (함께 배치)"]
-        M1S["Master1<br/>+ etcd"]
-        M2S["Master2<br/>+ etcd"]
+    subgraph Stacked["Stacked etcd (함께 배치)"]
+        M1S["Master 1 + etcd"]
+        M2S["Master 2 + etcd"]
+        M3S["Master 3 + etcd"]
     end
 
-    subgraph External["External (분리)"]
-        M1E["Master1"]
-        M2E["Master2"]
-        subgraph ETCD_Cluster["etcd cluster"]
-            E1["etcd1"]
-            E2["etcd2"]
-            E3["etcd3"]
-        end
+    subgraph External["External etcd (분리)"]
+        direction TB
+        Masters["Master 1, 2, 3"]
+        ETCD["etcd cluster<br/>(etcd 1, 2, 3)"]
+        Masters --> ETCD
     end
-
-    M1E --> ETCD_Cluster
-    M2E --> ETCD_Cluster
 ```
 
 ---

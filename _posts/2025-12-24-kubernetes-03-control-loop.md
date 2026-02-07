@@ -14,18 +14,18 @@ mermaid: true
 Kubernetes의 가장 핵심적인 철학은 **선언적(Declarative) 시스템**이다. 사용자는 "어떻게 할지"가 아니라 "최종 상태가 어떠해야 하는지"를 선언한다.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Imperative["명령형 (Imperative)"]
         I1["nginx Pod 3개를 생성해라"]
         I2["Pod 1개를 삭제해라"]
         I3["이미지를 v2로 업데이트해라"]
-        I4["절차를 지시<br/>매번 명령 필요"]
+        I4["절차를 지시 - 매번 명령 필요"]
     end
     subgraph Declarative["선언형 (Declarative)"]
         D1["nginx Pod이 3개여야 한다"]
         D2["nginx Pod이 2개여야 한다"]
         D3["nginx는 v2 이미지여야 한다"]
-        D4["최종 상태를 선언<br/>한번 정의 후 Kubernetes가 자동으로 유지"]
+        D4["최종 상태를 선언<br/>Kubernetes가 자동으로 유지"]
     end
 ```
 

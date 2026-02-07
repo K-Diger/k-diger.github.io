@@ -23,18 +23,29 @@ Service의 NodePort나 LoadBalancer는 L4(TCP/UDP) 수준에서 동작한다. �
 ### Service만으로 부족한 경우
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph before["LoadBalancer만 사용 (비용 증가)"]
-        app1_b["app1.example.com"] --> lb1["LB1 $"]
-        app2_b["app2.example.com"] --> lb2["LB2 $"]
-        app3_b["app3.example.com"] --> lb3["LB3 $"]
+        app1_b["app1.example.com"]
+        app2_b["app2.example.com"]
+        app3_b["app3.example.com"]
+        lb1["LB1 $"]
+        lb2["LB2 $"]
+        lb3["LB3 $"]
+        app1_b --> lb1
+        app2_b --> lb2
+        app3_b --> lb3
     end
 
     subgraph after["Ingress 사용 (비용 절감)"]
-        app1_a["app1.example.com"] --> ingress["Ingress"]
-        app2_a["app2.example.com"] --> ingress
-        app3_a["app3.example.com"] --> ingress
-        ingress --> lb["LB $"]
+        app1_a["app1.example.com"]
+        app2_a["app2.example.com"]
+        app3_a["app3.example.com"]
+        ingress["Ingress"]
+        lb["LB $"]
+        app1_a --> ingress
+        app2_a --> ingress
+        app3_a --> ingress
+        ingress --> lb
     end
 ```
 

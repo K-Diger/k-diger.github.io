@@ -23,20 +23,14 @@ mermaid: true
 ```mermaid
 flowchart TB
     subgraph pod["Pod (IP: 10.244.1.5)"]
-        subgraph c1["Container 1"]
-            p1["프로세스"]
-            f1["파일시스템"]
-        end
-        subgraph c2["Container 2 (선택적)"]
-            p2["프로세스"]
-            f2["파일시스템"]
-        end
-        shared["<b>공유 리소스</b><br/>- 네트워크 네임스페이스 (같은 IP, localhost 통신)<br/>- IPC 네임스페이스<br/>- 볼륨"]
-    end
+        c1["Container 1<br/>(프로세스 + 파일시스템)"]
+        c2["Container 2 (선택적)<br/>(프로세스 + 파일시스템)"]
+        shared["공유 리소스:<br/>네트워크 네임스페이스 (같은 IP)<br/>IPC 네임스페이스, 볼륨"]
 
-    c1 <-.-> c2
-    c1 --- shared
-    c2 --- shared
+        c1 <-.-> c2
+        c1 --- shared
+        c2 --- shared
+    end
 ```
 
 **주요 특징:**
@@ -164,12 +158,8 @@ spec:
 ```mermaid
 flowchart TB
     subgraph pod["Pod"]
-        subgraph main["Main App"]
-            mainContent["로그 파일 작성"]
-        end
-        subgraph sidecar["Sidecar (Log Shipper)"]
-            sidecarContent["로그 수집/전송"]
-        end
+        main["Main App<br/>(로그 파일 작성)"]
+        sidecar["Sidecar<br/>(로그 수집/전송)"]
         volume["Shared Volume<br/>/var/log"]
 
         main <--> volume
@@ -213,14 +203,11 @@ spec:
 ```mermaid
 flowchart TB
     subgraph pod["Pod"]
-        subgraph main["Main App"]
-            mainContent["localhost:5432"]
-        end
-        subgraph ambassador["Ambassador (DB Proxy)"]
-            ambContent["실제 DB 연결"]
-        end
+        main["Main App<br/>(localhost:5432 접근)"]
+        ambassador["Ambassador<br/>(DB Proxy)"]
         main <--> ambassador
     end
+
     db["외부 DB<br/>(복잡한 연결 로직)"]
     ambassador --> db
 ```
@@ -256,14 +243,10 @@ spec:
 메인 애플리케이션의 출력을 **표준 형식으로 변환**한다.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph pod["Pod"]
-        subgraph main["Main App"]
-            mainContent["자체 메트릭 형식"]
-        end
-        subgraph adapter["Adapter"]
-            adapterContent["Prometheus<br/>형식 변환"]
-        end
+        main["Main App<br/>자체 메트릭 형식"]
+        adapter["Adapter<br/>Prometheus 형식 변환"]
         main --> adapter
     end
     metrics[":9090/metrics"]

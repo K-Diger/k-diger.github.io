@@ -175,30 +175,11 @@ flowchart TB
 롤링 업데이트는 **기존 Pod을 순차적으로 새 Pod으로 교체**하는 배포 방식이다. 서비스 중단 없이 배포할 수 있다.
 
 ```mermaid
-flowchart LR
-    subgraph step1["Step 1: v1 (3개)"]
-        s1p1["v1"]
-        s1p2["v1"]
-        s1p3["v1"]
-    end
-
-    subgraph step2["Step 2: v2 생성, v1 삭제"]
-        s2p1["v1"]
-        s2p2["v1"]
-        s2p3["v2"]
-    end
-
-    subgraph step3["Step 3"]
-        s3p1["v1"]
-        s3p2["v2"]
-        s3p3["v2"]
-    end
-
-    subgraph step4["Step 4: v2 완료"]
-        s4p1["v2"]
-        s4p2["v2"]
-        s4p3["v2"]
-    end
+flowchart TB
+    step1["Step 1: v1 v1 v1<br/>(3개 모두 v1)"]
+    step2["Step 2: v1 v1 v2<br/>(v2 생성, v1 삭제)"]
+    step3["Step 3: v1 v2 v2"]
+    step4["Step 4: v2 v2 v2<br/>(v2 완료)"]
 
     step1 --> step2 --> step3 --> step4
 ```

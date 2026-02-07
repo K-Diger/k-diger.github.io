@@ -172,14 +172,12 @@ versions:
 Operator는 **CRD + Controller**의 조합으로, 애플리케이션의 운영 지식을 코드화한다.
 
 ```mermaid
-flowchart LR
-    subgraph operator["Operator Pattern"]
-        cr["Custom Resource<br/>(원하는 상태)<br/><br/>예: Database CR<br/>replicas: 3<br/>engine: postgres"]
-        ctrl["Controller<br/>(조정 로직)<br/><br/>DB Operator"]
-        managed["Managed Resources<br/><br/>Pod, Service,<br/>StatefulSet,<br/>ConfigMap..."]
+flowchart TB
+    cr["Custom Resource (원하는 상태)<br/>예: Database CR<br/>replicas: 3, engine: postgres"]
+    ctrl["Controller (조정 로직)<br/>DB Operator"]
+    managed["Managed Resources<br/>Pod, Service, StatefulSet, ConfigMap"]
 
-        cr --> ctrl --> managed
-    end
+    cr --> ctrl --> managed
 ```
 
 **Operator가 하는 일**:
@@ -347,11 +345,11 @@ func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 CRD의 대안으로, **자체 API Server**를 추가할 수 있다.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph apiserver["kube-apiserver"]
         core["/api/v1 → core API"]
         apps["/apis/apps/v1 → apps API"]
-        custom["/apis/custom.io/v1 → Aggregated API Server (Extension)"]
+        custom["/apis/custom.io/v1<br/>→ Aggregated API Server"]
     end
 ```
 

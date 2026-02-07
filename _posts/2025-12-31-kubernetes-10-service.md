@@ -508,17 +508,18 @@ spec:
 - 불균등한 로드밸런싱 가능
 
 ```mermaid
-flowchart LR
-    subgraph clusterPolicy["externalTrafficPolicy: Cluster"]
-        direction LR
-        cA["Node A<br/>(request)"] --> cB["Node B<br/>(forward)"] --> cPod["Pod<br/>(Node C)"]
-        cNote["Client IP가 SNAT됨"]
+flowchart TB
+    subgraph clusterPolicy["externalTrafficPolicy: Cluster (Client IP SNAT됨)"]
+        cA["Node A (request)"]
+        cB["Node B (forward)"]
+        cPod["Pod (Node C)"]
+        cA --> cB --> cPod
     end
 
-    subgraph localPolicy["externalTrafficPolicy: Local"]
-        direction LR
-        lA["Node A<br/>(request)"] --> lPod["Pod<br/>(Node A)"]
-        lNote["Client IP 보존됨"]
+    subgraph localPolicy["externalTrafficPolicy: Local (Client IP 보존)"]
+        lA["Node A (request)"]
+        lPod["Pod (Node A)"]
+        lA --> lPod
     end
 ```
 

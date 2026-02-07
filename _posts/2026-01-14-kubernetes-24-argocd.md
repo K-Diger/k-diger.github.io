@@ -26,12 +26,15 @@ ArgoCD는 Kubernetes를 위한 **GitOps 기반 CD(Continuous Delivery)** 도구�
 **전통적인 방식(Push 기반)**은 CI 파이프라인이 클러스터에 직접 배포 명령을 보낸다.
 
 ```mermaid
-flowchart LR
-    subgraph "Push 기반 배포"
-        DEV[개발자] -->|commit| GIT[Git]
-        GIT -->|trigger| CI[CI Pipeline]
-        CI -->|kubectl apply| K8S[Kubernetes]
-    end
+flowchart TB
+    DEV[개발자]
+    GIT[Git]
+    CI[CI Pipeline]
+    K8S[Kubernetes]
+
+    DEV -->|commit| GIT
+    GIT -->|trigger| CI
+    CI -->|kubectl apply| K8S
 ```
 
 문제점:
@@ -42,12 +45,15 @@ flowchart LR
 **GitOps 방식(Pull 기반)**은 클러스터 내부의 에이전트가 Git을 감시하고 변경을 반영한다.
 
 ```mermaid
-flowchart LR
-    subgraph "GitOps Pull 기반 배포"
-        DEV[개발자] -->|commit| GIT[Git Repository]
-        ARGO[ArgoCD] -->|watch| GIT
-        ARGO -->|sync| K8S[Kubernetes]
-    end
+flowchart TB
+    DEV[개발자]
+    GIT[Git Repository]
+    ARGO[ArgoCD]
+    K8S[Kubernetes]
+
+    DEV -->|commit| GIT
+    ARGO -->|watch| GIT
+    ARGO -->|sync| K8S
 ```
 
 장점:
@@ -181,15 +187,15 @@ argocd login localhost:8080
 ArgoCD에서 **Application**은 "무엇을 어디에 배포할 것인가"를 정의하는 CRD이다.
 
 ```mermaid
-flowchart LR
-    subgraph "Application 정의"
-        SOURCE[Source<br/>Git Repo + Path]
-        DEST[Destination<br/>Cluster + Namespace]
-    end
+flowchart TB
+    SOURCE[Source: Git Repo + Path]
+    DEST[Destination: Cluster + Namespace]
+    APP[Application]
+    TARGET[Target Cluster]
 
-    SOURCE --> APP[Application]
+    SOURCE --> APP
     DEST --> APP
-    APP -->|deploy| TARGET[Target Cluster]
+    APP -->|deploy| TARGET
 ```
 
 ### YAML로 Application 정의
@@ -304,17 +310,17 @@ spec:
 ### Sync 상태
 
 ```mermaid
-flowchart LR
-    subgraph "Sync Status"
-        SYNCED[Synced<br/>Git = Cluster]
-        OUTOFSYNC[OutOfSync<br/>Git ≠ Cluster]
+flowchart TB
+    subgraph sync["Sync Status"]
+        SYNCED[Synced: Git = Cluster]
+        OUTOFSYNC[OutOfSync: Git ≠ Cluster]
     end
 
-    subgraph "Health Status"
-        HEALTHY[Healthy<br/>정상 동작]
-        PROGRESSING[Progressing<br/>진행 중]
-        DEGRADED[Degraded<br/>문제 발생]
-        MISSING[Missing<br/>리소스 없음]
+    subgraph health["Health Status"]
+        HEALTHY[Healthy: 정상 동작]
+        PROGRESSING[Progressing: 진행 중]
+        DEGRADED[Degraded: 문제 발생]
+        MISSING[Missing: 리소스 없음]
     end
 ```
 
@@ -546,10 +552,15 @@ spec:
 **ApplicationSet**은 여러 Application을 템플릿으로 자동 생성한다. 멀티 클러스터, 멀티 환경 배포에 유용하다.
 
 ```mermaid
-flowchart LR
-    APPSET[ApplicationSet<br/>템플릿 + 생성기] --> APP1[App: dev]
-    APPSET --> APP2[App: staging]
-    APPSET --> APP3[App: prod]
+flowchart TB
+    APPSET[ApplicationSet<br/>템플릿 + 생성기]
+    APP1[App: dev]
+    APP2[App: staging]
+    APP3[App: prod]
+
+    APPSET --> APP1
+    APPSET --> APP2
+    APPSET --> APP3
 ```
 
 ### List Generator
@@ -679,11 +690,15 @@ apps/
 **Sync Hook**은 동기화 과정에서 특정 시점에 실행되는 리소스이다.
 
 ```mermaid
-flowchart LR
-    PRESYNC[PreSync<br/>DB 마이그레이션] --> SYNC[Sync<br/>앱 배포]
-    SYNC --> POSTSYNC[PostSync<br/>테스트/알림]
+flowchart TB
+    PRESYNC[PreSync: DB 마이그레이션]
+    SYNC[Sync: 앱 배포]
+    POSTSYNC[PostSync: 테스트/알림]
+    SYNCFAIL[SyncFail: 실패 시 알림]
 
-    SYNCFAIL[SyncFail<br/>실패 시 알림]
+    PRESYNC --> SYNC
+    SYNC --> POSTSYNC
+    SYNC -.->|실패 시| SYNCFAIL
 ```
 
 | Hook | 실행 시점 | 용도 |

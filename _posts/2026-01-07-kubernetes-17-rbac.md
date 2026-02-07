@@ -18,20 +18,16 @@ Kubernetes의 **RBAC(Role-Based Access Control)**은 "누가" "무엇을" "어�
 ### 주요 구성 요소
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph subject["Subject (누가)"]
-        user["User"]
-        group["Group"]
-        sa["ServiceAccount"]
+        user["User / Group / ServiceAccount"]
     end
 
     subgraph role["Role/ClusterRole (무엇을)"]
-        rules["rules:<br/>- apiGroups<br/>- resources<br/>- verbs"]
+        rules["rules: apiGroups, resources, verbs"]
     end
 
-    subgraph binding["RoleBinding/<br/>ClusterRoleBinding (연결)"]
-        bind["Subject + Role 연결"]
-    end
+    binding["RoleBinding/ClusterRoleBinding<br/>(Subject + Role 연결)"]
 
     subject --> binding
     role --> binding

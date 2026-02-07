@@ -88,12 +88,17 @@ flowchart TB
 도구 실행 시점에 자동으로 트리거되는 자동화다.
 
 ```mermaid
-flowchart LR
-    subgraph Hooks["훅 동작"]
-        SessionStart["세션 시작"] --> LoadContext["컨텍스트 로드"]
-        SessionEnd["세션 종료"] --> SaveContext["컨텍스트 저장"]
-        ToolRun["도구 실행"] --> AutoCheck["자동 검사"]
-    end
+flowchart TB
+    SessionStart["세션 시작"]
+    LoadContext["컨텍스트 로드"]
+    SessionEnd["세션 종료"]
+    SaveContext["컨텍스트 저장"]
+    ToolRun["도구 실행"]
+    AutoCheck["자동 검사"]
+
+    SessionStart --> LoadContext
+    SessionEnd --> SaveContext
+    ToolRun --> AutoCheck
 ```
 
 ### 6. MCP Settings
@@ -221,14 +226,12 @@ node scripts/setup-package-manager.js --detect
 - **권장**: 프로젝트당 10개 미만의 MCP 활성화
 
 ```mermaid
-flowchart LR
-    subgraph Context["컨텍스트 관리"]
-        Full["200k 토큰<br/>(기본)"]
-        Reduced["70k 토큰<br/>(과도한 MCP)"]
-    end
+flowchart TB
+    Full["200k 토큰 (기본)"]
+    Reduced["70k 토큰 (과도한 MCP)"]
 
-    Full -->|"MCP 10개 이상"| Reduced
-    Reduced -->|"MCP 최적화"| Full
+    Full -->|MCP 10개 이상 활성화| Reduced
+    Reduced -->|MCP 최적화/비활성화| Full
 ```
 
 ### 커스터마이징

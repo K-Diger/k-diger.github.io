@@ -155,8 +155,13 @@ rules:
 | `RequestResponse` | Request + 응답 본문 | Secret 등 민감 데이터 |
 
 ```mermaid
-flowchart LR
-    None["None<br>(간략)"] --> Metadata --> Request --> RequestResponse["RequestResponse<br>(상세)"]
+flowchart TB
+    None["None (간략)"]
+    Metadata["Metadata"]
+    Request["Request"]
+    RequestResponse["RequestResponse (상세)"]
+
+    None --> Metadata --> Request --> RequestResponse
 ```
 
 ### etcd 암호화란?
@@ -278,23 +283,29 @@ curl -k https://localhost:10250/pods
 기본적으로 Kubernetes의 모든 Pod는 서로 통신할 수 있다. 이것은 편리하지만 보안상 위험하다. 공격자가 하나의 Pod를 장악하면 다른 모든 Pod에 접근할 수 있기 때문이다.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Before["NetworkPolicy 없을 때"]
-        FE1[Frontend] <--> BE1[Backend] <--> DB1[Database]
-        ATK1[Attacker] <-.->|"모든 Pod 접근 가능"| FE1
+        FE1[Frontend]
+        BE1[Backend]
+        DB1[Database]
+        ATK1[Attacker]
+
+        FE1 <--> BE1 <--> DB1
+        ATK1 <-.->|모든 Pod 접근 가능| FE1
         ATK1 <-.-> BE1
         ATK1 <-.-> DB1
     end
-```
 
-```mermaid
-flowchart LR
     subgraph After["NetworkPolicy 적용 후"]
-        FE2[Frontend] --> BE2[Backend] --> DB2[Database]
+        FE2[Frontend]
+        BE2[Backend]
+        DB2[Database]
         ATK2[Attacker]
-        ATK2 -.-x|"접근 차단"| FE2
-        ATK2 -.-x|"접근 차단"| BE2
-        ATK2 -.-x|"접근 차단"| DB2
+
+        FE2 --> BE2 --> DB2
+        ATK2 -.-x|접근 차단| FE2
+        ATK2 -.-x|접근 차단| BE2
+        ATK2 -.-x|접근 차단| DB2
     end
 ```
 
@@ -555,17 +566,19 @@ securityContext:
 **gVisor**는 Google이 만든 샌드박스 런타임이다. 가상의 커널을 제공하여 컨테이너와 호스트 커널을 격리한다.
 
 ```mermaid
-flowchart LR
-    subgraph Runc["기본 런타임 (runc)"]
-        C1[Container] -->|"시스템콜"| K1["Host Kernel<br>(커널 취약점 악용 가능)"]
-    end
-```
-
-```mermaid
 flowchart TB
+    subgraph Runc["기본 런타임 (runc)"]
+        C1[Container]
+        K1["Host Kernel<br/>(커널 취약점 악용 가능)"]
+        C1 -->|시스템콜| K1
+    end
+
     subgraph GVisor["gVisor 런타임"]
-        C2[Container] -->|"시스템콜"| Sentry["Sentry<br>(가상 커널)"]
-        Sentry -->|"필터링 후<br>안전하게 전달"| K2[Host Kernel]
+        C2[Container]
+        Sentry["Sentry (가상 커널)"]
+        K2[Host Kernel]
+        C2 -->|시스템콜| Sentry
+        Sentry -->|필터링 후 안전하게 전달| K2
     end
 ```
 
@@ -752,16 +765,14 @@ Total: 142 (UNKNOWN: 0, LOW: 85, MEDIUM: 45, HIGH: 10, CRITICAL: 2)
 **이미지 서명**은 이미지가 신뢰할 수 있는 출처에서 왔고, 변조되지 않았음을 증명한다.
 
 ```mermaid
-flowchart LR
-    subgraph Signing["이미지 서명 과정"]
-        S1["1. 개발자가 이미지 빌드"]
-        S2["2. 개인키로 이미지 서명<br>(cosign sign)"]
-        S3["3. 서명을 레지스트리에 저장"]
-        S4["4. 배포 시 공개키로 서명 검증<br>(cosign verify)"]
-        S5["5. 검증 실패하면 배포 거부"]
+flowchart TB
+    S1["1. 개발자가 이미지 빌드"]
+    S2["2. 개인키로 이미지 서명 (cosign sign)"]
+    S3["3. 서명을 레지스트리에 저장"]
+    S4["4. 배포 시 공개키로 서명 검증 (cosign verify)"]
+    S5["5. 검증 실패하면 배포 거부"]
 
-        S1 --> S2 --> S3 --> S4 --> S5
-    end
+    S1 --> S2 --> S3 --> S4 --> S5
 ```
 
 ```bash
