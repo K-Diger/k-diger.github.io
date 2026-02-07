@@ -65,6 +65,11 @@ flowchart TB
 
 ### 2.1 kube-apiserver
 
+> **원문 ([kubernetes.io - Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/#kube-apiserver)):**
+> The API server is a component of the Kubernetes control plane that exposes the Kubernetes API. The API server is the front end for the Kubernetes control plane. The main implementation of a Kubernetes API server is kube-apiserver. kube-apiserver is designed to scale horizontally—that is, it scales by deploying more instances. You can run several instances of kube-apiserver and balance traffic between those instances.
+
+**번역:** API 서버는 Kubernetes API를 노출하는 Kubernetes 컨트롤 플레인 컴포넌트다. API 서버는 Kubernetes 컨트롤 플레인의 프론트엔드다. Kubernetes API 서버의 주요 구현체는 kube-apiserver다. kube-apiserver는 수평 확장을 위해 설계되었다. 즉, 인스턴스를 더 배포하여 확장한다. 여러 개의 kube-apiserver 인스턴스를 실행하고 인스턴스 간 트래픽을 분산할 수 있다.
+
 **역할**: Kubernetes의 관문(Gateway)이자 중앙 통신 허브다.
 
 ```mermaid
@@ -115,6 +120,11 @@ kubectl logs -n kube-system kube-apiserver-<node-name>
 ```
 
 ### 2.2 etcd
+
+> **원문 ([kubernetes.io - Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/#etcd)):**
+> Consistent and highly-available key value store used as Kubernetes' backing store for all cluster data. If your Kubernetes cluster uses etcd as its backing store, make sure you have a back up plan for the data. You can find in-depth information about etcd in the official documentation.
+
+**번역:** Kubernetes의 모든 클러스터 데이터를 저장하는 백업 저장소로 사용되는 일관성 있고 고가용성의 키-값 저장소다. Kubernetes 클러스터가 백업 저장소로 etcd를 사용하는 경우 데이터에 대한 백업 계획이 있는지 확인해야 한다.
 
 **역할**: 클러스터의 모든 상태를 저장하는 분산 키-값 저장소다.
 
@@ -191,6 +201,11 @@ ETCDCTL_API=3 etcdctl snapshot restore snapshot.db \
 
 ### 2.3 kube-scheduler
 
+> **원문 ([kubernetes.io - Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/#kube-scheduler)):**
+> Control plane component that watches for newly created Pods with no assigned node, and selects a node for them to run on. Factors taken into account for scheduling decisions include: individual and collective resource requirements, hardware/software/policy constraints, affinity and anti-affinity specifications, data locality, inter-workload interference, and deadlines.
+
+**번역:** 노드가 할당되지 않은 새로 생성된 Pod를 감시하고, Pod가 실행될 노드를 선택하는 컨트롤 플레인 컴포넌트다. 스케줄링 결정 시 고려되는 요소에는 개별 및 집합적 리소스 요구사항, 하드웨어/소프트웨어/정책 제약 조건, affinity 및 anti-affinity 사양, 데이터 지역성, 워크로드 간 간섭, 데드라인이 포함된다.
+
 **역할**: 새로 생성된 Pod를 어느 노드에 배치할지 결정한다.
 
 ```mermaid
@@ -229,6 +244,11 @@ kubectl describe pod <pod-name>
 ```
 
 ### 2.4 kube-controller-manager
+
+> **원문 ([kubernetes.io - Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/#kube-controller-manager)):**
+> Control plane component that runs controller processes. Logically, each controller is a separate process, but to reduce complexity, they are all compiled into a single binary and run in a single process. Some types of these controllers are: Node controller, Job controller, EndpointSlice controller, ServiceAccount controller.
+
+**번역:** 컨트롤러 프로세스를 실행하는 컨트롤 플레인 컴포넌트다. 논리적으로 각 컨트롤러는 별도의 프로세스이지만, 복잡성을 줄이기 위해 모두 단일 바이너리로 컴파일되어 단일 프로세스에서 실행된다. 이러한 컨트롤러의 일부 유형은 Node 컨트롤러, Job 컨트롤러, EndpointSlice 컨트롤러, ServiceAccount 컨트롤러다.
 
 **역할**: 여러 컨트롤러를 실행하여 클러스터 상태를 원하는 상태로 유지한다.
 
@@ -279,6 +299,11 @@ flowchart TB
 
 ### 2.5 cloud-controller-manager (선택적)
 
+> **원문 ([kubernetes.io - Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/#cloud-controller-manager)):**
+> A Kubernetes control plane component that embeds cloud-specific control logic. The cloud controller manager lets you link your cluster into your cloud provider's API, and separates out the components that interact with that cloud platform from components that only interact with your cluster.
+
+**번역:** 클라우드별 제어 로직을 포함하는 Kubernetes 컨트롤 플레인 컴포넌트다. 클라우드 컨트롤러 관리자를 사용하면 클러스터를 클라우드 공급자의 API에 연결할 수 있으며, 클라우드 플랫폼과 상호 작용하는 컴포넌트를 클러스터와만 상호 작용하는 컴포넌트와 분리할 수 있다.
+
 **역할**: 클라우드 프로바이더 특정 기능을 Kubernetes와 연결한다.
 
 **담당 기능:**
@@ -291,6 +316,11 @@ flowchart TB
 ## 3. Worker Node 컴포넌트
 
 ### 3.1 kubelet
+
+> **원문 ([kubernetes.io - Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/#kubelet)):**
+> An agent that runs on each node in the cluster. It makes sure that containers are running in a Pod. The kubelet takes a set of PodSpecs that are provided through various mechanisms and ensures that the containers described in those PodSpecs are running and healthy. The kubelet doesn't manage containers which were not created by Kubernetes.
+
+**번역:** 클러스터의 각 노드에서 실행되는 에이전트다. Pod에서 컨테이너가 실행되고 있는지 확인한다. kubelet은 다양한 메커니즘을 통해 제공된 PodSpec 세트를 가져와서 해당 PodSpec에 설명된 컨테이너가 실행 중이고 정상 상태인지 확인한다. kubelet은 Kubernetes에서 생성하지 않은 컨테이너는 관리하지 않는다.
 
 **역할**: 각 노드에서 Pod를 실제로 실행하고 관리하는 에이전트다.
 
@@ -348,6 +378,11 @@ kubectl describe node <node-name>
 
 ### 3.2 kube-proxy
 
+> **원문 ([kubernetes.io - Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/#kube-proxy)):**
+> kube-proxy is a network proxy that runs on each node in your cluster, implementing part of the Kubernetes Service concept. kube-proxy maintains network rules on nodes. These network rules allow network communication to your Pods from network sessions inside or outside of your cluster.
+
+**번역:** kube-proxy는 클러스터의 각 노드에서 실행되는 네트워크 프록시로, Kubernetes Service 개념의 일부를 구현한다. kube-proxy는 노드의 네트워크 규칙을 유지 관리한다. 이러한 네트워크 규칙을 통해 클러스터 내부 또는 외부의 네트워크 세션에서 Pod로의 네트워크 통신이 가능하다.
+
 **역할**: Service에 대한 네트워크 규칙을 관리하여 Pod 간 통신을 지원한다.
 
 ```mermaid
@@ -390,6 +425,11 @@ kubectl get cm kube-proxy -n kube-system -o yaml | grep mode
 ```
 
 ### 3.3 Container Runtime
+
+> **원문 ([kubernetes.io - Container Runtime Interface](https://kubernetes.io/docs/concepts/architecture/cri/)):**
+> The CRI is a plugin interface which enables the kubelet to use a wide variety of container runtimes, without having a need to recompile the cluster components. You need a working container runtime on each Node in your cluster, so that the kubelet can launch Pods and their containers.
+
+**번역:** CRI는 kubelet이 클러스터 컴포넌트를 재컴파일할 필요 없이 다양한 컨테이너 런타임을 사용할 수 있게 해주는 플러그인 인터페이스다. kubelet이 Pod와 컨테이너를 시작할 수 있도록 클러스터의 각 노드에 작동하는 컨테이너 런타임이 필요하다.
 
 **역할**: 실제로 컨테이너를 실행하는 소프트웨어다.
 

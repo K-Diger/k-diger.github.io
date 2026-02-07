@@ -9,6 +9,23 @@ mermaid: true
 
 Kubernetes 네트워킹을 이해하려면 기본적인 네트워크 개념부터 알아야 한다. 이 장에서는 OSI 모델, 오버레이 네트워크, VXLAN, iptables 등 CNI를 이해하는 데 필요한 기초 개념을 상세히 설명한다.
 
+## Kubernetes 네트워킹 모델
+
+> **원문 ([kubernetes.io - Cluster Networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/)):**
+> Networking is a central part of Kubernetes, but it can be challenging to understand exactly how it is expected to work. There are 4 distinct networking problems to address:
+> 1. Highly-coupled container-to-container communications: this is solved by Pods and localhost communications.
+> 2. Pod-to-Pod communications: this is the primary focus of this document.
+> 3. Pod-to-Service communications: this is covered by Services.
+> 4. External-to-Service communications: this is covered by Services.
+
+**번역:** 네트워킹은 Kubernetes의 핵심 요소이지만, 정확히 어떻게 동작해야 하는지 이해하기는 어려울 수 있다. 해결해야 할 4가지 주요 네트워킹 문제가 있다:
+1. 긴밀하게 결합된 컨테이너 간 통신: Pod와 localhost 통신으로 해결된다.
+2. Pod 간 통신: 이 문서의 주요 초점이다.
+3. Pod-to-Service 통신: Service로 다룬다.
+4. 외부-to-Service 통신: Service로 다룬다.
+
+**설명:** Kubernetes는 이러한 네트워킹 문제를 해결하기 위해 특정 요구사항을 정의한다. 모든 Pod는 NAT 없이 다른 모든 Pod와 통신할 수 있어야 하며, 노드의 에이전트(kubelet 등)는 해당 노드의 모든 Pod와 통신할 수 있어야 한다. 이를 구현하기 위해 CNI(Container Network Interface) 플러그인을 사용한다.
+
 ## 네트워크 기초
 
 ### OSI 7계층 모델
@@ -73,6 +90,15 @@ flowchart TB
     end
     Note["A → B 통신: 라우터가 패킷을 다음 네트워크로 전달"]
 ```
+
+### Overlay 네트워크의 필요성
+
+> **원문 ([kubernetes.io - Cluster Networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/)):**
+> Kubernetes assumes that pods can communicate with other pods, regardless of which host they land on. Kubernetes gives every pod its own cluster-private IP address, so you do not need to explicitly create links between pods or map container ports to host ports.
+
+**번역:** Kubernetes는 Pod가 어떤 호스트에 배치되든 상관없이 다른 Pod와 통신할 수 있다고 가정한다. Kubernetes는 모든 Pod에 고유한 클러스터 전용 IP 주소를 제공하므로, Pod 간 링크를 명시적으로 생성하거나 컨테이너 포트를 호스트 포트에 매핑할 필요가 없다.
+
+**설명:** 이 요구사항을 충족하기 위해 Overlay 네트워크 또는 직접 라우팅 방식이 필요하다. Overlay 네트워크는 기존 물리 네트워크 위에 가상 네트워크를 구축하여 Pod IP를 노드 간에 라우팅 가능하게 만든다.
 
 ### 컨테이너 네트워킹의 문제
 

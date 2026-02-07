@@ -85,6 +85,11 @@ spec:
 
 ## Node Affinity
 
+> **원문 ([kubernetes.io - Node Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity)):**
+> Node affinity is conceptually similar to nodeSelector, allowing you to constrain which nodes your Pod can be scheduled on based on node labels. There are two types of node affinity: requiredDuringSchedulingIgnoredDuringExecution (hard) and preferredDuringSchedulingIgnoredDuringExecution (soft). You can think of them as "hard" and "soft" respectively, in the sense that the former specifies rules that must be met for a pod to be scheduled onto a node, while the latter specifies preferences that the scheduler will try to enforce but will not guarantee.
+
+**번역:** Node affinity는 개념적으로 nodeSelector와 유사하며, 노드 레이블을 기반으로 Pod를 스케줄할 수 있는 노드를 제한할 수 있다. requiredDuringSchedulingIgnoredDuringExecution(hard)과 preferredDuringSchedulingIgnoredDuringExecution(soft)의 두 가지 유형이 있다. 전자는 Pod를 노드에 스케줄하기 위해 반드시 충족해야 하는 규칙을 지정하고, 후자는 스케줄러가 적용하려고 시도하지만 보장하지는 않는 선호도를 지정한다는 점에서 각각 "hard"와 "soft"로 생각할 수 있다.
+
 nodeSelector보다 **표현력이 풍부**한 노드 선택 방법이다.
 
 ### requiredDuringSchedulingIgnoredDuringExecution

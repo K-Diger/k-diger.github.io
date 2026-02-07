@@ -264,7 +264,12 @@ flowchart TB
 
 ### 4.1 Init Container란?
 
-Init Container는 **메인 컨테이너 실행 전에 초기화 작업을 수행**한다.
+> **원문 ([kubernetes.io - Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)):**
+> Init containers are specialized containers that run before app containers in a Pod. Init containers can contain utilities or setup scripts not present in an app image. You can specify init containers in the Pod specification alongside the containers array (which describes app containers).
+
+**번역:** Init container는 Pod의 앱 컨테이너보다 먼저 실행되는 특수한 컨테이너이다. Init container는 앱 이미지에 없는 유틸리티나 설정 스크립트를 포함할 수 있다. Pod 명세에서 containers 배열(앱 컨테이너를 설명하는)과 함께 init container를 지정할 수 있다.
+
+**역할:** **메인 컨테이너 실행 전에 초기화 작업을 수행**한다.
 
 ```mermaid
 flowchart TB
@@ -281,10 +286,21 @@ flowchart TB
 ```
 
 **특징:**
-- 순차 실행 (하나가 완료되어야 다음 시작)
-- 모두 완료되어야 메인 컨테이너 시작
-- 실패하면 Pod 재시작 (restartPolicy에 따라)
-- 메인 컨테이너와 다른 이미지, 권한 사용 가능
+
+> **원문 ([kubernetes.io - Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/#understanding-init-containers)):**
+> - They always run to completion.
+> - Each init container must complete successfully before the next one starts.
+
+**번역:**
+- 항상 완료될 때까지 실행된다.
+- 각 init container는 다음 컨테이너가 시작되기 전에 성공적으로 완료되어야 한다.
+
+- **순차 실행**: 하나가 완료되어야 다음 시작
+- **모두 완료 필수**: 모든 Init Container가 성공해야 메인 컨테이너 시작
+- **실패 시 재시작**: Init Container 실패 시 Pod의 `restartPolicy`에 따라 재시작
+- **독립적인 이미지**: 메인 컨테이너와 다른 이미지 사용 가능
+- **보안 격리**: 메인 컨테이너에 포함하면 안 되는 유틸리티나 코드 실행 가능
+- **다른 권한**: 메인 컨테이너보다 높은 권한으로 실행 가능
 
 ### 4.2 사용 사례
 
@@ -398,7 +414,12 @@ flowchart TB
 
 ### 5.2 Liveness Probe
 
-컨테이너가 **살아있는지(정상 동작하는지)** 확인한다.
+> **원문 ([kubernetes.io - Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-liveness-command)):**
+> The kubelet uses liveness probes to know when to restart a container. For example, liveness probes could catch a deadlock, where an application is running, but unable to make progress. Restarting a container in such a state can help to make the application more available despite bugs.
+
+**번역:** kubelet은 liveness probe를 사용하여 컨테이너를 언제 재시작할지 결정한다. 예를 들어, liveness probe는 애플리케이션이 실행 중이지만 진행할 수 없는 데드락을 감지할 수 있다. 이러한 상태의 컨테이너를 재시작하면 버그가 있음에도 불구하고 애플리케이션의 가용성을 높일 수 있다.
+
+**역할:** 컨테이너가 **살아있는지(정상 동작하는지)** 확인한다.
 
 ```yaml
 containers:
@@ -408,24 +429,45 @@ containers:
     httpGet:
       path: /healthz
       port: 8080
-    initialDelaySeconds: 15    # 첫 체크 전 대기
-    periodSeconds: 10          # 체크 주기
-    timeoutSeconds: 3          # 타임아웃
-    failureThreshold: 3        # 실패 허용 횟수
-    successThreshold: 1        # 성공으로 간주하는 횟수
+    initialDelaySeconds: 15    # 컨테이너 시작 후 첫 체크까지 대기 시간
+    periodSeconds: 10          # 체크 간격
+    timeoutSeconds: 3          # 체크 타임아웃
+    failureThreshold: 3        # 실패로 간주할 연속 실패 횟수
+    successThreshold: 1        # 성공으로 간주할 연속 성공 횟수
 ```
 
-**실패 시:**
-- kubelet이 컨테이너를 **재시작**
-- restartPolicy에 따라 재시작 결정
+**실패 시 동작:**
+
+> **원문 ([kubernetes.io - Pod Lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes)):**
+> If the liveness probe fails, the kubelet kills the container, and the container is subjected to its restart policy.
+
+**번역:** liveness probe가 실패하면 kubelet은 컨테이너를 종료하고, 컨테이너는 재시작 정책의 적용을 받는다.
+
+- kubelet이 컨테이너를 **종료(kill)**
+- Pod의 `restartPolicy`에 따라 재시작 결정:
+  - `Always` (기본값): 항상 재시작
+  - `OnFailure`: 실패 시에만 재시작
+  - `Never`: 재시작 안 함
+
+**사용 사례:**
+1. **데드락 감지**: 애플리케이션이 멈춰서 응답하지 않는 상태
+2. **무한 루프**: CPU는 사용하지만 작업을 진행하지 못하는 상태
+3. **메모리 누수**: OOM 전에 재시작하여 복구
+4. **의존 서비스 장애**: 복구 불가능한 연결 오류
 
 **주의사항:**
-- `initialDelaySeconds`를 충분히 설정 (앱 시작 시간 고려)
-- 너무 민감하게 설정하면 불필요한 재시작 발생
+- `initialDelaySeconds`를 충분히 설정 (애플리케이션 시작 시간 고려)
+- 너무 민감하게 설정하면 불필요한 재시작으로 서비스 불안정
+- 시작이 느린 애플리케이션은 Startup Probe 사용 권장
 
 ### 5.3 Readiness Probe
 
-Pod이 **트래픽을 받을 준비가 되었는지** 확인한다.
+> **원문 ([kubernetes.io - Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-readiness-probes)):**
+> Sometimes, applications are temporarily unable to serve traffic. For example, an application might need to load large data or configuration files during startup, or depend on external services after startup. In such cases, you don't want to kill the application, but you don't want to send it requests either. Kubernetes provides readiness probes to detect and mitigate these situations. A pod with containers reporting that they are not ready does not receive traffic through Kubernetes Services.
+
+**번역:** 때때로 애플리케이션이 일시적으로 트래픽을 제공할 수 없는 경우가 있다. 예를 들어, 애플리케이션이 시작 중에 대용량 데이터나 설정 파일을 로드해야 하거나, 시작 후 외부 서비스에 의존할 수 있다. 이러한 경우 애플리케이션을 종료하고 싶지는 않지만, 요청을 보내고 싶지도 않다. Kubernetes는 이러한 상황을 감지하고 완화하기 위해 readiness probe를 제공한다. 컨테이너가 준비되지 않았다고 보고하는 Pod은 Kubernetes Service를 통해 트래픽을 받지 않는다.
+
+**역할:** Pod이 **트래픽을 받을 준비가 되었는지** 확인한다.
 
 ```yaml
 containers:
@@ -435,23 +477,39 @@ containers:
     httpGet:
       path: /ready
       port: 8080
-    initialDelaySeconds: 5
-    periodSeconds: 5
+    initialDelaySeconds: 5  # 컨테이너 시작 후 첫 체크까지 대기 시간
+    periodSeconds: 5        # 체크 간격
+    timeoutSeconds: 1       # 체크 타임아웃
+    successThreshold: 1     # 성공으로 간주할 연속 성공 횟수
+    failureThreshold: 3     # 실패로 간주할 연속 실패 횟수
 ```
 
-**실패 시:**
+**실패 시 동작:**
+
+> **원문 ([kubernetes.io - Pod Conditions](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions)):**
+> Readiness gates are determined by the current state of status.condition fields for the Pod. If Kubernetes cannot find such a condition in the status.conditions field of a Pod, the status of the condition is defaulted to "False".
+
+**번역:** Readiness gate는 Pod의 status.condition 필드의 현재 상태에 의해 결정된다. Kubernetes가 Pod의 status.conditions 필드에서 해당 조건을 찾을 수 없으면 조건의 상태는 기본적으로 "False"가 된다.
+
 - Pod이 Service의 **Endpoint에서 제거**됨
 - 트래픽이 해당 Pod으로 라우팅되지 않음
-- 컨테이너는 재시작되지 않음
+- 컨테이너는 재시작되지 않음 (Liveness Probe와의 차이점)
+- Pod의 Ready Condition이 False가 됨
 
 **사용 사례:**
-- 애플리케이션 초기화 완료 대기
-- 외부 의존성(DB, Cache) 연결 확인
-- 일시적 부하 상황에서 트래픽 차단
+1. **초기화 완료 대기**: 애플리케이션 시작 시 대용량 데이터/설정 로드
+2. **외부 의존성 확인**: 데이터베이스, 캐시, 메시징 큐 연결 상태 체크
+3. **일시적 과부하**: CPU/메모리 부하가 높을 때 일시적으로 트래픽 차단
+4. **Graceful Shutdown**: 종료 시그널 받은 후 새 요청 거부하면서 기존 요청 처리 완료
 
 ### 5.4 Startup Probe
 
-**시작이 느린 애플리케이션**을 위한 Probe다.
+> **원문 ([kubernetes.io - Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes)):**
+> Sometimes, you have to deal with legacy applications that might require an additional startup time on their first initialization. In such cases, it can be tricky to set up liveness probe parameters without compromising the fast response to deadlocks that motivated such a probe. The trick is to set up a startup probe with the same command, HTTP or TCP check, with a failureThreshold * periodSeconds long enough to cover the worst case startup time.
+
+**번역:** 때로는 첫 초기화 시 추가 시작 시간이 필요한 레거시 애플리케이션을 다뤄야 할 수 있다. 이러한 경우, 데드락에 대한 빠른 응답을 훼손하지 않으면서 liveness probe 매개변수를 설정하는 것이 까다로울 수 있다. 해결책은 최악의 시작 시간을 커버할 수 있을 만큼 충분히 긴 failureThreshold * periodSeconds로 동일한 명령, HTTP 또는 TCP 체크를 사용하여 startup probe를 설정하는 것이다.
+
+**역할:** **시작이 느린 애플리케이션**의 초기화 완료를 기다린다.
 
 ```yaml
 containers:
@@ -461,20 +519,34 @@ containers:
     httpGet:
       path: /startup
       port: 8080
-    failureThreshold: 30
-    periodSeconds: 10
-    # 최대 300초(5분) 동안 시작 대기
+    failureThreshold: 30    # 최대 실패 허용 횟수
+    periodSeconds: 10       # 체크 간격
+    # 최대 대기 시간: 30 × 10 = 300초 (5분)
   livenessProbe:
     httpGet:
       path: /healthz
       port: 8080
     periodSeconds: 10
+    # Startup Probe 성공 후에만 시작됨
 ```
 
+**동작 방식:**
+
+> **원문 ([kubernetes.io - Pod Lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#when-should-you-use-a-startup-probe)):**
+> If your container usually starts in more than initialDelaySeconds + failureThreshold × periodSeconds, you should specify a startup probe that checks the same endpoint as the liveness probe. The default for periodSeconds is 10s. You should then set its failureThreshold high enough to allow the container to start, without changing the default values of the liveness probe.
+
+**번역:** 컨테이너가 일반적으로 initialDelaySeconds + failureThreshold × periodSeconds보다 더 오래 시작되는 경우, liveness probe와 동일한 엔드포인트를 확인하는 startup probe를 지정해야 한다. periodSeconds의 기본값은 10초이다. 그런 다음 liveness probe의 기본값을 변경하지 않고 컨테이너가 시작될 수 있도록 failureThreshold를 충분히 높게 설정해야 한다.
+
 **특징:**
-- Startup Probe가 성공하기 전까지 Liveness/Readiness Probe 비활성화
-- 오래 걸리는 초기화 작업이 있는 레거시 애플리케이션에 유용
-- Liveness Probe의 `initialDelaySeconds`를 대체
+- Startup Probe가 **성공하기 전까지** Liveness/Readiness Probe **비활성화**
+- 시작 시간이 예측 불가능한 레거시 애플리케이션에 유용
+- Liveness Probe의 긴 `initialDelaySeconds` 대체 (더 정교한 제어)
+
+**사용 사례:**
+1. **레거시 애플리케이션**: 초기화에 수 분이 걸리는 Java 앱, 대용량 데이터 로드
+2. **가변적인 시작 시간**: 첫 시작과 재시작의 소요 시간이 다른 경우
+3. **복잡한 의존성**: 여러 외부 서비스 연결 및 초기화 필요
+4. **대용량 캐시 워밍**: 시작 시 캐시를 미리 채우는 경우
 
 ### 5.5 Probe 방법
 

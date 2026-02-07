@@ -172,6 +172,11 @@ flowchart TB
 
 ### 3.1 롤링 업데이트란?
 
+> **원문 ([kubernetes.io - Deployment Strategy](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment)):**
+> The Deployment updates Pods in a rolling update fashion when `.spec.strategy.type==RollingUpdate`. You can specify `maxUnavailable` and `maxSurge` to control the rolling update process. Max Unavailable specifies the maximum number of Pods that can be unavailable during the update. Max Surge specifies the maximum number of Pods that can be created over the desired number of Pods.
+
+**번역:** Deployment는 `.spec.strategy.type==RollingUpdate`일 때 롤링 업데이트 방식으로 Pod을 업데이트한다. `maxUnavailable`과 `maxSurge`를 지정하여 롤링 업데이트 프로세스를 제어할 수 있다. Max Unavailable은 업데이트 중 사용 불가능할 수 있는 최대 Pod 수를 지정한다. Max Surge는 원하는 Pod 수를 초과하여 생성할 수 있는 최대 Pod 수를 지정한다.
+
 롤링 업데이트는 **기존 Pod을 순차적으로 새 Pod으로 교체**하는 배포 방식이다. 서비스 중단 없이 배포할 수 있다.
 
 ```mermaid
@@ -262,6 +267,11 @@ kubectl apply -f deployment.yaml
 ```
 
 ### 4.3 롤백
+
+> **원문 ([kubernetes.io - Rolling Back a Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment)):**
+> Sometimes, you may want to rollback a Deployment; for example, when the Deployment is not stable, such as crash looping. By default, all of the Deployment's rollout history is kept in the system so that you can rollback anytime you want.
+
+**번역:** 때때로 Deployment를 롤백하고 싶을 수 있다. 예를 들어 Deployment가 크래시 루프와 같이 안정적이지 않을 때다. 기본적으로 Deployment의 모든 롤아웃 히스토리가 시스템에 보관되므로 원하는 시점으로 언제든지 롤백할 수 있다.
 
 ```bash
 # 바로 이전 버전으로 롤백

@@ -55,6 +55,13 @@ flowchart TB
 
 ### CNI 플러그인 요구사항
 
+> **원문 ([kubernetes.io - Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)):**
+> To use network policies, you must be using a networking solution which supports NetworkPolicy. Creating a NetworkPolicy resource without a controller that implements it will have no effect.
+
+**번역:** 네트워크 정책을 사용하려면 NetworkPolicy를 지원하는 네트워킹 솔루션을 사용해야 한다. 이를 구현하는 컨트롤러 없이 NetworkPolicy 리소스를 만들면 효과가 없다.
+
+**역할/설명:**
+
 **NetworkPolicy는 CNI 플러그인이 지원해야 동작한다.**
 
 | CNI 플러그인 | NetworkPolicy 지원 |
@@ -107,6 +114,13 @@ spec:
 ```
 
 ### 주요 개념
+
+> **원문 ([kubernetes.io - Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)):**
+> A pod becomes isolated by having a NetworkPolicy that selects it. Once there is any NetworkPolicy in a namespace selecting a particular pod, that pod will reject any connections that are not allowed by any NetworkPolicy. Network policies do not conflict; they are additive. If any policy or policies apply to a given pod for a given direction, the connections allowed in that direction from that pod is the union of what the applicable policies allow.
+
+**번역:** Pod는 자신을 선택하는 NetworkPolicy를 가지면 격리된다. namespace에 특정 Pod를 선택하는 NetworkPolicy가 있으면 해당 Pod는 NetworkPolicy에서 허용하지 않는 모든 연결을 거부한다. 네트워크 정책은 충돌하지 않으며 추가된다. 주어진 방향에 대해 주어진 Pod에 정책이 적용되면 해당 Pod에서 해당 방향으로 허용되는 연결은 적용 가능한 정책이 허용하는 것의 합집합이다.
+
+**역할/설명:**
 
 **podSelector**: 정책이 적용될 Pod 선택
 - 빈 selector(`{}`)는 namespace의 모든 Pod 선택

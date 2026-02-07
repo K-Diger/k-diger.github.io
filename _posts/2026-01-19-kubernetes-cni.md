@@ -12,7 +12,12 @@ Kubernetes 네트워킹은 **CNI(Container Network Interface)** 플러그인이 
 
 ### CNI란?
 
-CNI는 컨테이너 네트워킹을 위한 **표준 인터페이스**이다.
+> **원문 ([kubernetes.io - Network Plugins](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/)):**
+> Kubernetes uses the Container Network Interface (CNI) to interact with networking providers like Calico, Cilium, Contiv, Flannel, and Weave Net to implement networking. A CNI plugin is required to implement the Kubernetes network model. You must use a CNI plugin that is compatible with the v0.4.0 or later releases of the CNI specification.
+
+**번역:** Kubernetes는 Calico, Cilium, Contiv, Flannel, Weave Net과 같은 네트워킹 제공자와 상호작용하기 위해 CNI(Container Network Interface)를 사용한다. Kubernetes 네트워크 모델을 구현하려면 CNI 플러그인이 필요하다. CNI 사양의 v0.4.0 이상 릴리스와 호환되는 CNI 플러그인을 사용해야 한다.
+
+**설명:** CNI는 컨테이너 네트워킹을 위한 **표준 인터페이스**이다. Kubernetes는 CNI를 통해 다양한 네트워킹 솔루션(Flannel, Calico, Cilium 등)을 플러그인 방식으로 지원한다. 각 CNI 플러그인은 Pod에 IP를 할당하고, Pod 간 네트워크 연결을 구성하며, 필요에 따라 NetworkPolicy를 구현한다.
 
 ```mermaid
 flowchart TB

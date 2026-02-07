@@ -209,6 +209,11 @@ kubectl describe pod <pod-name> | grep "QoS Class"
 
 ## LimitRange
 
+> **원문 ([kubernetes.io - Limit Ranges](https://kubernetes.io/docs/concepts/policy/limit-range/)):**
+> A LimitRange is a policy to constrain resource allocations (limits and requests) that you can specify for each applicable object kind (such as Pod or PersistentVolumeClaim) in a namespace. A LimitRange provides constraints that can: enforce minimum and maximum compute resources usage per Pod or Container in a namespace, enforce minimum and maximum storage request per PersistentVolumeClaim in a namespace, enforce a ratio between request and limit for a resource in a namespace, set default request/limit for compute resources in a namespace and automatically inject them to Containers at runtime.
+
+**번역:** LimitRange는 네임스페이스에서 각 적용 가능한 객체 종류(Pod, PersistentVolumeClaim 등)에 대해 지정할 수 있는 리소스 할당(limits 및 requests)을 제한하는 정책이다. LimitRange는 다음과 같은 제약을 제공할 수 있다: 네임스페이스의 Pod 또는 Container당 최소 및 최대 컴퓨팅 리소스 사용량 적용, 네임스페이스의 PersistentVolumeClaim당 최소 및 최대 스토리지 요청 적용, 네임스페이스의 리소스에 대한 요청과 제한 간의 비율 적용, 네임스페이스의 컴퓨팅 리소스에 대한 기본 요청/제한 설정 및 런타임에 Container에 자동 주입.
+
 **Namespace 수준**에서 기본값과 범위를 설정한다.
 
 ### Container LimitRange

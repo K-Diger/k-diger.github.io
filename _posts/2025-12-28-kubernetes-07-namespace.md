@@ -70,6 +70,13 @@ kubectl get all -n kube-system
 
 ### 1.3 Namespaced vs Cluster-scoped 리소스
 
+> **원문 ([kubernetes.io - Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)):**
+> Not all objects are in a namespace. Namespace-scoped resources, like Pods and Services, are in a namespace. Cluster-scoped resources, like nodes and persistentVolumes, are not in a namespace.
+
+**번역:** 모든 객체가 namespace에 있는 것은 아니다. Pod 및 Service와 같은 namespace 범위 리소스는 namespace에 있다. 노드 및 persistentVolume과 같은 클러스터 범위 리소스는 namespace에 없다.
+
+**역할/설명:**
+
 **Namespaced 리소스** (Namespace에 속함):
 - Pod, Service, Deployment, ReplicaSet
 - ConfigMap, Secret
@@ -288,6 +295,13 @@ spec:
 ## 4. LimitRange
 
 ### 4.1 LimitRange란?
+
+> **원문 ([kubernetes.io - Limit Ranges](https://kubernetes.io/docs/concepts/policy/limit-range/)):**
+> A LimitRange is a policy to constrain resource allocations (to Pods or Containers) in a namespace. A LimitRange provides constraints that can: Enforce minimum and maximum compute resources usage per Pod or Container in a namespace; Enforce minimum and maximum storage request per PersistentVolumeClaim; Enforce a ratio between request and limit for a resource; Set default request/limit for compute resources and automatically inject them to Containers at runtime.
+
+**번역:** LimitRange는 namespace에서 리소스 할당(Pod 또는 Container에)을 제한하는 정책이다. LimitRange는 다음과 같은 제약 조건을 제공할 수 있다: namespace의 Pod 또는 Container별 최소 및 최대 컴퓨팅 리소스 사용량 강제; PersistentVolumeClaim별 최소 및 최대 스토리지 요청 강제; 리소스에 대한 요청과 제한 간의 비율 강제; 컴퓨팅 리소스에 대한 기본 요청/제한을 설정하고 런타임에 Container에 자동으로 주입.
+
+**역할/설명:**
 
 LimitRange는 **개별 Pod/Container의 리소스 제한**을 설정한다.
 

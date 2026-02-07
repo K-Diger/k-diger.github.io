@@ -133,6 +133,13 @@ spec:
 
 ### pathType 옵션
 
+> **원문 ([kubernetes.io - Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)):**
+> Each path in an Ingress is required to have a corresponding path type. Paths that do not include an explicit pathType will fail validation. There are three supported path types: Exact, Prefix, ImplementationSpecific. In many cases, paths in an Ingress will use the Prefix path type.
+
+**번역:** Ingress의 각 경로에는 해당 경로 타입이 있어야 한다. 명시적 pathType을 포함하지 않는 경로는 검증에 실패한다. 세 가지 지원되는 경로 타입이 있다: Exact, Prefix, ImplementationSpecific. 많은 경우 Ingress의 경로는 Prefix 경로 타입을 사용한다.
+
+**역할/설명:**
+
 **Prefix**: 경로 접두사 매칭
 ```yaml
 - path: /api
@@ -277,6 +284,13 @@ spec:
 ```
 
 ## TLS 설정
+
+> **원문 ([kubernetes.io - Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)):**
+> You can secure an Ingress by specifying a Secret that contains a TLS private key and certificate. The Ingress resource only supports a single TLS port, 443, and assumes TLS termination at the ingress point (traffic to the Service and its Pods is in plaintext).
+
+**번역:** TLS 개인 키와 인증서를 포함하는 Secret을 지정하여 Ingress를 보호할 수 있다. Ingress 리소스는 단일 TLS 포트 443만 지원하며 ingress 지점에서 TLS 종료를 가정한다(Service 및 Pod로의 트래픽은 평문이다).
+
+**역할/설명:**
 
 ### TLS Secret 생성
 
@@ -485,6 +499,13 @@ nginx.ingress.kubernetes.io/canary-by-cookie: "canary"
 ```
 
 ## IngressClass
+
+> **원문 ([kubernetes.io - Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)):**
+> Ingresses can be implemented by different controllers, often with different configuration. Each Ingress should specify a class, a reference to an IngressClass resource that contains additional configuration including the name of the controller that should implement the class.
+
+**번역:** Ingress는 종종 다른 구성을 가진 다른 컨트롤러에 의해 구현될 수 있다. 각 Ingress는 클래스를 구현해야 하는 컨트롤러의 이름을 포함한 추가 구성이 포함된 IngressClass 리소스에 대한 참조인 클래스를 지정해야 한다.
+
+**역할/설명:**
 
 Kubernetes 1.18+에서 여러 Ingress Controller를 구분하기 위해 IngressClass를 사용한다.
 

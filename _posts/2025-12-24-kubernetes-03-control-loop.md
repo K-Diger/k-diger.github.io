@@ -125,6 +125,11 @@ Reconcile 작업은 멱등해야 한다. 같은 작업을 여러 번 수행해�
 
 ### 3.1 Reconciliation이란?
 
+> **원문 ([kubernetes.io - Controllers](https://kubernetes.io/docs/concepts/architecture/controller/)):**
+> A controller tracks at least one Kubernetes resource type. These objects have a spec field that represents the desired state. The controller(s) for that resource are responsible for making the current state come closer to that desired state.
+
+**번역:** 컨트롤러는 적어도 하나의 Kubernetes 리소스 타입을 추적한다. 이러한 객체에는 원하는 상태를 나타내는 spec 필드가 있다. 해당 리소스의 컨트롤러는 현재 상태를 원하는 상태에 더 가깝게 만드는 책임이 있다.
+
 Reconciliation은 현재 상태를 원하는 상태로 만드는 작업이다. Controller의 핵심 로직이다.
 
 ```go

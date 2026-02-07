@@ -173,6 +173,13 @@ volumes:
 
 ### ConfigMap 업데이트
 
+> **원문 ([kubernetes.io - ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/)):**
+> When a ConfigMap currently consumed in a volume is updated, projected keys are eventually updated as well. The kubelet checks whether the mounted ConfigMap is fresh on every periodic sync.
+
+**번역:** 볼륨에서 현재 사용 중인 ConfigMap이 업데이트되면 투영된 키도 결국 업데이트된다. kubelet은 주기적 동기화마다 마운트된 ConfigMap이 최신인지 확인한다.
+
+**역할/설명:**
+
 **볼륨 마운트 시**: ConfigMap이 업데이트되면 kubelet이 주기적으로 동기화한다 (기본 1분).
 
 **환경 변수로 사용 시**: Pod를 재시작해야 변경 사항이 적용된다.
@@ -346,6 +353,13 @@ spec:
 
 ### Secret 보안 강화
 
+> **원문 ([kubernetes.io - Encrypting Secret Data at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)):**
+> All of the APIs in Kubernetes that let you write persistent API resource data support at-rest encryption. For example, you can enable at-rest encryption for Secrets. This at-rest encryption is additional to any system-level encryption for the etcd cluster or for the filesystem(s) on hosts where you are running the kube-apiserver.
+
+**번역:** 영구 API 리소스 데이터 쓰기를 허용하는 Kubernetes의 모든 API는 저장 데이터 암호화를 지원한다. 예를 들어 Secret에 대해 저장 데이터 암호화를 활성화할 수 있다. 이 저장 데이터 암호화는 etcd 클러스터 또는 kube-apiserver를 실행하는 호스트의 파일 시스템에 대한 시스템 수준 암호화에 추가된다.
+
+**역할/설명:**
+
 **1. etcd 암호화**:
 ```yaml
 # /etc/kubernetes/encryption-config.yaml
@@ -386,6 +400,13 @@ rules:
 - 서비스 어카운트 토큰 자동 마운트 비활성화
 
 ## Immutable ConfigMap/Secret
+
+> **원문 ([kubernetes.io - ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/)):**
+> Kubernetes feature Immutable Secrets and ConfigMaps provides an option to set individual Secrets and ConfigMaps as immutable. For clusters that extensively use ConfigMaps (at least tens of thousands of unique ConfigMap to Pod mounts), preventing changes to their data has significant advantages: protects you from accidental updates that could cause application outages; improves performance by significantly reducing load on kube-apiserver, by closing watches for ConfigMaps marked as immutable.
+
+**번역:** Kubernetes 기능인 불변 Secret 및 ConfigMap은 개별 Secret 및 ConfigMap을 불변으로 설정하는 옵션을 제공한다. ConfigMap을 광범위하게 사용하는 클러스터(최소 수만 개의 고유한 ConfigMap to Pod 마운트)의 경우 데이터 변경을 방지하면 다음과 같은 중요한 이점이 있다: 애플리케이션 중단을 일으킬 수 있는 우발적 업데이트로부터 보호; 불변으로 표시된 ConfigMap에 대한 watch를 닫아 kube-apiserver의 부하를 크게 줄여 성능을 향상.
+
+**역할/설명:**
 
 Kubernetes 1.21+에서 불변(immutable) ConfigMap/Secret을 지원한다.
 

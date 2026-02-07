@@ -206,6 +206,11 @@ spec:
 
 ### Access Modes
 
+> **원문 ([kubernetes.io - Access Modes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes)):**
+> A PersistentVolume can be mounted on a host in any way supported by the resource provider. Providers will have different capabilities and each PV's access modes are set to the specific modes supported by that particular volume. The access modes are: ReadWriteOnce (the volume can be mounted as read-write by a single node), ReadOnlyMany (the volume can be mounted as read-only by many nodes), ReadWriteMany (the volume can be mounted as read-write by many nodes), ReadWriteOncePod (the volume can be mounted as read-write by a single Pod).
+
+**번역:** PersistentVolume은 리소스 공급자가 지원하는 모든 방식으로 호스트에 마운트될 수 있다. 공급자마다 다른 기능을 가지며 각 PV의 액세스 모드는 해당 특정 볼륨에서 지원하는 특정 모드로 설정된다. 액세스 모드는 ReadWriteOnce(단일 노드에서 읽기-쓰기로 마운트 가능), ReadOnlyMany(여러 노드에서 읽기 전용으로 마운트 가능), ReadWriteMany(여러 노드에서 읽기-쓰기로 마운트 가능), ReadWriteOncePod(단일 Pod에서 읽기-쓰기로 마운트 가능)다.
+
 | 모드 | 약어 | 설명 |
 |-----|------|------|
 | ReadWriteOnce | RWO | 단일 노드에서 읽기/쓰기 |
@@ -313,6 +318,11 @@ spec:
 ```
 
 ## StorageClass
+
+> **원문 ([kubernetes.io - Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/)):**
+> A StorageClass provides a way for administrators to describe the classes of storage they offer. Different classes might map to quality-of-service levels, or to backup policies, or to arbitrary policies determined by the cluster administrators. Kubernetes itself is unopinionated about what classes represent.
+
+**번역:** StorageClass는 관리자가 제공하는 스토리지 클래스를 설명하는 방법을 제공한다. 다른 클래스는 서비스 품질 수준, 백업 정책 또는 클러스터 관리자가 결정한 임의의 정책에 매핑될 수 있다. Kubernetes 자체는 클래스가 무엇을 나타내는지에 대해 의견이 없다.
 
 **StorageClass는 동적 프로비저닝을 위한 스토리지 유형 정의**이다.
 

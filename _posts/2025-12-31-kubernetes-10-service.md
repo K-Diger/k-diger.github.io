@@ -113,6 +113,11 @@ subsets:
 
 ### ClusterIP (기본값)
 
+> **원문 ([kubernetes.io - Service Types](https://kubernetes.io/docs/concepts/services-networking/service/#type-clusterip)):**
+> Exposes the Service on a cluster-internal IP. Choosing this value makes the Service only reachable from within the cluster. This is the default that is used if you don't explicitly specify a type for a Service.
+
+**번역:** 클러스터 내부 IP에서 Service를 노출한다. 이 값을 선택하면 Service가 클러스터 내에서만 접근 가능하다. Service에 대한 type을 명시적으로 지정하지 않으면 사용되는 기본값이다.
+
 클러스터 **내부에서만** 접근 가능한 가상 IP를 할당한다.
 
 ```yaml
@@ -144,6 +149,11 @@ curl http://backend-service.default.svc.cluster.local:80
 ```
 
 ### NodePort
+
+> **원문 ([kubernetes.io - Service Types](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport)):**
+> Exposes the Service on each Node's IP at a static port (the NodePort). To make the node port available, Kubernetes sets up a cluster IP address, the same as if you had requested a Service of type: ClusterIP.
+
+**번역:** 각 노드의 IP에서 정적 포트(NodePort)로 Service를 노출한다. 노드 포트를 사용 가능하게 하기 위해 Kubernetes는 type: ClusterIP의 Service를 요청한 것과 동일하게 클러스터 IP 주소를 설정한다.
 
 각 노드의 특정 포트를 열어 **외부에서 접근**할 수 있게 한다.
 
@@ -184,6 +194,11 @@ flowchart TB
 - 노드가 다운되면 해당 노드로의 접근 불가
 
 ### LoadBalancer
+
+> **원문 ([kubernetes.io - Service Types](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer)):**
+> Exposes the Service externally using an external load balancer. Kubernetes does not directly offer a load balancing component; you must provide one, or you can integrate your Kubernetes cluster with a cloud provider.
+
+**번역:** 외부 로드 밸런서를 사용하여 Service를 외부로 노출한다. Kubernetes는 직접 로드 밸런싱 컴포넌트를 제공하지 않는다. 로드 밸런서를 제공하거나 Kubernetes 클러스터를 클라우드 공급자와 통합해야 한다.
 
 클라우드 프로바이더의 **외부 로드밸런서**를 프로비저닝한다.
 
@@ -453,6 +468,11 @@ spec:
 **장점**: Pod의 포트 번호가 변경되어도 Service 수정 불필요.
 
 ## External Traffic Policy
+
+> **원문 ([kubernetes.io - Service External Traffic Policy](https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip)):**
+> Services with type LoadBalancer or NodePort have a field spec.externalTrafficPolicy which denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints. There are two available options: Cluster (default) and Local. Cluster obscures the client source IP and may cause a second hop to another node, but should have good overall load-spreading. Local preserves the client source IP and avoids a second hop for LoadBalancer and NodePort type Services, but risks potentially imbalanced traffic spreading.
+
+**번역:** LoadBalancer 또는 NodePort 타입의 Service에는 외부 트래픽을 노드 로컬 엔드포인트로 라우팅할지 클러스터 전체 엔드포인트로 라우팅할지를 나타내는 spec.externalTrafficPolicy 필드가 있다. Cluster(기본값)와 Local의 두 가지 옵션이 있다. Cluster는 클라이언트 소스 IP를 숨기고 다른 노드로의 두 번째 홉이 발생할 수 있지만 전체적으로 좋은 로드 분산을 제공한다. Local은 클라이언트 소스 IP를 보존하고 LoadBalancer 및 NodePort 타입 Service의 두 번째 홉을 방지하지만 잠재적으로 불균형한 트래픽 분산이 발생할 위험이 있다.
 
 외부 트래픽(NodePort, LoadBalancer)의 라우팅 방식을 제어한다.
 

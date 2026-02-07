@@ -12,7 +12,12 @@ tags: [kubernetes, opa, gatekeeper, policy, security]
 
 ### OPA란?
 
-OPA는 **정책을 코드로 관리**하는 오픈소스 정책 엔진이다.
+> **원문 ([openpolicyagent.org - Introduction](https://www.openpolicyagent.org/docs/latest/)):**
+> The Open Policy Agent (OPA, pronounced "oh-pa") is an open source, general-purpose policy engine that unifies policy enforcement across the stack. OPA provides a high-level declarative language that lets you specify policy as code and simple APIs to offload policy decision-making from your software.
+
+**번역:** OPA(Open Policy Agent, "오-파"라고 발음)는 스택 전반에 걸쳐 정책 시행을 통합하는 오픈소스 범용 정책 엔진이다. OPA는 정책을 코드로 지정할 수 있는 고수준 선언적 언어와 소프트웨어에서 정책 의사결정을 오프로드할 수 있는 간단한 API를 제공한다.
+
+**설명:** OPA는 **정책을 코드로 관리**하는 오픈소스 정책 엔진이다. Rego라는 선언적 언어로 정책을 작성하며, Kubernetes뿐만 아니라 마이크로서비스, CI/CD 파이프라인, API 게이트웨이 등 다양한 환경에서 정책을 시행할 수 있다. Kubernetes에서는 Gatekeeper를 통해 Admission Controller로 통합되어 리소스 생성 시 정책을 검증한다.
 
 ```mermaid
 flowchart TB

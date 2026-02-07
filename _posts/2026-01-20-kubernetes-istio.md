@@ -10,6 +10,15 @@ tags: [kubernetes, istio, service-mesh, envoy, microservices]
 
 ## Service Mesh 개념
 
+### Service Mesh란?
+
+> **원문 ([istio.io - The Istio service mesh](https://istio.io/latest/about/service-mesh/)):**
+> A service mesh is an infrastructure layer that gives applications capabilities like zero-trust security, observability, and advanced traffic management, without code changes.
+
+**번역:** 서비스 메시는 애플리케이션에 제로 트러스트 보안, 관측성, 고급 트래픽 관리와 같은 기능을 코드 변경 없이 제공하는 인프라 계층이다.
+
+**설명:** Service Mesh는 마이크로서비스 간 통신을 관리하는 전용 인프라 계층이다. 애플리케이션 코드를 수정하지 않고도 서비스 간 보안, 관측성, 트래픽 제어를 구현할 수 있다. Istio는 이러한 Service Mesh를 Kubernetes 환경에서 구현하는 가장 인기 있는 솔루션이다.
+
 ### 왜 Service Mesh가 필요한가?
 
 마이크로서비스의 네트워킹 과제:

@@ -30,6 +30,13 @@ mermaid: true
 
 ### 1.2 StatefulSet의 핵심 특징
 
+> **원문 ([kubernetes.io - StatefulSets](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)):**
+> StatefulSet provides guarantees about ordering and uniqueness. For a StatefulSet with N replicas, when Pods are being deployed, they are created sequentially, in order from {0..N-1}. When Pods are being deleted, they are terminated in reverse order, from {N-1..0}. Before a scaling operation is applied to a Pod, all of its predecessors must be Running and Ready.
+
+**번역:** StatefulSet은 순서와 고유성에 대한 보장을 제공한다. N개의 복제본이 있는 StatefulSet의 경우 Pod가 배포될 때 {0..N-1} 순서대로 순차적으로 생성된다. Pod가 삭제될 때는 {N-1..0}에서 역순으로 종료된다. 스케일링 작업이 Pod에 적용되기 전에 모든 선행 Pod가 Running 및 Ready 상태여야 한다.
+
+**역할/설명:**
+
 **1. 안정적인 네트워크 ID:**
 ```
 Pod 이름: <statefulset-name>-<ordinal>
@@ -108,6 +115,13 @@ spec:
 ```
 
 ### 1.4 Headless Service
+
+> **원문 ([kubernetes.io - StatefulSets](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)):**
+> The StatefulSet can use a Headless Service to control the domain of its Pods. The domain managed by this Service takes the form: $(service name).$(namespace).svc.cluster.local, where "cluster.local" is the cluster domain. As each Pod is created, it gets a matching DNS subdomain, taking the form: $(podname).$(governing service domain), where the governing service is defined by the serviceName field on the StatefulSet.
+
+**번역:** StatefulSet은 Headless Service를 사용하여 Pod의 도메인을 제어할 수 있다. 이 Service가 관리하는 도메인은 $(service name).$(namespace).svc.cluster.local 형식을 취하며 "cluster.local"은 클러스터 도메인이다. 각 Pod가 생성되면 일치하는 DNS 하위 도메인을 얻으며 $(podname).$(governing service domain) 형식을 취한다. governing service는 StatefulSet의 serviceName 필드로 정의된다.
+
+**역할/설명:**
 
 StatefulSet은 **Headless Service**를 사용하여 각 Pod에 고유한 DNS 레코드를 생성한다.
 
@@ -307,6 +321,13 @@ spec:
 
 ### 3.1 Job이란?
 
+> **원문 ([kubernetes.io - Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/)):**
+> A Job creates one or more Pods and will continue to retry execution of the Pods until a specified number of them successfully terminate. As pods successfully complete, the Job tracks the successful completions. When a specified number of successful completions is reached, the task (ie, Job) is complete. Deleting a Job will clean up the Pods it created.
+
+**번역:** Job은 하나 이상의 Pod를 생성하고 지정된 수의 Pod가 성공적으로 종료될 때까지 Pod 실행을 계속 재시도한다. Pod가 성공적으로 완료되면 Job은 성공적인 완료를 추적한다. 지정된 수의 성공적인 완료에 도달하면 작업(즉, Job)이 완료된다. Job을 삭제하면 생성된 Pod가 정리된다.
+
+**역할/설명:**
+
 Job은 **일회성 작업을 완료될 때까지 실행**하는 컨트롤러다.
 
 ```yaml
@@ -351,6 +372,13 @@ spec:
 ## 4. CronJob
 
 ### 4.1 CronJob이란?
+
+> **원문 ([kubernetes.io - CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)):**
+> A CronJob creates Jobs on a repeating schedule. CronJob is meant for performing regular scheduled actions such as backups, report generation, and so on. One CronJob object is like one line of a crontab (cron table) file on a Unix system. It runs a Job periodically on a given schedule, written in Cron format.
+
+**번역:** CronJob은 반복 일정에 따라 Job을 생성한다. CronJob은 백업, 보고서 생성 등과 같은 정기적으로 예약된 작업을 수행하기 위한 것이다. 하나의 CronJob 객체는 Unix 시스템의 crontab(cron table) 파일의 한 줄과 같다. Cron 형식으로 작성된 주어진 일정에 따라 주기적으로 Job을 실행한다.
+
+**역할/설명:**
 
 CronJob은 **스케줄에 따라 Job을 생성**하는 컨트롤러다.
 

@@ -11,6 +11,15 @@ mermaid: true
 
 ## CKS 시험 개요
 
+### CKS란?
+
+> **원문 ([CNCF - Certified Kubernetes Security Specialist](https://www.cncf.io/training/certification/cks/)):**
+> The Certified Kubernetes Security Specialist (CKS) program provides assurance that a CKS has the skills, knowledge, and competence on a broad range of best practices for securing container-based applications and Kubernetes platforms during build, deployment and runtime.
+
+**번역:** CKS(Certified Kubernetes Security Specialist) 프로그램은 CKS 자격 보유자가 컨테이너 기반 애플리케이션과 Kubernetes 플랫폼을 빌드, 배포 및 런타임 중에 보호하기 위한 광범위한 모범 사례에 대한 기술, 지식 및 역량을 갖추고 있음을 보증한다.
+
+**설명:** CKS는 Kubernetes 보안 전문가 자격증으로, 클러스터 보안 설정, 시스템 하드닝, 워크로드 보안, 공급망 보안, 런타임 보안 등 Kubernetes 환경의 전반적인 보안 역량을 검증한다. CKA 자격증을 전제조건으로 요구하며, 실습 기반 시험으로 진행된다.
+
 ### 시험 정보
 
 | 항목 | 내용 |
@@ -35,6 +44,18 @@ mermaid: true
 ---
 
 ## 클러스터 설정 보안
+
+### API Server 보안 3단계
+
+> **원문 ([kubernetes.io - Controlling Access to the Kubernetes API](https://kubernetes.io/docs/concepts/security/controlling-access/)):**
+> Once TLS is established, the HTTP request moves to the Authentication step. After the request is authenticated as coming from a specific user, the request must be authorized. Admission Control modules are software modules that can modify or reject requests.
+
+**번역:** TLS가 설정되면 HTTP 요청은 인증(Authentication) 단계로 이동한다. 요청이 특정 사용자로부터 온 것으로 인증된 후, 요청은 승인(Authorization)되어야 한다. Admission Control 모듈은 요청을 수정하거나 거부할 수 있는 소프트웨어 모듈이다.
+
+**설명:** Kubernetes API Server는 3단계 보안 프로세스를 거친다:
+1. **Authentication (인증)**: 누구인가? - 클라이언트 인증서, 토큰, JWT 등으로 사용자 확인
+2. **Authorization (인가)**: 권한이 있는가? - RBAC, ABAC 등으로 허용된 작업인지 확인
+3. **Admission Control (승인 제어)**: 정책을 만족하는가? - 리소스 내용을 검증하고 필요시 수정 또는 거부
 
 ### API Server란?
 
@@ -222,6 +243,15 @@ ETCDCTL_API=3 etcdctl get /registry/secrets/default/my-secret \
   --cert=/etc/kubernetes/pki/etcd/server.crt \
   --key=/etc/kubernetes/pki/etcd/server.key | hexdump -C
 ```
+
+### kubelet 보안
+
+> **원문 ([kubernetes.io - Kubelet authentication/authorization](https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/)):**
+> Kubelets expose HTTPS endpoints which grant powerful control over the node and containers. By default Kubelets allow unauthenticated access to this API. Production clusters should enable Kubelet authentication and authorization.
+
+**번역:** Kubelet은 노드와 컨테이너에 대한 강력한 제어를 부여하는 HTTPS 엔드포인트를 노출한다. 기본적으로 Kubelet은 이 API에 대한 인증되지 않은 접근을 허용한다. 프로덕션 클러스터는 Kubelet 인증 및 인가를 활성화해야 한다.
+
+**설명:** Kubelet은 각 워커 노드에서 실행되는 에이전트로 Pod를 실제로 실행하고 관리한다. Kubelet API가 노출되어 있으면 공격자가 Pod 정보를 조회하거나 명령을 실행할 수 있으므로, 익명 접근을 차단하고 Webhook 인증/인가를 활성화해야 한다.
 
 ### kubelet이란?
 
@@ -419,7 +449,18 @@ spec:
 
 ### Pod Security Standards (PSS)란?
 
-**Pod Security Standards**는 Pod의 보안 수준을 정의하는 표준이다. Kubernetes 1.25부터 기본 제공된다.
+> **원문 ([kubernetes.io - Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)):**
+> The Pod Security Standards define three different policies to broadly cover the security spectrum. These policies are cumulative and range from highly-permissive to highly-restrictive.
+> - **Privileged**: Unrestricted policy, providing the widest possible level of permissions. This policy allows for known privilege escalations.
+> - **Baseline**: Minimally restrictive policy which prevents known privilege escalations. Allows the default (minimally specified) Pod configuration.
+> - **Restricted**: Heavily restricted policy, following current Pod hardening best practices.
+
+**번역:** Pod Security Standards는 보안 범위를 광범위하게 다루는 세 가지 정책을 정의한다. 이 정책들은 누적적이며 매우 허용적인 것부터 매우 제한적인 것까지 범위를 갖는다.
+- **Privileged**: 제한 없는 정책으로, 가능한 가장 광범위한 권한을 제공한다. 이 정책은 알려진 권한 상승을 허용한다.
+- **Baseline**: 최소한으로 제한적인 정책으로 알려진 권한 상승을 방지한다. 기본(최소 지정) Pod 구성을 허용한다.
+- **Restricted**: 현재 Pod 강화 모범 사례를 따르는 매우 제한적인 정책이다.
+
+**설명:** **Pod Security Standards**는 Pod의 보안 수준을 정의하는 표준이다. Kubernetes 1.25부터 기본 제공되며, Pod Security Policy(PSP)를 대체한다. Namespace 레벨에서 라벨을 통해 적용할 수 있다.
 
 ```mermaid
 flowchart TB
