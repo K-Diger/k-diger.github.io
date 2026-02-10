@@ -4,6 +4,7 @@ title: "Istio Service Mesh"
 date: 2026-01-20
 categories: [Kubernetes]
 tags: [kubernetes, istio, service-mesh, envoy, microservices]
+mermaid: true
 ---
 
 마이크로서비스 아키텍처에서 서비스 간 통신 관리는 복잡하다. **Service Mesh**는 이 복잡성을 인프라 레이어로 추상화하여 관리한다. **Istio**는 가장 널리 사용되는 Service Mesh 솔루션이다.

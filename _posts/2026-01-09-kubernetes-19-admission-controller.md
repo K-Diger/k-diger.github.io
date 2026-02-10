@@ -4,6 +4,7 @@ title: "Part 19/26: Admission Controller와 Webhook"
 date: 2026-01-09
 categories: [Kubernetes]
 tags: [kubernetes, admission-controller, webhook, security, cka, cks]
+mermaid: true
 ---
 
 > **원문 ([kubernetes.io - Admission Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)):**

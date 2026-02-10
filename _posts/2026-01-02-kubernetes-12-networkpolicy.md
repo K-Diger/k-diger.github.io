@@ -4,6 +4,7 @@ title: "Part 12/26: NetworkPolicy"
 date: 2026-01-02
 categories: [Kubernetes]
 tags: [kubernetes, networkpolicy, security, networking, calico, cka]
+mermaid: true
 ---
 
 기본적으로 Kubernetes 클러스터 내의 모든 Pod는 서로 자유롭게 통신할 수 있다. 이는 마이크로서비스 간 통신에 편리하지만, 보안 관점에서는 위험할 수 있다. **NetworkPolicy**는 Pod 수준에서 네트워크 트래픽을 제어하는 방화벽 역할을 한다.

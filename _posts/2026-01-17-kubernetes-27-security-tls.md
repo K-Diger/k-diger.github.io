@@ -4,6 +4,7 @@ title: "TLS/PKI 인증서 관리"
 date: 2026-01-17
 categories: [Kubernetes]
 tags: [kubernetes, security, tls, pki, certificate, ssh, cks]
+mermaid: true
 ---
 
 Kubernetes 보안을 이해하려면 **TLS와 PKI(Public Key Infrastructure)**의 원리를 알아야 한다. 이 장에서는 자주 헷갈리는 공개키/개인키 암호화 원리부터 Kubernetes 인증서 구조까지 다룬다.

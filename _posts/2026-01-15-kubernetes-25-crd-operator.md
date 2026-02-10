@@ -4,6 +4,7 @@ title: "Part 25/26: CRD와 Operator"
 date: 2026-01-15
 categories: [Kubernetes]
 tags: [kubernetes, crd, operator, custom-resource, cka]
+mermaid: true
 ---
 
 Kubernetes는 **Custom Resource Definition(CRD)**를 통해 API를 확장할 수 있다. **Operator 패턴**은 CRD와 컨트롤러를 결합하여 복잡한 애플리케이션을 자동으로 관리한다.

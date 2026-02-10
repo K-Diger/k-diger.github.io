@@ -4,6 +4,7 @@ title: "Part 11/26: Ingress와 TLS 설정"
 date: 2026-01-01
 categories: [Kubernetes]
 tags: [kubernetes, ingress, nginx, traefik, networking, tls, cka]
+mermaid: true
 ---
 
 Service의 NodePort나 LoadBalancer는 L4(TCP/UDP) 수준에서 동작한다. 웹 애플리케이션에서 URL 경로나 호스트 기반 라우팅, TLS 종료 등 L7(HTTP/HTTPS) 기능이 필요할 때 **Ingress**를 사용한다.

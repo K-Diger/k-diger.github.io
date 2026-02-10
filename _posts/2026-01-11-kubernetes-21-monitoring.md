@@ -4,6 +4,7 @@ title: "Part 21/26: Metrics Server와 로깅"
 date: 2026-01-11
 categories: [Kubernetes]
 tags: [kubernetes, monitoring, logging, metrics-server, prometheus, cka]
+mermaid: true
 ---
 
 Kubernetes 클러스터 운영에서 **모니터링**과 **로깅**은 문제 진단과 성능 최적화의 핵심이다. 이 장에서는 Kubernetes의 기본 모니터링 도구와 로그 수집 방법을 다룬다.

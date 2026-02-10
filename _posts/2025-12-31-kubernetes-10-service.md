@@ -4,6 +4,7 @@ title: "Part 10/26: Service 타입과 Endpoint"
 date: 2025-12-31
 categories: [Kubernetes]
 tags: [kubernetes, service, clusterip, nodeport, loadbalancer, networking, cka]
+mermaid: true
 ---
 
 Kubernetes에서 Pod는 일시적(ephemeral)인 존재이다. Pod가 재시작되면 IP 주소가 변경되고, Deployment로 관리되는 Pod들은 언제든지 새로운 Pod로 교체될 수 있다. 이러한 환경에서 안정적인 네트워크 통신을 위해 **Service**라는 추상화 계층이 필요하다.

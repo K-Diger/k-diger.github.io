@@ -4,6 +4,7 @@ title: "Part 22/26: 트러블슈팅 체크리스트"
 date: 2026-01-12
 categories: [Kubernetes]
 tags: [kubernetes, troubleshooting, debugging, cka]
+mermaid: true
 ---
 
 Kubernetes 트러블슈팅은 체계적인 접근이 필요하다. 문제가 발생한 계층(애플리케이션, Pod, 노드, 클러스터)을 파악하고, 단계별로 원인을 좁혀나가야 한다.

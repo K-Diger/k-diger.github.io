@@ -4,6 +4,7 @@ title: "OPA/Gatekeeper"
 date: 2026-01-21
 categories: [Kubernetes]
 tags: [kubernetes, opa, gatekeeper, policy, security]
+mermaid: true
 ---
 
 **OPA(Open Policy Agent)**는 범용 정책 엔진이고, **Gatekeeper**는 OPA를 Kubernetes에 통합하여 Admission Control 정책을 관리한다. 이를 통해 "컨테이너는 반드시 non-root로 실행되어야 한다" 같은 정책을 선언적으로 적용할 수 있다.

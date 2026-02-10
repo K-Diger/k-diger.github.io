@@ -239,7 +239,7 @@ flowchart TB
         Loop["for item := range queue<br/>    reconcile(item)"]
     end
 
-    API -->|Watch<br/>HTTP Long-poll / WebSocket| Reflector
+    API -->|"Watch<br/>HTTP Long-poll / WebSocket"| Reflector
     Reflector --> Indexer
     Reflector -->|이벤트| Handlers
     Indexer -->|조회| Handlers

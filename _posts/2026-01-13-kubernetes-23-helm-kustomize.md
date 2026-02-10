@@ -4,6 +4,7 @@ title: "Part 23/26: Helm 차트와 Kustomize"
 date: 2026-01-13
 categories: [Kubernetes]
 tags: [kubernetes, helm, kustomize, package-management, cka]
+mermaid: true
 ---
 
 Kubernetes 애플리케이션 배포에서 여러 YAML 파일을 관리하는 것은 번거롭다. **Helm**과 **Kustomize**는 이 문제를 해결하는 대표적인 도구이다. Helm은 패키지 관리자 방식으로, Kustomize는 오버레이 방식으로 설정을 관리한다.

@@ -553,7 +553,7 @@ spec:
 
 ```mermaid
 flowchart TB
-    APPSET[ApplicationSet<br/>템플릿 + 생성기]
+    APPSET["ApplicationSet<br/>템플릿 + 생성기"]
     APP1[App: dev]
     APP2[App: staging]
     APP3[App: prod]

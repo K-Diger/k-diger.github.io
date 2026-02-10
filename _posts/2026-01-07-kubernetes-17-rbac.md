@@ -4,6 +4,7 @@ title: "Part 17/26: RBAC와 ServiceAccount"
 date: 2026-01-07
 categories: [Kubernetes]
 tags: [kubernetes, rbac, security, role, clusterrole, serviceaccount, cka]
+mermaid: true
 ---
 
 Kubernetes의 **RBAC(Role-Based Access Control)**은 "누가" "무엇을" "어디서" 할 수 있는지를 제어한다. API 요청의 인증(Authentication) 이후 인가(Authorization) 단계에서 RBAC 규칙이 적용된다.

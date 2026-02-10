@@ -4,6 +4,7 @@ title: "Part 15/26: 스케줄링 - Taint, Affinity"
 date: 2026-01-05
 categories: [Kubernetes]
 tags: [kubernetes, scheduling, nodeSelector, affinity, taints, tolerations, cka]
+mermaid: true
 ---
 
 Kubernetes 스케줄러는 Pod가 실행될 노드를 결정한다. 기본적으로 리소스 가용성과 균형을 고려하지만, **nodeSelector**, **Affinity/Anti-Affinity**, **Taints/Tolerations** 등을 통해 세밀한 제어가 가능하다.

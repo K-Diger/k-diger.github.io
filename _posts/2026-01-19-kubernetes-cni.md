@@ -4,6 +4,7 @@ title: "CNI - Calico, Cilium, Flannel"
 date: 2026-01-19
 categories: [Kubernetes]
 tags: [kubernetes, cni, calico, cilium, flannel, networking]
+mermaid: true
 ---
 
 Kubernetes 네트워킹은 **CNI(Container Network Interface)** 플러그인이 담당한다. 클러스터의 요구사항에 따라 적절한 CNI를 선택하는 것이 중요하다. 이 장에서는 주요 CNI 플러그인의 특징과 선택 기준을 다룬다.
