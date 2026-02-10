@@ -1095,6 +1095,21 @@ openspec init
 /opsx:archive
 ```
 
+#### 실전 사용 가이드
+
+**전제조건:** Node.js 20.19.0 이상
+
+위 코드 블록의 각 명령어가 실제로 무엇을 하는지 단계별로 살펴보자:
+
+1. `npm install -g @fission-ai/openspec@latest` - OpenSpec CLI를 전역으로 설치한다. 패키지 이름이 `openspec`이 아니라 `@fission-ai/openspec`임에 주의하자.
+2. `openspec init` - 프로젝트 루트에 `.openspec/` 디렉토리와 기본 설정 파일을 생성한다.
+3. `/opsx:new [이름]` - 새 변경사항(델타 스펙)을 시작한다. 이름은 기능을 설명하는 짧은 문자열이다.
+4. `/opsx:ff` - "Fast Forward"의 약자로, proposal → specs → design → tasks 문서를 한 번에 자동 생성한다. 각 단계를 개별적으로 진행할 수도 있지만, 처음에는 `/opsx:ff`로 한 번에 생성한 후 검토하는 것이 효율적이다.
+5. `/opsx:apply` - 생성된 tasks를 기반으로 실제 코드 구현을 시작한다.
+6. `/opsx:archive` - 완료된 변경사항을 보관하고, 메인 스펙 문서를 업데이트한다.
+
+**브라운필드 프로젝트에서의 활용 팁:** 기존 코드베이스가 있는 프로젝트에서 OpenSpec을 시작할 때는, `openspec init` 후에 기존 아키텍처를 설명하는 기본 스펙을 먼저 작성하는 것이 좋다. 이후 새 기능을 추가할 때마다 `/opsx:new`로 델타 스펙을 만들면, 전체 스펙을 다시 쓰지 않고 변경사항만 관리할 수 있다.
+
 GitHub: [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) / 공식: [openspec.pro](https://openspec.pro)
 
 ### 5.2 GitHub Spec Kit
@@ -1107,6 +1122,55 @@ GitHub: [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) / 공식: 
 **헌법(Constitution)이란?** 프로젝트의 헌법은 마치 국가의 헌법처럼, "절대로 어겨서는 안 될 규칙"을 정의한 문서다. AI 에이전트가 코드를 생성할 때 이 헌법을 항상 지켜야 한다. 예를 들어 "모든 API 응답은 JSON 형식이어야 한다", "보안 키는 .env 파일에만 저장해야 한다" 같은 규칙이다.
 
 GitHub과 Microsoft가 지원하는 이 도구는 기업 환경과 규제가 많은 산업을 겨냥했다. 4단계 게이트 플로우를 엄격하게 따른다: Specify -> Plan -> Tasks -> Implement. 각 단계를 완료해야 다음으로 넘어갈 수 있다.
+
+#### 설치 및 실전 사용 가이드
+
+**전제조건:** Python 3.11 이상, UV 패키지 매니저, Git
+
+```bash
+# UV 패키지 매니저 설치 (없다면)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 방법 1: 영구 설치 (권장)
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+
+# 방법 2: 일회성 실행
+uvx --from git+https://github.com/github/spec-kit.git specify init my-project
+```
+
+**프로젝트 초기화:**
+
+```bash
+specify init my-project
+# → AI 에이전트 선택 프롬프트가 나타남 (Claude Code, Copilot, Cursor 등 17개 이상 지원)
+```
+
+초기화가 완료되면 프로젝트에 `speckit.constitution` 파일이 생성된다. 이 파일에 프로젝트의 "헌법"(절대 규칙)을 정의한다:
+
+```markdown
+<!-- speckit.constitution 예시 -->
+
+- 모든 API 응답은 JSON 형식이어야 한다
+- 보안 키는 .env 파일에만 저장해야 한다
+- 모든 public 함수에는 JSDoc 주석이 필요하다
+- SQL 쿼리는 반드시 파라미터화해야 한다
+```
+
+**4단계 게이트 워크플로우 (AI IDE에서 실행):**
+
+```bash
+# 1단계: 기능 요구사항 정의
+# speckit.specify 파일에 요구사항 작성 후:
+/speckit.plan          # AI가 기술 설계 전략 수립
+
+# 2단계: 설계 검토 및 승인 후:
+/speckit.tasks         # 구체적 작업 단위로 분해
+
+# 3단계: 작업 검토 및 승인 후:
+/speckit.implement     # AI가 코드 구현 시작
+```
+
+각 단계(`/speckit.plan`, `/speckit.tasks`, `/speckit.implement`)는 이전 단계가 완료되고 승인되어야만 실행할 수 있다. 이 엄격한 게이트 구조가 Spec Kit의 핵심 특징이다.
 
 GitHub: [github/spec-kit](https://github.com/github/spec-kit)
 
@@ -1137,6 +1201,40 @@ npx bmad-method install
 
 복잡한 도메인 로직이 많은 프로젝트에서 특히 효과적이다. 다만 학습 곡선이 가장 높고, 프로토타이핑에는 과하다.
 
+#### 실전 사용 가이드
+
+**전제조건:** Node.js v20 이상
+
+**비대화형 자동 설치 (CI/CD 또는 스크립트용):**
+
+```bash
+npx bmad-method install --directory ./my-project --modules bmm --tools claude-code --yes
+```
+
+BMAD는 작업 규모에 따라 두 가지 경로를 제공한다:
+
+**빠른 흐름 (버그 수정, 소규모 기능):**
+
+```bash
+/quick-spec     # 코드베이스 분석 + 기술 사양 한 번에 정의
+/dev-story      # 각 스토리별 구현
+/code-review    # 품질 검증
+```
+
+**완전 계획 경로 (신규 제품, 대규모 플랫폼):**
+
+```bash
+/product-brief              # 문제 정의 + MVP 범위 설정
+/create-prd                 # 전체 요구사항 문서(PRD) 생성
+/create-architecture        # 기술 아키텍처 설계
+/create-epics-and-stories   # 에픽과 스토리로 작업 분해
+/sprint-planning            # 스프린트 추적 시작
+# 각 스토리마다 반복:
+/create-story → /dev-story → /code-review
+```
+
+각 슬래시 명령어는 내부적으로 12개 이상의 전문 에이전트(PM, 아키텍트, 개발자, 스크럼마스터, QA 등) 중 적합한 역할을 자동으로 호출한다.
+
 GitHub: [bmad-code-org/BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)
 
 ### 5.4 Kiro (AWS)
@@ -1151,6 +1249,54 @@ AWS가 만든 독립형 IDE + CLI로, SDD가 개발 환경 자체에 내장돼 �
 Requirements는 **EARS 표기법**을 사용한다. EARS(Easy Approach to Requirements Syntax)는 요구사항을 기계가 파싱하기 쉬운 형태로 작성하는 방법이다. 패턴은 "[조건] [주체] [행동] [결과]"로, 예를 들어 "사용자가 로그인 버튼을 클릭했을 때, 시스템은 인증 페이지로 이동해야 한다"와 같이 작성한다.
 
 Hook/정책으로 파일 저장마다 테스트, 문서, 보안 체크가 자동 실행된다. 감사 추적(Audit Trail)이 내장돼 있어서, 모든 변경의 이력이 자동으로 기록된다.
+
+#### 설치 및 실전 사용 가이드
+
+**시스템 요구사항:**
+
+- macOS: Intel 또는 Apple Silicon
+- Windows: 10/11 (64비트만, ARM 미지원)
+- Linux: glibc 2.39 이상 (Ubuntu 24+, Fedora 40+, Arch Linux 등)
+
+**설치:**
+
+```bash
+# 방법 1: macOS/Linux 자동 설치
+curl -fsSL https://cli.kiro.dev/install | bash
+
+# 방법 2: 수동 다운로드
+# https://kiro.dev/downloads 에서 운영체제에 맞는 파일 다운로드 후 실행
+```
+
+**초기 설정:**
+
+Kiro를 처음 실행하면 인증 화면이 나타난다. GitHub, Google, AWS Builder ID, AWS IAM Identity Center 중 하나로 로그인한다. AWS 계정이 필수는 아니다.
+
+**Specs를 이용한 SDD 워크플로우:**
+
+1. 프로젝트를 열고 Kiro 패널에서 "Specs" 섹션으로 이동한다
+2. 새 스펙 생성 버튼을 클릭하고, 자연어로 기능을 설명한다
+3. Kiro가 자동으로 PRD → Requirements(EARS 형식) → Design → Tasks를 생성한다
+4. 각 단계에서 검토하고 승인한 후 다음으로 진행한다
+
+**Agent Hooks 설정:**
+
+`Cmd+Shift+P` (macOS) 또는 `Ctrl+Shift+P` (Windows/Linux)로 Command Palette를 열고, "Kiro: Open Kiro Hook UI"를 선택한다. 자연어로 워크플로우를 정의하면, 파일 저장/생성/삭제 시 자동으로 테스트, 문서 업데이트, 보안 검사가 실행된다.
+
+**Steering Files (프로젝트 규칙 정의):**
+
+```text
+프로젝트/
+├── .kiro/
+│   └── steering/
+│       ├── product.md     ← 제품 목적, 목표 사용자, 비즈니스 목표
+│       ├── tech.md        ← 프레임워크, 라이브러리, 기술 제약사항
+│       └── structure.md   ← 파일 구조, 네이밍 규칙, 아키텍처
+```
+
+글로벌 설정은 `~/.kiro/steering/`에 저장하면 모든 프로젝트에 적용된다.
+
+**가격:** Free(50크레딧/월), Pro $20/월(1,000크레딧), Pro+ $40/월(2,000크레딧), Power $200/월(10,000크레딧). 신규 가입 시 500 보너스 크레딧(30일 유효)이 지급된다.
 
 공식: [kiro.dev](https://kiro.dev)
 
@@ -1173,6 +1319,63 @@ npx cc-sdd@latest --claude --lang ko
 /kiro:spec-design photo-albums-ko
 /kiro:spec-tasks photo-albums-ko
 ```
+
+#### 실전 사용 가이드
+
+**전제조건:** Node.js
+
+위 명령어는 Claude Code용이지만, 다른 AI 도구에서도 사용할 수 있다:
+
+```bash
+# Cursor IDE용
+npx cc-sdd@latest --cursor --lang ko
+
+# Gemini CLI용
+npx cc-sdd@latest --gemini --lang ko
+
+# GitHub Copilot용
+npx cc-sdd@latest --copilot --lang ko
+
+# Windsurf IDE용
+npx cc-sdd@latest --windsurf --lang ko
+
+# 변경사항 미리보기 (실제 적용 전 확인)
+npx cc-sdd@latest --claude --lang ko --dry-run
+
+# 사양 저장 디렉토리 변경
+npx cc-sdd@latest --claude --lang ko --kiro-dir docs
+```
+
+**전체 워크플로우 예제 (전자상거래 플랫폼):**
+
+```bash
+# 1단계: 프로젝트에 cc-sdd 초기화
+cd ecommerce-project
+npx cc-sdd@latest --claude --lang ko
+
+# 2단계: 사양 초기화 - 기능을 자연어로 설명
+/kiro:spec-init "전자상거래 플랫폼 - 상품 목록, 장바구니, 결제 기능"
+
+# 3단계: EARS 형식 요구사항 자동 생성 → 팀 검토
+/kiro:spec-requirements ecommerce-platform-ko
+
+# 4단계: 아키텍처 설계 + Mermaid 다이어그램 → 팀 검토
+/kiro:spec-design ecommerce-platform-ko -y
+
+# 5단계: 구현 작업 분해 (의존성 추적 포함)
+/kiro:spec-tasks ecommerce-platform-ko -y
+
+# 6단계: 승인된 사양 기반으로 코드 구현
+/kiro:spec-impl ecommerce-platform-ko
+```
+
+기존 코드를 개선할 때는 `/kiro:steering` 명령어를 사용한다:
+
+```bash
+/kiro:steering "사용자 인증 시스템에 2FA(이중인증) 추가"
+```
+
+생성된 사양 문서는 `.kiro/specs/` 디렉토리에 저장되며, 팀원 간 공유가 가능하다.
 
 GitHub: [gotalab/cc-sdd](https://github.com/gotalab/cc-sdd)
 
@@ -1232,6 +1435,33 @@ Claude Code 확장을 이해하려면 먼저 세 가지 개념을 알아야 한�
 /plugin install oh-my-claude@oh-my-claude
 ```
 
+#### 실전 사용 가이드
+
+**전제조건:** uv 패키지 매니저(`curl -LsSf https://astral.sh/uv/install.sh | sh`), macOS 또는 Linux, Claude Code CLI
+
+설치 후 Claude Code를 재시작하면 자동으로 활성화된다. 이후 프롬프트에 **매직 키워드**를 포함시키면 해당 모드가 작동한다:
+
+```bash
+# ultrawork (약어: ulw) - 병렬 최대 실행, 완료까지 멈추지 않음
+ultrawork 이 API를 리팩토링해줘
+
+# ultraresearch (약어: ulr) - 온라인 소스까지 철저 조사
+ultraresearch React Server Components vs Next.js App Router 비교
+
+# ultradebug (약어: uld) - 7단계 체계적 디버깅
+ultradebug 500 에러가 간헐적으로 발생함
+```
+
+ultrawork를 호출하면 내부적으로 5개의 서브에이전트가 자동으로 파이프라인을 구성한다:
+
+```text
+Librarian(파일 요약) → Advisor(갭 분석) → Critic(계획 검토)
+    → Worker(구현) → Validator(QA 검증)
+    → 최종 결과 요약만 메인 세션으로 반환
+```
+
+**Enhanced Plan 모드:** `Shift+Tab`을 눌러 Plan 모드에 진입하면, 6단계 파이프라인(Recon → Interview → Research → Gap Analysis → Plan → Critic Review)이 자동으로 실행된다. 일반 Plan 모드보다 훨씬 체계적인 계획을 수립한다.
+
 GitHub: [TechDufus/oh-my-claude](https://github.com/TechDufus/oh-my-claude)
 
 ### 6.2 Oh My ClaudeCode
@@ -1260,6 +1490,44 @@ Oh My Claude보다 훨씬 포괄적인 **멀티에이전트 오케스트레이�
 /oh-my-claudecode:omc-setup
 ```
 
+#### 실전 사용 가이드
+
+**전제조건:** Claude Code CLI 설치, Claude Max/Pro 구독 또는 API 키
+
+설치가 완료되면 Claude Code 프롬프트에서 다음처럼 모드를 호출한다:
+
+```bash
+# Team 모드: 3개 에이전트가 계획→PRD→실행→검증→수정 파이프라인을 자동으로 진행
+team 3:executor 로그인 시스템 구현해줘
+
+# Autopilot 모드: 단일 에이전트가 자율적으로 작업 완료
+autopilot: REST API CRUD 엔드포인트 만들어줘
+
+# Ultrawork 모드: 팀 인프라 없이 병렬 최대 처리 (빠른 대량 작업)
+ulw 이 프로젝트의 모든 테스트 파일 업데이트
+
+# Ralph 모드: 완료 보장 지속 모드 (중단 없이 끝까지)
+ralph: DB 마이그레이션 스크립트 작성하고 실행까지
+
+# Ecomode: 토큰 30-50% 절약 (간단한 작업에 적합)
+eco: API 문서 작성해줘
+```
+
+**고급 설정 (선택):**
+
+Team 모드의 전체 기능을 활성화하려면 실험 플래그를 설정한다:
+
+```json
+// ~/.claude/settings.json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+Oh My ClaudeCode는 지능형 모델 라우팅도 지원한다. 간단한 작업은 자동으로 Haiku 모델로, 복잡한 작업은 Opus 모델로 분배하여 비용을 최적화한다.
+
 GitHub: [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode)
 
 ### 6.3 oh-my-claude-code (KaimingWan - 학습형 프레임워크)
@@ -1286,6 +1554,55 @@ Day 1:   범용 AI 어시스턴트일 뿐이다
 Day 30:  사용자의 선호와 실수 패턴을 파악하기 시작한다
 Day 100: 사용자의 사고방식을 이해하는 맞춤형 에이전트로 변신한다
 ```
+
+#### 설치 및 실전 사용 가이드
+
+**전제조건:** Git, Bash 환경, Claude Code 또는 Kiro CLI
+
+**설치 방법 1 - 새 프로젝트:**
+
+```bash
+git clone https://github.com/KaimingWan/oh-my-claude-code.git my-project
+cd my-project
+# CLAUDE.md를 프로젝트에 맞게 편집
+```
+
+**설치 방법 2 - 기존 프로젝트에 적용:**
+
+```bash
+git clone https://github.com/KaimingWan/oh-my-claude-code.git /tmp/omcc
+/tmp/omcc/tools/init-project.sh ./my-project "My Project"
+```
+
+설치 후 프로젝트에 다음 구조가 생성된다:
+
+```text
+프로젝트/
+├── CLAUDE.md                  ← Layer 2 (200줄 이내, 매 대화 자동 로드)
+├── .claude/
+│   └── hooks/
+│       ├── three-rules-check.sh       ← Layer 1 (연구-우선, 스킬-우선, 도구화-우선 검증)
+│       └── block-dangerous-commands.sh ← Layer 1 (rm, git reset --hard 등 차단)
+├── knowledge/                 ← Layer 3 (AI가 자동으로 지식 축적)
+│   └── lessons-learned.md     ← 에이전트가 교훈을 기록하는 파일
+└── tools/
+    └── init-project.sh
+```
+
+**실전 사용:**
+
+일상적으로는 평소처럼 Claude Code를 사용하면 된다. Hook이 백그라운드에서 자동으로 위험 명령을 차단하고, 에이전트가 `lessons-learned.md`에 교훈을 기록한다.
+
+정기적인 유지보수가 필요할 때는 다음 명령어를 사용한다:
+
+```bash
+/reflect        # 학습 동기화 - 축적된 교훈을 CLAUDE.md에 반영
+/view-queue     # 대기 중인 학습 항목 확인
+@lint           # CLAUDE.md 라인 수/구조 감사 (200줄 초과 시 경고)
+@compact        # 저빈도 규칙을 knowledge/ 폴더로 자동 이동
+```
+
+`@lint`와 `@compact`가 특히 중요하다. CLAUDE.md가 200줄을 초과하면 매 대화마다 불필요한 토큰을 소비하게 되므로, `@compact`로 자주 쓰이지 않는 규칙을 `knowledge/` 폴더로 내보내야 한다.
 
 GitHub: [KaimingWan/oh-my-claude-code](https://github.com/KaimingWan/oh-my-claude-code)
 
@@ -1538,6 +1855,25 @@ OpenClaw의 바이럴은 AI가 "대답하는 도구"에서 "행동하는 에이�
 #### 보안이 새로운 전선
 
 에이전트에게 더 많은 권한을 줄수록 **공격 표면(attack surface)**이 넓어진다. 공격 표면이란 악의적인 공격자가 시스템을 침입할 수 있는 모든 경로를 의미한다. OpenClaw의 poisoned plugin 사태가 이를 잘 보여줬다. 2026년 후반부터는 "AI 에이전트 보안"이 별도의 분야로 떠오를 것으로 보인다. **샌드박싱**(격리된 환경에서 실행), **권한 관리**(최소 권한 원칙), **감사 로깅**(AI의 모든 행동을 기록) 같은 기술들의 중요성이 커질 것이다.
+
+---
+
+## 부록: 프레임워크 설치 명령어 빠른 참조
+
+아래 테이블은 이 글에서 다룬 SDD 프레임워크와 Claude Code 확장 프레임워크의 설치 명령어를 한눈에 비교한 것이다.
+
+| 프레임워크                 | 전제조건                    | 설치 명령어                                                                                                                                         | 적용 환경                                |
+|-----------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
+| **OpenSpec**          | Node.js 20.19.0+        | `npm install -g @fission-ai/openspec@latest`                                                                                                   | Claude Code, Cursor, Copilot 등       |
+| **GitHub Spec Kit**   | Python 3.11+, UV        | `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git`                                                                | Claude Code, Copilot, Cursor 등 17개+  |
+| **BMAD Method**       | Node.js v20+            | `npx bmad-method install`                                                                                                                      | Claude Code, Cursor, Windsurf 등      |
+| **Kiro**              | macOS/Windows 10+/Linux | `curl -fsSL https://cli.kiro.dev/install \| bash` 또는 [kiro.dev](https://kiro.dev/downloads) 수동 다운로드                                            | Kiro IDE 자체 (독립형)                    |
+| **cc-sdd**            | Node.js                 | `npx cc-sdd@latest --claude --lang ko`                                                                                                         | Claude Code, Cursor, Gemini CLI 등 8개 |
+| **Oh My Claude**      | uv, Claude Code         | `/plugin marketplace add TechDufus/oh-my-claude` → `/plugin install oh-my-claude@oh-my-claude`                                                 | Claude Code CLI/Desktop Code 탭       |
+| **Oh My ClaudeCode**  | Claude Code             | `/plugin marketplace add https://github.com/Yeachan-Heo/oh-my-claudecode` → `/plugin install oh-my-claudecode` → `/oh-my-claudecode:omc-setup` | Claude Code CLI/Desktop Code 탭       |
+| **oh-my-claude-code** | Git, Bash               | `git clone https://github.com/KaimingWan/oh-my-claude-code.git` 또는 `init-project.sh`                                                           | Claude Code, Kiro CLI                |
+
+> **참고:** 각 프레임워크는 빠르게 업데이트되고 있으므로, 설치 전에 해당 GitHub 리포지토리의 최신 README를 반드시 확인하는 것을 권장한다.
 
 ---
 
