@@ -1,5 +1,5 @@
 ---
-title: "AI 코딩 에이전트 완벽 가이드 2026 - 토큰 최적화부터 Spec-Driven Development, 최신 도구 총정리까지"
+title: "AI 코딩 에이전트 - 토큰 최적화, Spec-Driven Development, 최신 도구"
 date: 2026-02-10
 categories: [ AI, Development ]
 tags: [ Claude, Claude Code, AI Agent, SDD, Token Optimization, OpenClaw, Cursor, Copilot ]
