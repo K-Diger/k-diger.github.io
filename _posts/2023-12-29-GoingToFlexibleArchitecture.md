@@ -1,6 +1,6 @@
 ---
 
-title: 유연한 시스템 설계 방법 톺아보기와 자문자답
+title: 유연한 시스템 설계 방법 자문자답
 date: 2023-12-29
 categories: [MicroService]
 tags: [MicroService]
@@ -8,6 +8,7 @@ layout: post
 toc: true
 math: true
 mermaid: true
+published: false
 
 ---
 

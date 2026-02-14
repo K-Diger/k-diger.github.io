@@ -8,6 +8,7 @@ layout: post
 toc: true
 math: true
 mermaid: true
+published: false
 ---
 
 # 문제 상황

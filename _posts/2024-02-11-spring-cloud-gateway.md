@@ -1,6 +1,6 @@
 ---
 
-title: Spring Cloud Gateway 공식문서 톺아보기와 적용
+title: Spring Cloud Gateway 공식문서 적용
 date: 2024-02-11
 categories: [Gateway]
 tags: [Gateway]
@@ -8,6 +8,7 @@ layout: post
 toc: true
 math: true
 mermaid: true
+published: false
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 
-title: Kafka 정확히 한 번 전송/읽기 톺아보기 및 적용
+title: Kafka 정확히 한 번 전송/읽기  적용
 date: 2024-09-26
 categories: [Kafka]
 tags: [Kafka]
