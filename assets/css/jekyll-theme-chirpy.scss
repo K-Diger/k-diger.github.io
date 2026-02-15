@@ -142,3 +142,23 @@ html[data-mode='dark'] {
     --main-border-color: #344354;
   }
 }
+
+@media (min-width: 1200px) {
+  #main-wrapper main.post-main {
+    flex: 0 0 72%;
+    max-width: 72%;
+  }
+
+  #main-wrapper #panel-wrapper.post-panel {
+    flex: 0 0 28%;
+    max-width: 28%;
+    padding-left: 1rem !important;
+  }
+
+  #main-wrapper #panel-wrapper.post-panel #toc-wrapper .toc-link {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.45;
+  }
+}

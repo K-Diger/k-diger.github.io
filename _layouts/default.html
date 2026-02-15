@@ -29,7 +29,7 @@ layout: compress
             class="
               col-12
               col-lg-11
-              {% if page.layout == 'post' %}col-xl-10{% else %}col-xl-9{% endif %}
+              {% if page.layout == 'post' %}col-xl-9 post-main{% else %}col-xl-9{% endif %}
               px-md-4
             "
           >
@@ -44,7 +44,7 @@ layout: compress
           <aside
             aria-label="Panel"
             id="panel-wrapper"
-            class="{% if page.layout == 'post' %}col-xl-2{% else %}col-xl-3{% endif %} ps-2 text-muted"
+            class="{% if page.layout == 'post' %}col-xl-3 post-panel{% else %}col-xl-3{% endif %} ps-2 text-muted"
           >
             <div class="access">
               {% include_cached update-list.html lang=lang %}
@@ -65,7 +65,7 @@ layout: compress
             class="
               col-12
               col-lg-11
-              {% if page.layout == 'post' %}col-xl-10{% else %}col-xl-9{% endif %}
+              {% if page.layout == 'post' %}col-xl-9 post-main{% else %}col-xl-9{% endif %}
               px-md-4
             "
           >
