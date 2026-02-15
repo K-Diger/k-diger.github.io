@@ -1,5 +1,5 @@
 ---
-title: "GitOps와 ArgoCD 실전 패턴 - App of Apps부터 Progressive Delivery까지"
+title: "GitOps와 ArgoCD 실전 패턴 - App of Apps부터 Progressive Delivery"
 date: 2026-02-14
 categories: [ DevOps, ArgoCD ]
 tags: [ gitops, argocd, applicationset, app-of-apps, argo-rollouts, progressive-delivery, sealed-secrets, helm, kustomize ]

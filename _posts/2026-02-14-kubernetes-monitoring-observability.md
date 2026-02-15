@@ -1,5 +1,5 @@
 ---
-title: "Kubernetes 모니터링과 Observability - Prometheus부터 LGTM 스택, SRE까지"
+title: "Kubernetes 모니터링과 Observability - Prometheus부터 LGTM 스택, SRE"
 date: 2026-02-14
 categories: [ Kubernetes, Observability ]
 tags: [ kubernetes, prometheus, grafana, loki, tempo, thanos, alertmanager, opentelemetry, sre, slo, sli, monitoring, observability ]

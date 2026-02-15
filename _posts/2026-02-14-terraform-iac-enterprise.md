@@ -1,5 +1,5 @@
 ---
-title: "Terraform IaC 실전 - 모듈 설계부터 멀티 클라우드, State 관리까지"
+title: "Terraform IaC 실전 - 모듈 설계부터 멀티 클라우드, State 관리"
 date: 2026-02-14
 categories: [ DevOps, Terraform ]
 tags: [ terraform, iac, infrastructure-as-code, module, state, multi-cloud, terragrunt, opa, sentinel, samsung-sds ]

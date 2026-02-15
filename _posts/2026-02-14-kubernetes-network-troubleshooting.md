@@ -1,5 +1,5 @@
 ---
-title: "Kubernetes 네트워크 트러블슈팅 - 기본 개념부터 실전 디버깅까지"
+title: "Kubernetes 네트워크 트러블슈팅 - 기본 개념부터 실전 디버깅"
 date: 2026-02-14
 categories: [ Kubernetes, Network ]
 tags: [ kubernetes, network, troubleshooting, dns, cni, iptables, conntrack, coredns, calico, cilium, istio, envoy ]

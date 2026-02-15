@@ -1,5 +1,5 @@
 ---
-title: "Istio Service Mesh 심화 - 아키텍처부터 트래픽 관리, 보안, Observability까지"
+title: "Istio Service Mesh 심화 - 아키텍처부터 트래픽 관리, 보안, Observability"
 date: 2026-02-14
 categories: [ Kubernetes, Istio ]
 tags: [ kubernetes, istio, service-mesh, envoy, mtls, virtualservice, destinationrule, gateway-api, kiali, jaeger, ambient-mesh ]
