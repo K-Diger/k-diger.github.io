@@ -9,3 +9,136 @@
 ';
 
 /* append your custom style below */
+
+/* Reading-first post typography and contrast tuning */
+article[data-toc] .content {
+  font-size: clamp(1.1rem, 1.02rem + 0.25vw, 1.22rem);
+  line-height: 1.92;
+  letter-spacing: 0;
+}
+
+article[data-toc] .content p,
+article[data-toc] .content ul,
+article[data-toc] .content ol,
+article[data-toc] .content dl {
+  margin-bottom: 1.05rem;
+}
+
+article[data-toc] .content h2,
+article[data-toc] .content h3,
+article[data-toc] .content h4 {
+  line-height: 1.38;
+  letter-spacing: -0.01em;
+}
+
+article[data-toc] .content blockquote {
+  border-left-width: 0.22rem;
+  padding-left: 1.05rem;
+  margin: 1.1rem 0 1.25rem;
+}
+
+article[data-toc] .content code.highlighter-rouge {
+  padding: 0.2rem 0.42rem;
+  border-radius: 0.35rem;
+}
+
+article[data-toc] .content div[class^='language-'] {
+  margin: 1rem 0 1.35rem;
+}
+
+article[data-toc] .content .highlight pre {
+  font-size: 0.94rem;
+  line-height: 1.72;
+}
+
+article[data-toc] .content .table-wrapper > table {
+  min-width: 100%;
+  font-size: 0.98rem;
+}
+
+article[data-toc] .content .table-wrapper > table th,
+article[data-toc] .content .table-wrapper > table td {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+article[data-toc] .content .mermaid {
+  margin: 1.2rem 0 1.3rem;
+}
+
+@media (max-width: 767px) {
+  article[data-toc] .content {
+    font-size: clamp(1.04rem, 1rem + 0.6vw, 1.12rem);
+    line-height: 1.84;
+  }
+}
+
+@media (min-width: 1400px) {
+  article[data-toc] .content {
+    font-size: clamp(1.12rem, 1.05rem + 0.2vw, 1.24rem);
+  }
+}
+
+html[data-mode='light'] {
+  --text-color: #1d2630;
+  --heading-color: #101b29;
+  --text-muted-color: #5f6b79;
+  --label-color: #3b4653;
+  --link-color: #004ea8;
+  --link-underline-color: #bdcad8;
+  --blockquote-border-color: #cbd5e1;
+  --blockquote-text-color: #4f5f70;
+  --inline-code-bg: rgb(15 23 42 / 8%);
+  --code-color: #17212f;
+  --btn-border-color: #d7e0ea;
+  --main-border-color: #e5edf5;
+}
+
+html[data-mode='dark'] {
+  --text-color: #e7edf5;
+  --heading-color: #f5f8fc;
+  --text-muted-color: #afbccb;
+  --label-color: #cfdae7;
+  --link-color: #8cc8ff;
+  --link-underline-color: #5f9fdd;
+  --blockquote-border-color: #5f7891;
+  --blockquote-text-color: #c1cddb;
+  --inline-code-bg: rgb(255 255 255 / 12%);
+  --code-color: #f0f5fb;
+  --btn-border-color: #445363;
+  --main-border-color: #344354;
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-mode]) {
+    --text-color: #1d2630;
+    --heading-color: #101b29;
+    --text-muted-color: #5f6b79;
+    --label-color: #3b4653;
+    --link-color: #004ea8;
+    --link-underline-color: #bdcad8;
+    --blockquote-border-color: #cbd5e1;
+    --blockquote-text-color: #4f5f70;
+    --inline-code-bg: rgb(15 23 42 / 8%);
+    --code-color: #17212f;
+    --btn-border-color: #d7e0ea;
+    --main-border-color: #e5edf5;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-mode]) {
+    --text-color: #e7edf5;
+    --heading-color: #f5f8fc;
+    --text-muted-color: #afbccb;
+    --label-color: #cfdae7;
+    --link-color: #8cc8ff;
+    --link-underline-color: #5f9fdd;
+    --blockquote-border-color: #5f7891;
+    --blockquote-text-color: #c1cddb;
+    --inline-code-bg: rgb(255 255 255 / 12%);
+    --code-color: #f0f5fb;
+    --btn-border-color: #445363;
+    --main-border-color: #344354;
+  }
+}

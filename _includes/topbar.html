@@ -55,6 +55,12 @@
       {% endif %}
     </div>
 
+    {% unless site.theme_mode %}
+      <button type="button" id="mode-toggle-mobile" class="btn btn-link" aria-label="Switch Mode">
+        <i class="fas fa-adjust fa-fw"></i>
+      </button>
+    {% endunless %}
+
     <button type="button" id="search-trigger" class="btn btn-link" aria-label="Search">
       <i class="fas fa-search fa-fw"></i>
     </button>
@@ -75,3 +81,20 @@
     </button>
   </div>
 </header>
+
+{% unless site.theme_mode %}
+  <script>
+    (() => {
+      const modeToggleMobile = document.getElementById('mode-toggle-mobile');
+      if (!modeToggleMobile || typeof Theme === 'undefined') return;
+
+      modeToggleMobile.addEventListener('click', () => Theme.flip());
+
+      const searchTrigger = document.getElementById('search-trigger');
+      const searchCancel = document.getElementById('search-cancel');
+
+      searchTrigger?.addEventListener('click', () => modeToggleMobile.classList.add('d-none'));
+      searchCancel?.addEventListener('click', () => modeToggleMobile.classList.remove('d-none'));
+    })();
+  </script>
+{% endunless %}

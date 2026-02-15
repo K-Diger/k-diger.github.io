@@ -84,3 +84,12 @@
     display: block;
   }
 }
+
+#mode-toggle-mobile {
+  display: none;
+
+  @include bp.lt(bp.get(lg)) {
+    display: block;
+    margin-right: 0.1rem;
+  }
+}
