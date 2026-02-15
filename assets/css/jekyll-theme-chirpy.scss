@@ -144,14 +144,18 @@ html[data-mode='dark'] {
 }
 
 @media (min-width: 1200px) {
+  #main-wrapper > .container.post-layout {
+    max-width: min(1580px, calc(100vw - 17.5rem));
+  }
+
   #main-wrapper main.post-main {
-    flex: 0 0 72%;
-    max-width: 72%;
+    flex: 0 0 76%;
+    max-width: 76%;
   }
 
   #main-wrapper #panel-wrapper.post-panel {
-    flex: 0 0 28%;
-    max-width: 28%;
+    flex: 0 0 24%;
+    max-width: 24%;
     padding-left: 1rem !important;
   }
 
