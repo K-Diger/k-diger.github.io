@@ -24,7 +24,7 @@ mermaid: true
 
 - **공식문서 링크:**
   - [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
-  - [Configure a Pod to Use a PersistentVolume](https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/)
+  - [Configure a Pod to Use a PersistentVolume](https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/)ㅇ
 - **검색 키워드:** `PersistentVolumeClaim`, `dynamic provisioning`, `storageClassName`, `volumeMounts`
 
 **풀이 과정:**
