@@ -1,14 +1,12 @@
 ---
-
-title: Kubernetes DRA Plugin gRPC 연결 관리 개선기  
-date: 2025-12-20  
-categories: [Kubernetes, DRA]  
-tags: [Kubernetes, DRA, gRPC, Kubelet, DevOps, Infrastructure]  
-layout: post  
-toc: true  
-math: true  
+title: "Kubernetes DRA Plugin gRPC 연결 관리 개선기"
+date: 2025-12-20
+categories: [Kubernetes, DRA]
+tags: [Kubernetes, DRA, gRPC, Kubelet, DevOps, Infrastructure]
+layout: post
+toc: true
+math: true
 mermaid: true
-
 ---
 
 ## 개요
@@ -21,7 +19,7 @@ mermaid: true
 
 ### DRA의 등장 배경
 
-Dynamic Resource Allocation(DRA)은 Kubernetes v1.26에서 알파로 도입되어 v1.34에서 GA를 목표로 하는 기능이다.
+Dynamic Resource Allocation(DRA)은 Kubernetes v1.26에서 알파로 도입되어 v1.34에서 GA(정식 버전)가 된 기능이다.
 
 GPU, TPU, FPGA와 같은 특수 하드웨어 리소스를 Pod에 동적으로 할당하는 새로운 API를 제공한다.
 
@@ -29,7 +27,7 @@ GPU, TPU, FPGA와 같은 특수 하드웨어 리소스를 Pod에 동적으로 �
 
 기존 Device Plugin 프레임워크는 다음과 같은 제약이 있다.
 
-- **표현력 부족**: 디바이스 수량만 보고 가능하고, 특정 속성이나 기능은 표현 불가
+- **표현력 부족**: 디바이스 수량만 보고(report)할 수 있고, 특정 속성이나 기능은 표현 불가
 - **할당 제약**: 단일 컨테이너에 전체 디바이스만 할당 가능 (부분 할당 불가)
 - **공유 불가**: 리소스 공유 메커니즘 미지원
 - **정적 관리**: 정적 보고 방식으로 동적 변경 대응 어려움
@@ -40,7 +38,7 @@ DRA는 PersistentVolume/PersistentVolumeClaim과 유사한 선언적 모델을 �
 
 ```yaml
 # DeviceClass: GPU 종류와 같이 디바이스 카테고리 정의
-apiVersion: resource.k8s.io/v1alpha3
+apiVersion: resource.k8s.io/v1
 kind: DeviceClass
 metadata:
   name: nvidia-gpu
@@ -65,15 +63,15 @@ graph TB
         A[Scheduler] --> B[ResourceClaim]
         B --> C[ResourceSlice]
     end
-    
+
     subgraph "Node"
         D[Kubelet] --> E[DRA Plugin]
         E --> F[GPU Driver]
     end
-    
+
     A -.allocate.-> B
     D <-.gRPC.-> E
-    
+
     style E fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
@@ -99,7 +97,7 @@ Pod가 특정 노드에 스케줄링된 후, 실제로 시작하기 전에 호�
 ```protobuf
 // pkg/kubelet/apis/dra/v1/api.proto
 service Node {
-    rpc NodePrepareResources(NodePrepareResourcesRequest) 
+    rpc NodePrepareResources(NodePrepareResourcesRequest)
         returns (NodePrepareResourcesResponse) {}
 }
 
@@ -116,7 +114,7 @@ sequenceDiagram
     participant K as Kubelet
     participant D as DRA Plugin
     participant G as GPU Driver
-    
+
     S->>K: Pod 할당 (with ResourceClaim)
     K->>D: NodePrepareResources
     D->>G: GPU 상태 확인
@@ -139,7 +137,9 @@ sequenceDiagram
 - PCIe 링크 구성
 - CUDA 컨텍스트 설정
 
-3. **CDI Spec 생성**
+3. **CDI(Container Device Interface) Spec 생성**
+
+CDI는 컨테이너 런타임이 디바이스에 접근하는 방법을 표준화한 사양이다. OCI 런타임과 독립적으로 디바이스 설정을 정의할 수 있어, 특정 런타임에 종속되지 않는 이식성을 제공한다.
 
 - 컨테이너가 접근할 디바이스 파일 정의
 - 환경 변수 설정
@@ -193,7 +193,7 @@ Pod가 종료될 때 호출되어 리소스를 정리하고 다른 Pod에서 사
 
 #### 실제 사용 시나리오
 
-AI 모델 학습 워크로드 예시
+AI 모델 학습 워크로드를 예시로 살펴본다.
 
 ```yaml
 apiVersion: v1
@@ -220,23 +220,23 @@ sequenceDiagram
     participant S as Scheduler
     participant K as Kubelet
     participant D as DRA Plugin
-    
+
     Note over P,D: 1. Pod 생성 및 스케줄링
     P->>S: Pod 생성 요청
     S->>S: ResourceClaim 생성 및 예약
     S->>K: Pod 할당 (node-1)
-    
+
     Note over K,D: 2. 리소스 준비
     K->>D: NodePrepareResources
     D->>D: nvidia-smi로 GPU 상태 확인
     D->>D: GPU 0 초기화
     D->>D: CDI Spec 생성
     D-->>K: CDI Spec 반환
-    
+
     Note over K,P: 3. 컨테이너 시작
     K->>P: 컨테이너 시작 (CDI 적용)
     P->>P: ML 학습 실행
-    
+
     Note over P,D: 4. Pod 종료
     P->>K: 종료 요청
     K->>D: NodeUnprepareResources
@@ -250,12 +250,12 @@ Health API는 Kubernetes v1.34에서 알파로 도입된 기능으로, **디바�
 
 #### NodeWatchResources (Server Streaming)
 
-DRA 드라이버가 kubelet에게 디바이스 상태를 지속적으로 스트리밍한다.
+DRA 드라이버가 kubelet에게 디바이스 상태를 지속적으로 스트리밍한다. 일반적인 요청-응답(Unary) 방식이 아닌, 서버 스트리밍 방식을 사용하여 상태 변경이 발생할 때마다 즉시 kubelet에 전달할 수 있다.
 
 ```protobuf
 // pkg/kubelet/apis/dra/dra-health/v1alpha1/api.proto
 service DRAResourceHealth {
-    rpc NodeWatchResources(NodeWatchResourcesRequest) 
+    rpc NodeWatchResources(NodeWatchResourcesRequest)
         returns (stream NodeWatchResourcesResponse) {}
 }
 
@@ -279,16 +279,16 @@ sequenceDiagram
     participant K as Kubelet
     participant D as DRA Driver
     participant G as GPU
-    
+
     K->>D: NodeWatchResources (스트림 시작)
-    
+
     loop 지속적 모니터링
         D->>G: GPU 온도 체크
         D->>G: 메모리 ECC 에러 감지
         D->>G: PCIe 링크 상태 확인
         D->>G: 전력 소비 모니터링
     end
-    
+
     Note over D: 상태 변경 감지!
     D-->>K: Health Update (Unhealthy)
     K->>K: healthInfoCache 업데이트
@@ -304,11 +304,9 @@ sequenceDiagram
 5. **NodeWatchResources (Health API)** - 백그라운드 모니터링 시작
 6. 정상 실행...
 7. [선택] 장애 발생 시
-
-- Health Update: Unhealthy
-- Pod Status 업데이트
-- 운영자 개입 또는 자동 복구
-
+   - Health Update: Unhealthy
+   - Pod Status 업데이트
+   - 운영자 개입 또는 자동 복구
 8. Pod 종료
 9. **NodeUnprepareResources (DRA API)** - GPU 정리 및 해제
 
@@ -322,28 +320,28 @@ sequenceDiagram
 // pkg/kubelet/cm/dra/plugin/dra_plugin.go (변경 전)
 
 // DRA API 호출 시 매번 연결 확인
-func (p *DRAPlugin) NodePrepareResources(ctx context.Context, 
+func (p *DRAPlugin) NodePrepareResources(ctx context.Context,
     req *drapbv1.NodePrepareResourcesRequest) (*drapbv1.NodePrepareResourcesResponse, error) {
-    
+
     conn, err := p.getOrCreateGRPCConn()  // 매번 연결 확인
     if err != nil {
         return nil, err
     }
-    
+
     // DRA v1 클라이언트를 매번 새로 생성
     client := drapbv1.NewDRAPluginClient(conn)
     return client.NodePrepareResources(ctx, req)
 }
 
 // Health API 호출 - 지연 초기화 패턴
-func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context, 
+func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context,
     req *drahealthv1alpha1.GetResourceHealthStatusRequest) (*drahealthv1alpha1.GetResourceHealthStatusResponse, error) {
-    
+
     conn, err := p.getOrCreateGRPCConn()  // 또 다른 연결 관리
     if err != nil {
         return nil, err
     }
-    
+
     // Lazy initialization - 여기서 healthClient가 nil일 수 있음!
     if p.healthClient == nil {
         p.healthClient = drahealthv1alpha1.NewDRAResourceHealthClient(conn)
@@ -355,21 +353,21 @@ func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context,
 func (p *DRAPlugin) getOrCreateGRPCConn() (*grpc.ClientConn, error) {
     p.mu.Lock()
     defer p.mu.Unlock()
-    
+
     if p.conn != nil {
         return p.conn, nil
     }
-    
+
     // deprecated API 사용
-    conn, err := grpc.Dial(p.endpoint, 
+    conn, err := grpc.Dial(p.endpoint,
         grpc.WithInsecure(),
         grpc.WithBlock(),  // 차단 동작
         grpc.WithTimeout(connectionTimeout))
-    
+
     if err != nil {
         return nil, err
     }
-    
+
     p.conn = conn
     return conn, nil
 }
@@ -379,7 +377,7 @@ func (p *DRAPlugin) getOrCreateGRPCConn() (*grpc.ClientConn, error) {
 
 #### 1. 이중 연결 패턴
 
-**DRA API**: 매번 `getOrCreateGRPCConn()` 호출 후 새로운 클라이언트 생성  
+**DRA API**: 매번 `getOrCreateGRPCConn()` 호출 후 새로운 클라이언트 생성
 **Health API**: 별도의 lazy initialization으로 healthClient 관리
 
 두 API가 같은 연결을 사용하지만 완전히 다른 방식으로 관리되어 일관성이 없었다.
@@ -459,16 +457,16 @@ plugin.GetResourceHealthStatus()  // healthClient == nil!
 // 반복적인 연결 재생성
 for {
     conn, _ := p.getOrCreateGRPCConn()
-    
+
     // healthClient는 이전 연결 참조
     if p.healthClient == nil {
         p.healthClient = NewClient(conn)
     }
-    
+
     // 연결 끊김
     conn.Close()
     p.conn = nil
-    
+
     // 새 연결 생성되지만 healthClient는 교체되지 않음
     // 이전 healthClient가 참조하는 닫힌 연결들이 메모리에 누적
 }
@@ -476,11 +474,11 @@ for {
 
 #### 3. Deprecated API 사용
 
-`grpc.Dial`은 gRPC v1.64부터 deprecated되었으며, `grpc.NewClient`로 마이그레이션이 권장된다.
+`grpc.Dial`은 gRPC-Go v1.63부터 deprecated되었으며, `grpc.NewClient`로 마이그레이션이 권장된다.
 
 ```go
 // Deprecated
-conn, err := grpc.Dial(endpoint, 
+conn, err := grpc.Dial(endpoint,
     grpc.WithInsecure(),
     grpc.WithBlock())  // 연결 확립까지 차단
 
@@ -490,7 +488,7 @@ conn, err := grpc.NewClient(endpoint,
 // 실제 RPC 호출 시점에 연결 시도 (lazy connection)
 ```
 
-`grpc.Dial`의 `WithBlock` 옵션은 연결이 확립될 때까지 블로킹하여 초기화 시간을 지연시킬 수 있다.
+주요 차이점은 `grpc.Dial`이 호출 시점에 즉시 연결을 시도하는 반면, `grpc.NewClient`는 실제 RPC 호출 시점까지 연결을 지연시킨다. 이로 인해 초기화 단계에서의 불필요한 블로킹이 제거된다.
 
 ## 해결 방안: 연결 관리 코드 통합
 
@@ -502,12 +500,12 @@ conn, err := grpc.NewClient(endpoint,
 type DRAPlugin struct {
     endpoint string
     conn     *grpc.ClientConn
-    
+
     // 모든 클라이언트를 사전 생성
     draV1Client       drapbv1.DRAPluginClient
     draV1Beta1Client  drapbv1beta1.DRAPluginClient
     healthClient      drahealthv1alpha1.DRAResourceHealthClient
-    
+
     mu sync.RWMutex
 }
 
@@ -525,18 +523,18 @@ func (p *DRAPlugin) Register(registrar pluginregistration.PluginRegistrar) error
 func (p *DRAPlugin) ensureConnection() error {
     p.mu.Lock()
     defer p.mu.Unlock()
-    
+
     if p.conn != nil {
         return nil
     }
-    
+
     // 최신 API 사용
     conn, err := grpc.NewClient(p.endpoint,
         grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         return err
     }
-    
+
     p.conn = conn
     return nil
 }
@@ -545,7 +543,7 @@ func (p *DRAPlugin) ensureConnection() error {
 func (p *DRAPlugin) createAllClients() {
     p.mu.Lock()
     defer p.mu.Unlock()
-    
+
     // 한 번에 모든 클라이언트 생성 - lazy initialization 제거
     p.draV1Client = drapbv1.NewDRAPluginClient(p.conn)
     p.draV1Beta1Client = drapbv1beta1.NewDRAPluginClient(p.conn)
@@ -553,38 +551,38 @@ func (p *DRAPlugin) createAllClients() {
 }
 
 // DRA API - 사전 생성된 클라이언트 재사용
-func (p *DRAPlugin) NodePrepareResources(ctx context.Context, 
+func (p *DRAPlugin) NodePrepareResources(ctx context.Context,
     req *drapbv1.NodePrepareResourcesRequest) (*drapbv1.NodePrepareResourcesResponse, error) {
-    
+
     p.mu.RLock()
     client := p.draV1Client  // 단순 참조
     p.mu.RUnlock()
-    
+
     return client.NodePrepareResources(ctx, req)
 }
 
 // Health API - 사전 생성된 클라이언트 재사용
-func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context, 
+func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context,
     req *drahealthv1alpha1.GetResourceHealthStatusRequest) (*drahealthv1alpha1.GetResourceHealthStatusResponse, error) {
-    
+
     p.mu.RLock()
     client := p.healthClient  // 단순 참조, nil 체크 불필요!
     p.mu.RUnlock()
-    
+
     return client.GetResourceHealthStatus(ctx, req)
 }
 ```
 
 ### Before vs After 비교
 
-```
+```text
 [Before]
 ┌─────────────────────────────────────────────┐
 │ DRA API 호출                                │
 │  1. getOrCreateGRPCConn() 호출              │
 │  2. Lock 획득/해제                          │
 │  3. 연결 확인                               │
-│  4. 새로운 클라이언트 생성 (매번 수행)          │
+│  4. 새로운 클라이언트 생성 (매번 수행)      │
 │  5. RPC 호출                                │
 └─────────────────────────────────────────────┘
 
@@ -597,7 +595,7 @@ func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context,
 │  5. RPC 호출                                │
 └─────────────────────────────────────────────┘
 
-문제: 
+문제:
 - 두 API가 다른 연결 관리 패턴
 - 매번 오버헤드 발생
 - Race condition 가능성
@@ -653,6 +651,12 @@ func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context,
 - gRPC 최신 권장사항 적용
 - Deprecated API 제거
 
+## 마무리
+
+이번 기여를 통해 DRA 플러그인의 gRPC 연결 관리를 단일 패턴으로 통합하고, lazy initialization에서 발생할 수 있는 race condition과 상태 불일치 문제를 제거했다. `grpc.Dial`에서 `grpc.NewClient`로의 마이그레이션도 함께 진행하여 deprecated API 의존성을 해소했다.
+
+Kubernetes처럼 규모가 큰 프로젝트에서는 사소해 보이는 연결 관리 코드도 장기적으로 안정성과 유지보수성에 큰 영향을 미친다. 특히 kubelet은 모든 노드에서 실행되는 핵심 컴포넌트이므로, 이런 개선이 클러스터 전체의 신뢰성 향상에 기여한다.
+
 ## 참고 자료
 
 - **PR**: [kubernetes/kubernetes#133964](https://github.com/kubernetes/kubernetes/pull/133964)
@@ -660,5 +664,6 @@ func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context,
 - **DRA 공식 문서**: [Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/)
 - **DRA Health Status KEP**: [KEP-4680](https://github.com/kubernetes/enhancements/issues/4680)
 - **Health Status 블로그**: [Kubernetes v1.34: Pods Report DRA Resource Health](https://kubernetes.io/blog/2025/09/17/kubernetes-v1-34-pods-report-dra-resource-health/)
+- **gRPC-Go NewClient 마이그레이션**: [grpc/grpc-go#7090](https://github.com/grpc/grpc-go/issues/7090)
 - **Kubernetes v1.36 마일스톤**
 - **SIG Node 승인 완료**: 2025년 12월 18일
