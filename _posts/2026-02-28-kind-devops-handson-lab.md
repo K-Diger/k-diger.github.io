@@ -1,5 +1,5 @@
 ---
-title: "Kind 기반 프로덕션 패리티 DevOps 핸즈온 랩 구축기"
+title: "Kind 기반 Kubernetes 핸즈온 구축"
 date: 2026-02-28
 categories: [ DevOps, Kubernetes ]
 tags: [ Kind, Cilium, Istio, Kong, ArgoCD, Gatekeeper, LGTM, Mimir, Loki, Tempo, Grafana, OTel, eBPF, GatewayAPI ]
@@ -9,11 +9,9 @@ math: true
 mermaid: true
 ---
 
-로컬 머신에서 프로덕션과 동일한 DevOps 환경을 구축할 수 있을까? Kind 클러스터 위에 Cilium(eBPF CNI) + Istio Ambient(mTLS) + Kong(Gateway API) + ArgoCD(GitOps) + Gatekeeper(OPA) + LGTM 관측성 스택을 올리고, 실제 운영 환경(DC 39대 서버, Docker Compose 기반)과 동일한 설정을 적용했다. 이 글에서는 각 기술의 동작 원리부터 실습 과제, 장애 주입, 트러블슈팅까지 전체 과정을 다룬다. `--env` 옵션으로 `dev`, `stg`, `prod` 환경을 전환할 수 있으며, 도메인은 `*.lab-{ENV}.local` 형식이다.
+Kind 클러스터 위에 Cilium(eBPF CNI) + Istio Ambient(mTLS) + Kong(Gateway API) + ArgoCD(GitOps) + Gatekeeper(OPA) + LGTM 관측성 스택을 올리고, 실제 운영 환경(DC 39대 서버, Docker Compose 기반)과 동일한 설정을 적용했다. 이 글에서는 각 기술의 동작 원리부터 실습 과제, 장애 주입, 트러블슈팅까지 전체 과정을 다룬다. `--env` 옵션으로 `dev`, `stg`, `prod` 환경을 전환할 수 있으며, 도메인은 `*.lab-{ENV}.local` 형식이다.
 
 > **환경**: `--env` 옵션으로 `dev`, `stg`, `prod` 환경을 전환할 수 있으며, 도메인은 `*.lab-{ENV}.local` 형식.
->
-> Last updated: 2026-02-28
 
 ---
 
@@ -1625,6 +1623,37 @@ curl -s -u "admin:${GRAFANA_PASS}" http://grafana.lab-dev.local/api/datasources 
 # Grafana → Alerting → Alert Rules 에서 확인
 ```
 
+### 7-8. Node Exporter vs Alloy 호스트 메트릭 수집
+
+호스트(노드) 레벨의 CPU, 메모리, 디스크, 네트워크 메트릭을 수집하는 두 가지 방법이 있다. Grafana Alloy의 `prometheus.exporter.unix`가 Node Exporter를 내장하고 있어 **기능적으로 100% 대체 가능**하지만, 환경에 따라 최적 구성이 다르다.
+
+**비교 테이블**:
+
+| 항목 | Node Exporter (독립) | Alloy (`prometheus.exporter.unix`) |
+|------|------|------|
+| 배포 크기 | 단일 바이너리 ~7MB | Alloy 전체 바이너리 ~150MB |
+| 설정 | 플래그만 (거의 제로 설정) | `config.alloy` 필수 |
+| 권한 | 최소 (읽기 전용 `/proc`, `/sys` 마운트) | 호스트 메트릭 시 동일 마운트 + 추가 권한 |
+| 관리 포인트 | 별도 프로세스 관리 | **통합** (로그+메트릭 한 에이전트) |
+| 메트릭 이름 | `node_*` (업계 표준) | `node_*` (동일) |
+
+**환경별 권장 패턴**:
+
+| 환경 | 권장 | 이유 |
+|------|------|------|
+| **Kubernetes** | Node Exporter DaemonSet + Alloy DaemonSet **분리** | Grafana Labs 공식 권장. 관심사 분리, Node Exporter 경량, 높은 권한 불필요 |
+| **Docker Compose/VM (소규모)** | Alloy 단독 (`prometheus.exporter.unix`) | 관리 포인트 1개. 로그+메트릭 통합 수집 |
+| **Docker Compose/VM (대규모)** | Node Exporter + Alloy **분리** | Ansible로 Node Exporter 일괄 배포, Alloy는 scraper 역할 |
+
+**왜 분리가 권장되는가?** — 관심사 분리(Separation of Concerns). Node Exporter = **메트릭 생산자** (호스트 메트릭을 `/metrics`로 노출), Alloy = **메트릭 수집/전송자** (scrape → remote_write). 장애 격리가 가능하고, 각 컴포넌트의 리소스와 권한을 독립적으로 관리할 수 있다.
+
+> **프로덕션 참고**: 27대 서버에 Node Exporter(port 9100) 배포 → Alloy가 15초 간격 pull 방식으로 수집 중이다. 이 구성이 베스트 프랙티스에 부합한다.
+
+**참고 자료**:
+- [Grafana Alloy: prometheus.exporter.unix](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.exporter.unix/)
+- [Grafana k8s-monitoring-helm Issue #659](https://github.com/grafana/k8s-monitoring-helm/issues/659) — 관심사 분리 권장
+- [SUSE: Grafana Alloy로 Node Exporter 대체](https://www.suse.com/c/grafana-alloy-part-2-replacing-prometheus-node-exporter/)
+
 ### 실습 과제
 
 #### 실습 7-1: 트래픽 생성 → Grafana에서 trace → log → metric 상관관계 추적
@@ -1741,6 +1770,82 @@ Loki는 로그 본문을 인덱싱하지 않고 라벨(namespace, pod, container
 Tempo는 트레이스 전용 저장소로, Jaeger처럼 인덱스를 만들지 않고 trace_id로만 접근하여 스토리지 효율이 높다.
 
 프로덕션에서 ELK 4대(Elasticsearch 3 + Kibana 1)와 LGTM 스택을 병행 운영 중이다. 점진적으로 LGTM으로 일원화하여 스토리지 비용을 줄일 계획이다.
+
+#### 실습 7-3: Spring Boot OTel 계측 + Grafana UI 심화
+
+Spring Boot 앱에 OTel Java Agent를 적용하면, 코드 변경 없이 HTTP, JDBC, Kafka, Redis 등 80+ 라이브러리의 트레이스/메트릭/로그가 자동 생성된다.
+
+**계측 방식 비교**:
+
+| 항목 | OTel Java Agent (`-javaagent`) | Micrometer + OTel Bridge |
+|------|------|------|
+| 코드 변경 | 제로 코드 (bytecode instrumentation) | 의존성 추가 + `application.yml` |
+| 자동 계측 | HTTP, JDBC, Kafka, gRPC, Redis 등 80+ | Spring MVC/WebFlux HTTP만 기본 |
+| K8s 운영 | **init container 패턴** (앱 이미지 변경 불필요) | 앱 빌드에 포함 |
+| 프로덕션 | **권장** — 운영팀이 앱 코드 변경 없이 관측성 추가 | 개발팀 직접 관리 시 적합 |
+
+**K8s init container 패턴** — OTel Java Agent를 init container로 다운로드 → `emptyDir` 볼륨 → 앱 컨테이너의 `JAVA_TOOL_OPTIONS`에 `-javaagent` 지정:
+
+```yaml
+initContainers:
+  - name: otel-agent
+    image: ghcr.io/open-telemetry/opentelemetry-java-instrumentation/opentelemetry-javaagent:latest
+    command: ["cp", "/javaagent.jar", "/otel/javaagent.jar"]
+    volumeMounts:
+      - name: otel-agent
+        mountPath: /otel
+containers:
+  - name: app
+    env:
+      - name: JAVA_TOOL_OPTIONS
+        value: "-javaagent:/otel/javaagent.jar"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc:4317"
+      - name: OTEL_SERVICE_NAME
+        value: "spring-app"
+      - name: OTEL_TRACES_SAMPLER
+        value: "always_on"  # 앱은 100% 전송, Collector에서 tail_sampling
+      - name: OTEL_RESOURCE_ATTRIBUTES
+        value: "service.namespace=demo,deployment.environment=dev"
+    volumeMounts:
+      - name: otel-agent
+        mountPath: /otel
+volumes:
+  - name: otel-agent
+    emptyDir: {}
+```
+
+> **왜 `always_on`?**: 앱에서 head sampling하면 에러 트레이스를 놓칠 수 있다. 앱은 모든 트레이스를 전송하고, OTel Collector의 `tail_sampling`이 error(100%), slow(100%), normal(10%) 정책으로 보관 여부를 결정한다.
+
+**구조화 로깅** — 로그 패턴에 `[trace_id,span_id]` 포함 → Grafana `derivedFields` 정규식 `\[([a-f0-9]{32}),`과 매칭 → 로그에서 Tempo 자동 점프.
+
+**Grafana UI 심화 실습**:
+
+1. **Explore → Mimir (PromQL)**:
+   - JVM Heap: `process_runtime_jvm_memory_usage{type="heap"} / process_runtime_jvm_memory_limit{type="heap"} * 100`
+   - HTTP RPS: `sum(rate(http_server_request_duration_seconds_count[5m])) by (http_route)`
+   - P95 레이턴시: `histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le, http_route))`
+   - 에러율: `sum(rate(http_server_request_duration_seconds_count{http_status_code=~"5.."}[5m])) / sum(rate(http_server_request_duration_seconds_count[5m])) * 100`
+   - GC Pause: `rate(process_runtime_jvm_gc_duration_sum[5m])`
+
+2. **Explore → Loki (LogQL)**:
+   - Builder 모드: `namespace`/`container` 라벨 필터, 돋보기 자동완성
+   - Code 모드: `{namespace="demo"} |= "ERROR"`, JSON 파서 `| json | level="ERROR"`
+   - trace_id 클릭 → Tempo 자동 점프 (`derivedFields` 동작)
+   - Live tail, 로그 볼륨 히스토그램
+
+3. **Explore → Tempo (TraceQL)**:
+   - Search: Service Name, Duration, Status, Tags 필터
+   - Span 트리: 가로 바 = 소요 시간, 부모-자식 계층, Tags/Logs 탭
+   - TraceQL: `{ duration > 500ms && span.http.status_code >= 500 }`, `{ span.db.system = "postgresql" }`
+   - Service Map: 노드 색상(에러율), 크기(요청 빈도), 화살표(의존성)
+
+4. **장애 대응 시나리오** (메트릭 → 로그 → 트레이스 → 서비스 맵):
+   - Mimir P95 → 스파이크 시간대 드래그 → Loki 전환(시간 유지) → `|= "timeout"` 검색 → TraceID 클릭 → Tempo Span 트리 → 병목 식별 → Service Map → 영향도 파악
+
+5. **대시보드 만들기**: Dashboards → New → Add visualization → 4개 패널 (HTTP RPS/P95 Latency/JVM Heap Gauge/Error Rate Stat)
+
+> **참고**: OTel Java Agent 공식 문서 — [https://opentelemetry.io/docs/zero-code/java/agent/](https://opentelemetry.io/docs/zero-code/java/agent/)
 
 ---
 
