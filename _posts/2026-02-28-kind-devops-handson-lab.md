@@ -155,7 +155,7 @@ Kong Gateway의 라우팅 규칙과 플러그인을 확인하는 Admin UI다. No
 | 5 | OTel high-cardinality 폭발 | process.pid 등 고유 속성             | resource 속성 삭제 프로세서                    |
 | 6 | Kong NodePort 충돌         | Kind extraPortMappings          | hostPort 80/443 → NodePort 30080/30443 |
 | 7 | Kong → Backend 502       | AuthorizationPolicy가 Kong SA 차단 | `kong-gateway` SA를 ALLOW 목록에 추가        |
-| 8 | 외부→Kong 접속 불가          | STRICT mTLS가 NodePort 트래픽 차단 | Kong proxy 포트 portLevelMtls PERMISSIVE |
+| 8 | 외부→Kong 접속 불가            | STRICT mTLS가 NodePort 트래픽 차단    | Kong proxy 포트 portLevelMtls PERMISSIVE |
 
 ---
 
@@ -613,9 +613,10 @@ Kubernetes에서 외부 트래픽을 클러스터 내부 서비스로 전달하�
    인프라 설정(어떤 컨트롤러를 쓸지)과 라우팅 규칙(어떤 경로를 어디로 보낼지)이 섞여 있어서, 인프라 관리자와 개발자의 권한 분리가 어렵다.
 
 3. **Gateway API**: Kubernetes의 차세대 표준. 역할에 따라 리소스를 분리한다:
-  - `GatewayClass` — "어떤 구현체를 사용할 것인가" (인프라 관리자가 설정)
-  - `Gateway` — "어떤 포트에서 트래픽을 수신할 것인가" (클러스터 관리자가 설정)
-  - `HTTPRoute` — "어떤 Host/경로를 어떤 서비스로 보낼 것인가" (개발자가 설정)
+
+- `GatewayClass` — "어떤 구현체를 사용할 것인가" (인프라 관리자가 설정)
+- `Gateway` — "어떤 포트에서 트래픽을 수신할 것인가" (클러스터 관리자가 설정)
+- `HTTPRoute` — "어떤 Host/경로를 어떤 서비스로 보낼 것인가" (개발자가 설정)
 
 이 3계층 분리 덕분에, 개발자는 자기 서비스의 HTTPRoute만 작성하면 되고 Gateway 인프라를 건드릴 필요가 없다. RBAC으로 권한을 분리하기에도 적합하다.
 
@@ -1892,7 +1893,9 @@ curl -s http://api.lab-dev.local/delay/3 -o /dev/null -w "Slow: HTTP %{http_code
 2. 전체 서비스를 K8s에 배포 (트래픽 없음, Kong upstream은 DC 유지)
 3. 임시 도메인으로 내부 검증 (3~5일)
 4. **Kong upstream을 DC → K8s NodePort로 전환** (서비스별 순차)
-  - 롤백: upstream을 DC IP로 되돌리면 즉시 복구
+
+- 롤백: upstream을 DC IP로 되돌리면 즉시 복구
+
 5. 안정화 확인 후 DC 서버 반납
 
 **마이그레이션 순서** (위험도 낮은 순):
