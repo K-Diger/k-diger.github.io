@@ -466,6 +466,32 @@ kubectl delete cnp -n demo backend-allow-frontend-only
 kubectl delete pod test-cnp -n demo
 ```
 
+#### UI에서 확인: Hubble Service Map
+
+1. **Hubble UI 접속**: `http://hubble.lab-dev.local` (Kong 경유) 또는 `kubectl port-forward -n kube-system svc/hubble-ui 12000:80`
+2. **네임스페이스 선택**: 상단 드롭다운에서 `demo` 네임스페이스 선택
+3. **Service Map 해석**:
+   - **노드(원)** = Pod 또는 Service (이름이 라벨로 표시됨)
+   - **화살표** = 트래픽 방향 (출발지 → 목적지)
+   - **초록색 화살표** = 허용된(FORWARDED) 트래픽
+   - **빨간색 화살표** = 차단된(DROPPED) 트래픽
+   - 화살표 위에 마우스를 올리면 프로토콜, 포트, verdict 등 상세 정보 표시
+4. **CiliumNetworkPolicy 적용 전후 비교**:
+   - 정책 적용 전: `test-cnp` → `backend` 화살표가 초록색 (허용됨)
+   - 정책 적용 후: `test-cnp` → `backend` 화살표가 빨간색 (차단됨), `frontend` → `backend`는 여전히 초록색
+5. **플로우 목록 확인**: 하단 플로우 테이블에서 개별 네트워크 이벤트 확인
+   - Source / Destination / Verdict / Type 칼럼으로 트래픽 분석
+   - `hubble observe` CLI 출력과 동일한 데이터가 UI에 표시됨을 확인
+
+**CLI ↔ UI 대조**:
+
+```bash
+# 터미널에서 hubble observe 실행
+hubble observe -n demo --last 10
+# 출력된 플로우(Source → Destination, Verdict)가
+# Hubble UI 하단 플로우 목록과 동일한 데이터임을 확인
+```
+
 #### 실습 2-2: 장애 주입 — Cilium Agent Pod 삭제
 
 ```bash
@@ -547,6 +573,15 @@ hubble observe --namespace demo --type l7 --protocol http --last 20
 # ── 5. 정리 ──
 kubectl delete cnp -n demo backend-l7-http-policy
 ```
+
+#### UI에서 확인: L7 DROPPED 트래픽 관찰
+
+1. **Hubble UI**에서 `demo` 네임스페이스 선택
+2. L7 정책 적용 후 `POST /post` 요청을 보내면:
+   - Service Map에서 `frontend` → `backend` 화살표가 **빨간색**으로 변경됨
+   - 빨간색 화살표 클릭 → verdict: `DROPPED`, L7 reason 확인 가능
+3. `GET /get` 요청은 여전히 **초록색** 화살표 (허용됨)
+4. 플로우 목록에서 `Type: l7`, `Verdict: DROPPED` 필터로 차단된 HTTP 요청만 모아 볼 수 있음
 
 **L7 정책의 동작 원리**:
 
@@ -1039,6 +1074,22 @@ kubectl get applications -n argocd test-guestbook
 kubectl delete application -n argocd test-guestbook
 ```
 
+#### UI에서 확인: Application 상태 및 SYNC
+
+1. **ArgoCD UI 접속**: `http://argocd.lab-dev.local` (Kong 경유) 또는 `kubectl port-forward svc/argocd-server -n argocd 8080:443` → `https://localhost:8080`
+2. **Application 카드 확인**: 메인 화면에서 `test-guestbook` 카드를 찾는다
+   - **Sync Status**: `OutOfSync` (노란색) → Sync 후 `Synced` (초록색)
+   - **Health Status**: `Healthy` (하트 아이콘) / `Progressing` / `Degraded`
+3. **APP DETAILS 네비게이션**: `test-guestbook` 카드를 클릭하여 상세 화면으로 진입
+   - **리소스 트리**: Application → Deployment → ReplicaSet → Pod 계층 구조가 시각화됨
+   - 각 노드의 아이콘 색상으로 Health 상태 확인 가능
+4. **UI에서 SYNC 실행**:
+   - 상단 **SYNC** 버튼 클릭 → 옵션 패널이 열림
+   - **PRUNE**: Git에서 삭제된 리소스를 클러스터에서도 제거
+   - **DRY RUN**: 실제 적용 없이 변경 사항만 미리 확인
+   - **FORCE**: 리소스를 삭제 후 재생성 (주의: 다운타임 발생)
+   - SYNCHRONIZE 클릭 후 리소스 트리에서 각 노드가 실시간으로 `Progressing` → `Healthy`로 전환되는 것을 관찰
+
 #### 실습 5-2: selfHeal 동작 확인 — 수동 변경 후 자동 복구
 
 ```bash
@@ -1069,6 +1120,24 @@ kubectl get deploy -n test guestbook-ui -w
 kubectl get app -n argocd test-guestbook -o jsonpath='{.status.sync.status}'
 # → Synced (Git과 클러스터 상태가 다시 일치)
 ```
+
+#### UI에서 확인: selfHeal 실시간 관찰
+
+1. **selfHeal 관찰**: `kubectl scale` 실행 후 ArgoCD UI에서 `test-guestbook` 상세 화면을 열어둔다
+   - Sync Status가 `Synced` → `OutOfSync` (노란색)로 변경됨
+   - selfHeal이 작동하여 수 초 내에 자동으로 `Synced` (초록색)으로 복원됨
+   - 리소스 트리에서 Pod 수가 5개로 증가했다가 다시 1개로 줄어드는 과정이 실시간으로 보임
+
+2. **HISTORY AND ROLLBACK 탭 확인**:
+   - 상세 화면 → 상단 **HISTORY AND ROLLBACK** 탭 클릭
+   - 최근 Sync 기록에서 `Initiated by: automated` 라벨이 붙은 항목을 확인
+   - 수동 Sync와 자동 Sync의 이력이 구분되어 기록됨
+
+3. **APP DIFF 버튼으로 drift 확인** (selfHeal 복구 전 빠르게 확인해야 함):
+   - 상단 **APP DIFF** 버튼 클릭
+   - Git에 정의된 상태(Desired)와 클러스터 실제 상태(Live)의 차이가 diff 형식으로 표시됨
+   - replicas 값이 `1` → `5`로 변경된 것이 빨간색/초록색으로 시각화됨
+   - 리소스 트리에서 `OutOfSync` 상태인 Deployment 노드 클릭 → **DIFF** 탭에서 해당 리소스의 변경 사항 확인
 
 ### Q&A
 
@@ -1574,6 +1643,27 @@ kubectl logs -n demo -l app=load-generator --follow
 # → 트레이스에서 "Related metrics" 클릭 → Mimir 메트릭 확인
 ```
 
+#### UI에서 확인: Grafana 상관관계 추적
+
+1. **Grafana 접속**: `http://grafana.lab-dev.local` (Kong 경유) 또는 `kubectl port-forward svc/grafana -n monitoring 3000:80`
+   - Password: `kubectl -n monitoring get secret grafana -o jsonpath="{.data.admin-password}" | base64 -d`
+
+2. **Data Sources 연결 테스트**: ⚙️ → **Data sources** → 각 데이터소스 클릭 → **Save & test**
+   - Mimir, Loki, Tempo, AlertManager 4개 모두 `Data source is working` 확인
+
+3. **Tempo에서 트레이스 검색**: Explore → **Tempo** 선택
+   - **Service Name**: `backend` 선택 → **Find Traces** 클릭
+   - 트레이스 하나 클릭 → Span 트리에서 각 서비스 구간의 소요 시간 확인
+   - Span의 가로 길이 = 소요 시간 (긴 Span이 병목)
+   - 각 Span 클릭 → 태그(HTTP status, method)와 로그 확인
+
+4. **메트릭 → 로그 → 트레이스 상관관계 점프**:
+   - Explore → **Mimir** 선택 → `rate(hubble_http_requests_total{namespace="demo"}[5m])` 실행
+   - 그래프에서 시간대를 드래그하여 범위 선택
+   - 데이터소스를 **Loki**로 전환 → 시간 범위 유지 상태에서 `{namespace="demo"}` 실행
+   - 로그 라인 펼침 → `traceID` 필드 클릭 → 자동으로 **Tempo**에서 해당 트레이스 열림
+   - **핵심**: 데이터소스를 전환해도 **시간 범위가 유지**되므로 교차 확인 가능
+
 #### 실습 7-2: 에러/지연 트래픽으로 tail_sampling 동작 확인
 
 ```bash
@@ -1595,6 +1685,26 @@ done
 # → 에러/지연 트레이스는 모두 존재 (100%)
 # → 정상 트레이스는 ~2개만 존재 (20개 중 10%)
 ```
+
+#### UI에서 확인: tail_sampling 결과 비교
+
+1. **Grafana → Explore → Tempo** 선택
+2. **에러 트레이스 확인**: Service Name 선택 → **Status** 필터에서 `Error` 선택 → Find Traces
+   - 위에서 보낸 5xx 에러 요청 트레이스가 **모두** 존재함을 확인 (100% 보관)
+3. **느린 트레이스 확인**: **Min Duration**에 `2s` 입력 → Find Traces
+   - `/delay/3` 요청 트레이스가 존재함을 확인 (100% 보관)
+4. **정상 트레이스 확인**: Status 필터 제거, Duration 필터 제거 → Find Traces
+   - 정상 200 요청은 20개 중 약 2개만 존재 (10% 샘플링)
+5. **Loki에서 Builder/Code 모드 실습**:
+   - Explore → **Loki** 선택 → **Builder** 모드에서 `namespace` = `demo` 선택
+   - 라벨 값 옆 🔍 돋보기 아이콘 클릭으로 사용 가능한 값 자동 완성
+   - **Code** 모드 전환 → `{namespace="demo"} |= "error"` 입력 후 Run query
+   - 우측 상단 **Live** 버튼 → 실시간 로그 스트리밍 확인 → **Stop**으로 중지
+6. **Mimir에서 PromQL 실습**:
+   - Explore → **Mimir** 선택 → **Code** 모드
+   - `container_memory_working_set_bytes{namespace="demo"}` 입력 → Run query
+   - **Graph** / **Table** 토글로 시각화 모드 전환
+   - 시간 범위 피커에서 `Last 15 minutes` → `Last 1 hour` 등으로 조절
 
 ### Q&A
 
