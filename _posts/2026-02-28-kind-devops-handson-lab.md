@@ -394,16 +394,41 @@ kubectl get pods -n kube-system -l k8s-app=hubble-relay
 #### 실습 2-1: CiliumNetworkPolicy로 Pod 접근 제한
 
 ```bash
-# ── 1. 변경 전: 정책 없이 누구나 backend에 접근 가능한 상태 확인 ──
+# ── 1. 변경 전: CiliumNetworkPolicy 없이 접근 가능한 상태 확인 ──
 
 # frontend에서 backend 호출 (성공)
 kubectl exec -n demo deploy/frontend -- curl -sf http://backend.demo.svc/status/200
 # → 200 OK
 
-# default 네임스페이스의 임시 Pod에서 backend 호출 (성공 — 아직 제한 없음)
-kubectl run test-before --image=curlimages/curl --rm -it --restart=Never -n default -- \
-  curl -sf --max-time 5 http://backend.demo.svc/status/200
-# → 200 OK (아무 Pod에서나 backend 접근 가능)
+# demo 네임스페이스 내 테스트 Pod에서 backend 호출
+# (serviceAccountName=frontend → AuthorizationPolicy 통과, app=test-cnp → CNP 테스트용)
+kubectl apply -n demo -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-cnp
+  labels:
+    app: test-cnp
+    env: dev
+    team: platform
+spec:
+  serviceAccountName: frontend
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  containers:
+  - name: curl
+    image: curlimages/curl:8.5.0
+    command: ["sleep", "120"]
+    resources:
+      limits:
+        cpu: 100m
+        memory: 64Mi
+EOF
+kubectl wait --for=condition=ready pod/test-cnp -n demo --timeout=60s
+
+kubectl exec -n demo test-cnp -- curl -sf --max-time 5 http://backend.demo.svc/status/200
+# → 200 OK (CiliumNetworkPolicy 없음 — app 라벨과 무관하게 접근 가능)
 
 # ── 2. CiliumNetworkPolicy 적용: frontend + Kong만 허용 ──
 
@@ -427,17 +452,18 @@ EOF
 
 # ── 3. 변경 후: 허용된 Pod는 통과, 허용되지 않은 Pod는 차단 확인 ──
 
-# frontend → backend (허용 목록에 있으므로 성공)
+# frontend → backend (app=frontend 라벨이 허용 목록에 있으므로 성공)
 kubectl exec -n demo deploy/frontend -- curl -sf http://backend.demo.svc/status/200
 # → 200 OK
 
-# default 네임스페이스의 임시 Pod → backend (허용 목록에 없으므로 차단)
-kubectl run test-after --image=curlimages/curl --rm -it --restart=Never -n default -- \
-  curl -sf --max-time 5 http://backend.demo.svc/status/200
-# → 타임아웃 (Cilium이 차단 — 아까는 됐지만, 정책 적용 후 차단됨)
+# test-cnp → backend (app=test-cnp 라벨이 허용 목록에 없으므로 차단)
+kubectl exec -n demo test-cnp -- curl -sf --max-time 5 http://backend.demo.svc/status/200
+# → 타임아웃 (CiliumNetworkPolicy가 app=test-cnp 라벨을 차단)
+# → 포인트: 같은 ServiceAccount(frontend)여도 Pod 라벨 기반의 L3/L4 정책으로 차단됨
 
 # ── 4. 정리 ──
 kubectl delete cnp -n demo backend-allow-frontend-only
+kubectl delete pod test-cnp -n demo
 ```
 
 #### 실습 2-2: 장애 주입 — Cilium Agent Pod 삭제
