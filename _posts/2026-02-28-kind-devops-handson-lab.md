@@ -1,5 +1,5 @@
 ---
-title: "Kind 기반 Kubernetes 핸즈온 구축기"
+title: "Kind 기반 프로덕션 패리티 DevOps 핸즈온 랩 구축기"
 date: 2026-02-28
 categories: [ DevOps, Kubernetes ]
 tags: [ Kind, Cilium, Istio, Kong, ArgoCD, Gatekeeper, LGTM, Mimir, Loki, Tempo, Grafana, OTel, eBPF, GatewayAPI ]
@@ -9,9 +9,11 @@ math: true
 mermaid: true
 ---
 
-Kind 클러스터 위에 Cilium(eBPF CNI) + Istio Ambient(mTLS) + Kong(Gateway API) + ArgoCD(GitOps) + Gatekeeper(OPA) + LGTM 관측성 스택을 올리고, 실제 운영 환경(DC 39대 서버, Docker Compose 기반)과 동일한 설정을 적용했다. 이 글에서는 각 기술의 동작 원리부터 실습 과제, 장애 주입, 트러블슈팅까지 전체 과정을 다룬다. `--env` 옵션으로 `dev`, `stg`, `prod` 환경을 전환할 수 있으며, 도메인은 `*.lab-{ENV}.local` 형식이다.
+로컬 머신에서 프로덕션과 동일한 DevOps 환경을 구축할 수 있을까? Kind 클러스터 위에 Cilium(eBPF CNI) + Istio Ambient(mTLS) + Kong(Gateway API) + ArgoCD(GitOps) + Gatekeeper(OPA) + LGTM 관측성 스택을 올리고, 실제 운영 환경(DC 39대 서버, Docker Compose 기반)과 동일한 설정을 적용했다. 이 글에서는 각 기술의 동작 원리부터 실습 과제, 장애 주입, 트러블슈팅까지 전체 과정을 다룬다. `--env` 옵션으로 `dev`, `stg`, `prod` 환경을 전환할 수 있으며, 도메인은 `*.lab-{ENV}.local` 형식이다.
 
 > **환경**: `--env` 옵션으로 `dev`, `stg`, `prod` 환경을 전환할 수 있으며, 도메인은 `*.lab-{ENV}.local` 형식.
+>
+> Last updated: 2026-02-28
 
 ---
 
@@ -28,13 +30,13 @@ Kind 클러스터 위에 Cilium(eBPF CNI) + Istio Ambient(mTLS) + Kong(Gateway A
 | 5  | Istio Ambient    | v1.29          | istiod, ztunnel, cni    | istio-system      | 7 (istiod×1, ztunnel×3, cni×3)                                                                                                   |
 | 6  | ArgoCD           | v3.3.2         | argo-cd-9.4.5           | argocd            | 7                                                                                                                                |
 | 7  | Gatekeeper (OPA) | v3.21.1        | gatekeeper-3.21.1       | gatekeeper-system | 2                                                                                                                                |
-| 8  | OTel Collector   | v0.118.0       | (LGTM 내)                | monitoring        | 1                                                                                                                                |
+| 8  | OTel Collector   | v0.146.1       | (LGTM 내)                | monitoring        | 1                                                                                                                                |
 | 9  | Mimir            | 3.0.1          | mimir-distributed-6.0.5 | monitoring        | 10 (distributor, ingester, compactor, querier, query-frontend, query-scheduler, ruler, store-gateway, gateway, rollout-operator) |
 | 10 | Loki             | 3.6.5          | loki-6.53.0             | monitoring        | 3 (loki×1, canary×2)                                                                                                             |
-| 11 | Tempo            | 2.9.1          | tempo-distributed       | monitoring        | 1                                                                                                                                |
-| 12 | Alloy            | -              | alloy                   | monitoring        | 2 (DaemonSet)                                                                                                                    |
+| 11 | Tempo            | 2.9.0          | tempo-1.24.4            | monitoring        | 1                                                                                                                                |
+| 12 | Alloy            | v1.13.0        | alloy-1.6.0             | monitoring        | 2 (DaemonSet)                                                                                                                    |
 | 13 | Grafana          | 12.3.1         | grafana-10.5.15         | monitoring        | 1                                                                                                                                |
-| 14 | AlertManager     | -              | -                       | monitoring        | 1                                                                                                                                |
+| 14 | AlertManager     | v0.30.1        | - (raw manifest)        | monitoring        | 1                                                                                                                                |
 
 **노드**: control-plane 1 + worker 2 (arm64, containerd 2.2.0)
 **총 Pod**: 57개 / **네임스페이스**: 8개 (kube-system 16, monitoring 19, istio-system 7, argocd 7, demo 3, kong 2,
@@ -84,7 +86,8 @@ echo "127.0.0.1 grafana.lab-dev.local argocd.lab-dev.local hubble.lab-dev.local 
 | Tempo (트레이스)      | 요청 하나가 어떤 서비스를 거쳐서 얼마나 걸렸는지 (예: Kong → backend 200ms)    |
 | AlertManager (알림) | 알림 규칙 목록, 발생 중인 알림, Silence(알림 무시) 관리                    |
 
-Grafana의 핵심 가치는 4개 데이터소스를 **상관관계로 연결**해서 볼 수 있다는 것이다. 에러율 급증 그래프를 발견하면(Mimir) → 클릭해서 해당 시간대 로그로 이동(Loki) → 로그에서 trace ID를 클릭하면 트레이스로 이동(Tempo) → 어떤 서비스에서 얼마나 느렸는지 확인하는 흐름이다.
+Grafana의 핵심 가치는 4개 데이터소스를 **상관관계로 연결**해서 볼 수 있다는 것이다. 에러율 급증 그래프를 발견하면(Mimir) → 클릭해서 해당 시간대 로그로 이동(Loki) → 로그에서 trace
+ID를 클릭하면 트레이스로 이동(Tempo) → 어떤 서비스에서 얼마나 느렸는지 확인하는 흐름이다.
 
 프로덕션에서는 "장애 발생 → 원인 파악"까지의 시간(MTTR)을 단축하는 핵심 도구로, 온콜 담당자가 가장 먼저 여는 화면이다.
 
@@ -99,7 +102,8 @@ Git에 정의한 K8s 리소스가 실제 클러스터와 일치하는지 보여�
 | Diff 뷰         | Git에 정의된 상태 vs 실제 클러스터 상태의 차이점. kubectl edit 등으로 수동 변경하면 여기에 빨간색으로 표시 |
 | History        | 이전 배포 기록과 롤백 버튼                                                       |
 
-개발자가 Git에 `replicas: 3`으로 push하면 ArgoCD가 자동 감지 → UI에서 "OutOfSync" 표시 → 자동 sync(selfHeal) 또는 수동 Sync 버튼으로 클러스터에 반영하는 흐름이다. 누가 언제 뭘 배포했는지 추적하고, 문제 생기면 이전 버전으로 원클릭 롤백할 수 있다.
+개발자가 Git에 `replicas: 3`으로 push하면 ArgoCD가 자동 감지 → UI에서 "OutOfSync" 표시 → 자동 sync(selfHeal) 또는 수동 Sync 버튼으로 클러스터에 반영하는
+흐름이다. 누가 언제 뭘 배포했는지 추적하고, 문제 생기면 이전 버전으로 원클릭 롤백할 수 있다.
 
 #### Hubble UI — 네트워크 관측 맵
 
@@ -112,7 +116,8 @@ Git에 정의한 K8s 리소스가 실제 클러스터와 일치하는지 보여�
 | Policy 뷰    | CiliumNetworkPolicy에 의해 차단된 트래픽을 빨간색으로 표시                         |
 | DNS 요청      | 어떤 Pod가 어떤 도메인을 조회했는지                                             |
 
-"backend Pod가 외부 API 호출이 안 된다" 같은 문제가 발생하면, Hubble UI에서 해당 Pod를 선택 → Flow 목록에서 트래픽 확인 → "DROPPED by policy" 발견 → NetworkPolicy 수정하는 흐름으로 디버깅한다. 보안 감사 시 트래픽 흐름 증빙 자료로도 활용한다.
+"backend Pod가 외부 API 호출이 안 된다" 같은 문제가 발생하면, Hubble UI에서 해당 Pod를 선택 → Flow 목록에서 트래픽 확인 → "DROPPED by policy" 발견 →
+NetworkPolicy 수정하는 흐름으로 디버깅한다. 보안 감사 시 트래픽 흐름 증빙 자료로도 활용한다.
 
 #### Kong Manager — API Gateway 관리
 
@@ -136,18 +141,21 @@ Kong Gateway의 라우팅 규칙과 플러그인을 확인하는 Admin UI다. No
 | 서비스 간 통신이 안 된다     | **Hubble UI** → 트래픽 차단 여부, DNS 문제 확인            |
 | 외부에서 URL 접속이 안 된다  | **Kong Manager** → 라우팅 규칙, 업스트림 서비스 상태 확인       |
 
-현재 Docker Compose 환경에서는 이런 UI가 없기 때문에 장애 시 `ssh` → `docker logs` → `grep` 순서로 서버를 돌아다녀야 한다. K8s + 이 4개 UI가 있으면 브라우저 하나에서 전부 확인 가능하다.
+현재 Docker Compose 환경에서는 이런 UI가 없기 때문에 장애 시 `ssh` → `docker logs` → `grep` 순서로 서버를 돌아다녀야 한다. K8s + 이 4개 UI가 있으면 브라우저 하나에서
+전부 확인 가능하다.
 
 ### 해결된 호환성 이슈
 
-| # | 이슈                       | 원인                        | 해결                                     |
-|---|--------------------------|---------------------------|----------------------------------------|
-| 1 | Cilium + Istio CNI 충돌    | CNI exclusive mode        | `cni.exclusive: false` 설정              |
-| 2 | ztunnel 트래픽 우회           | socketLB가 ztunnel 이전에 NAT | `socketLB.hostNamespaceOnly: true`     |
-| 3 | Mimir Kafka ingest 실패    | Kafka 미설치 환경              | Classic write path 사용                  |
-| 4 | Tempo idle timeout       | tail_sampling 30s 대기      | `trace_idle_period: 60s`               |
-| 5 | OTel high-cardinality 폭발 | process.pid 등 고유 속성       | resource 속성 삭제 프로세서                    |
-| 6 | Kong NodePort 충돌         | Kind extraPortMappings    | hostPort 80/443 → NodePort 30080/30443 |
+| # | 이슈                       | 원인                              | 해결                                     |
+|---|--------------------------|---------------------------------|----------------------------------------|
+| 1 | Cilium + Istio CNI 충돌    | CNI exclusive mode              | `cni.exclusive: false` 설정              |
+| 2 | ztunnel 트래픽 우회           | socketLB가 ztunnel 이전에 NAT       | `socketLB.hostNamespaceOnly: true`     |
+| 3 | Mimir Kafka ingest 실패    | Kafka 미설치 환경                    | Classic write path 사용                  |
+| 4 | Tempo idle timeout       | tail_sampling 30s 대기            | `trace_idle_period: 60s`               |
+| 5 | OTel high-cardinality 폭발 | process.pid 등 고유 속성             | resource 속성 삭제 프로세서                    |
+| 6 | Kong NodePort 충돌         | Kind extraPortMappings          | hostPort 80/443 → NodePort 30080/30443 |
+| 7 | Kong → Backend 502       | AuthorizationPolicy가 Kong SA 차단 | `kong-gateway` SA를 ALLOW 목록에 추가        |
+| 8 | 외부→Kong 접속 불가          | STRICT mTLS가 NodePort 트래픽 차단 | Kong proxy 포트 portLevelMtls PERMISSIVE |
 
 ---
 
@@ -461,6 +469,98 @@ kubectl exec -n demo deploy/frontend -- curl -sf http://backend.demo.svc/status/
 kubectl wait --for=condition=ready pod -l k8s-app=cilium -n kube-system --timeout=60s
 kubectl get pods -n kube-system -l k8s-app=cilium
 # → 새 Pod가 Ready — eBPF map 동기화 완료
+```
+
+#### 실습 2-3: L7 HTTP 정책 — Cilium Envoy 활용
+
+> L3/L4 정책(실습 2-1)은 IP/포트 수준에서만 제어한다. L7 정책은 HTTP 메서드, 경로, 헤더까지 제어할 수 있다.
+> 이 정책이 적용되면 Cilium Envoy DaemonSet이 트래픽 경로에 개입하여 HTTP 파싱을 수행한다.
+
+```bash
+# ── 1. 변경 전: 모든 HTTP 메서드/경로 허용 ──
+
+# GET 요청 (정상)
+kubectl exec -n demo deploy/frontend -- curl -sf http://backend.demo.svc/get
+# → 200 OK
+
+# POST 요청 (정상)
+kubectl exec -n demo deploy/frontend -- curl -sf -X POST http://backend.demo.svc/post
+# → 200 OK
+
+# DELETE 요청 (정상)
+kubectl exec -n demo deploy/frontend -- curl -sf -X DELETE http://backend.demo.svc/delete
+# → 200 OK
+
+# ── 2. L7 CiliumNetworkPolicy 적용: frontend는 GET만 허용, 특정 경로만 ──
+
+kubectl apply -f lab/01-cilium/policies/backend-l7-policy.yaml
+
+# ── 3. 변경 후: L7 수준에서 제어됨을 확인 ──
+
+# frontend → GET /status/200 (허용된 경로 패턴 → 통과)
+kubectl exec -n demo deploy/frontend -- curl -sf http://backend.demo.svc/status/200
+# → 200 OK
+
+# frontend → GET /get (허용 → 통과)
+kubectl exec -n demo deploy/frontend -- curl -sf http://backend.demo.svc/get
+# → 200 OK
+
+# frontend → POST /post (GET만 허용 → 차단)
+kubectl exec -n demo deploy/frontend -- curl -sf -X POST http://backend.demo.svc/post
+# → Access denied (403) — L7 정책이 HTTP 메서드를 검사하여 차단
+
+# frontend → GET /delay/1 (허용된 경로 패턴에 없음 → 차단)
+kubectl exec -n demo deploy/frontend -- curl -sf http://backend.demo.svc/delay/1
+# → Access denied (403) — /delay/.* 패턴이 rules.http에 없으므로 차단
+
+# ── 4. Hubble로 L7 필터링 관찰 ──
+hubble observe --namespace demo --type l7 --protocol http --last 20
+# → DROPPED 이벤트에서 HTTP method=POST, path=/post 확인 가능
+# → L7 정책은 Cilium Envoy가 처리하므로 Hubble에 HTTP 수준 로그 노출
+
+# ── 5. 정리 ──
+kubectl delete cnp -n demo backend-l7-http-policy
+```
+
+**L7 정책의 동작 원리**:
+
+```
+L3/L4 정책 (실습 2-1):
+  Pod A → eBPF (커널) → 허용/차단 → Pod B
+  검사: 출발지 IP, 목적지 IP, 포트 번호만
+
+L7 정책 (실습 2-3):
+  Pod A → eBPF → Cilium Envoy (userspace) → eBPF → Pod B
+                  ↑
+                  HTTP 파싱: method=POST → 차단
+                  HTTP 파싱: path=/delay/1 → 차단
+                  HTTP 파싱: method=GET, path=/get → 허용
+
+Envoy 개입 조건: CiliumNetworkPolicy에 rules.http 필드가 있을 때만
+  → L7 정책이 없으면 Envoy Pod는 idle (리소스 소모만, 트래픽 처리 안 함)
+```
+
+**L7 NetworkPolicy 포인트**:
+
+```
+Q: Kubernetes 기본 NetworkPolicy와 CiliumNetworkPolicy의 L7 지원 차이는?
+
+A: Kubernetes 기본 NetworkPolicy는 L3/L4(IP, 포트)만 지원한다.
+   HTTP 경로나 메서드 기반 제어가 불가능하다.
+
+   CiliumNetworkPolicy는 rules.http 필드로 L7 정책을 지원한다.
+   이 정책이 적용되면 Cilium Envoy DaemonSet이 트래픽 경로에 개입하여
+   HTTP 메서드, 경로, 헤더를 파싱한다.
+
+   Production 활용 예시:
+   ├── 관리자 API (/admin/*)는 특정 ServiceAccount만 접근 허용
+   ├── 헬스체크 (/healthz)는 모든 소스에서 허용
+   ├── 쓰기 API (POST/PUT/DELETE)는 인증된 서비스만 허용
+   └── 읽기 API (GET)는 폭넓게 허용
+
+   주의: L7 정책은 Envoy를 경유하므로 L3/L4 대비 레이턴시가 증가한다.
+   따라서 모든 서비스에 L7 정책을 적용하는 것이 아니라,
+   보안이 중요한 서비스에만 선택적으로 적용하는 것이 Best Practice이다.
 ```
 
 ### Q&A
@@ -1529,7 +1629,7 @@ Kubernetes의 기본 스케줄러는 리소스가 허용하는 한 Pod를 생성
 
 | 리소스           | 역할                | Lab 설정                                                     | 프로덕션 설정                                               |
 |---------------|-------------------|------------------------------------------------------------|-------------------------------------------------------|
-| PriorityClass | Pod 스케줄링 우선순위     | mis-critical(1M), mis-high(100K), mis-normal(10K, default) | 동일                                                    |
+| PriorityClass | Pod 스케줄링 우선순위     | lab-critical(1M), lab-high(100K), lab-normal(10K, default) | 동일                                                    |
 | ResourceQuota | 네임스페이스별 리소스 총량 제한 | CPU req=4/lim=8, Mem req=8Gi/lim=16Gi, pods=20             | CPU req=64/lim=128, Mem req=256Gi/lim=512Gi, pods=100 |
 | LimitRange    | 컨테이너 기본 리소스 값     | default limits: 2CPU/4Gi, default requests: 250m/512Mi     | 동일                                                    |
 | PDB           | 동시 중단 Pod 수 제한    | backend: minAvailable=1                                    | 서비스별 minAvailable 설정                                  |
@@ -1539,7 +1639,7 @@ Kubernetes의 기본 스케줄러는 리소스가 허용하는 한 Pod를 생성
 ```bash
 # PriorityClass 목록
 kubectl get priorityclasses
-# → mis-critical (1000000), mis-high (100000), mis-normal (10000, globalDefault=true)
+# → lab-critical (1000000), lab-high (100000), lab-normal (10000, globalDefault=true)
 
 # ResourceQuota 상태 (현재 사용량/한도)
 kubectl describe resourcequota -n demo
@@ -1905,7 +2005,455 @@ DC의 Docker Compose 서버에도 동일 에이전트 배포:
 
 ---
 
-## 11. 일상 운영 명령어 모음
+## 11. Helm 차트 실습
+
+> 인프라 컴포넌트(Cilium, Kong, Istio, ArgoCD, Gatekeeper, LGTM 스택)는 모두 Helm으로 설치했지만, 유일하게 demo 앱만 raw `kubectl apply`로 배포하고 있다. Production에서는 10개 이상의 subchart를 가진 Umbrella Chart로 환경별 values를 관리한다. 이 섹션에서 demo 앱을 Helm chart화하여 Lab ↔ Production 갭을 줄인다.
+
+### 이 기술이 없다면?
+
+```
+문제: raw kubectl로 10+개 YAML 관리
+├── 값 하드코딩 → env:dev가 5개 파일(namespace, backend, frontend, SA, job)에 각각 하드코딩
+├── 환경별 파일 복사 → dev/stg/prod마다 파일 복사 후 수동 수정 → 수정 누락 사고
+├── 롤백 불가 → kubectl apply는 히스토리 없음, 이전 상태 복원 수동
+└── 현재 06-demo-app이 바로 이 상태
+
+해결: Helm chart로 템플릿화
+├── values.yaml 하나로 환경별 값 주입
+├── _helpers.tpl로 Gatekeeper 필수 라벨(app, env, team) 강제
+├── helm rollback으로 즉시 이전 버전 복원
+└── ArgoCD + Helm으로 GitOps 자동 배포
+```
+
+### 동작 원리
+
+**Chart 구조**:
+
+```
+lab/03-argocd/apps/demo-app/
+├── Chart.yaml                    # 차트 메타데이터 (이름, 버전)
+├── values.yaml                   # 기본값 (dev 환경)
+├── values-stg.yaml               # stg 환경 오버라이드
+├── values-prod.yaml              # prod 환경 오버라이드
+└── templates/
+    ├── _helpers.tpl              # 공통 헬퍼 (라벨, securityContext)
+    ├── namespace.yaml            # Namespace (조건부 생성)
+    ├── backend-deployment.yaml   # Backend Deployment
+    ├── backend-service.yaml      # Backend Service
+    ├── frontend-deployment.yaml  # Frontend Deployment
+    ├── frontend-sa.yaml          # Frontend ServiceAccount
+    └── load-generator-job.yaml   # Load Generator Job (조건부)
+```
+
+**Go template 렌더링 원리**:
+
+```
+values.yaml (입력)          templates/*.yaml (템플릿)         최종 manifest (출력)
+─────────────────     +     ─────────────────────────     =   ──────────────────
+global:                     metadata:                         metadata:
+  env: dev                    labels:                           labels:
+  team: platform                env: {{ .Values.global.env }}     env: dev
+backend:                    spec:                             spec:
+  replicas: 2                 replicas: {{ .Values...replicas }}  replicas: 2
+
+helm template = 렌더링만 (클러스터 변경 없음, CI에서 검증용)
+helm install  = 렌더링 + kubectl apply + release 히스토리 저장
+```
+
+**Lab Helm 활용 현황**:
+
+| # | 컴포넌트         | 배포 방식                                        | Helm Release                     |
+|---|--------------|----------------------------------------------|----------------------------------|
+| 1 | Cilium       | Helm install                                 | `cilium` (kube-system)           |
+| 2 | Kong         | Helm install                                 | `kong` (kong)                    |
+| 3 | Istio        | Helm install (base + istiod + cni + ztunnel) | `istio-*` (istio-system)         |
+| 4 | ArgoCD       | Helm install                                 | `argocd` (argocd)                |
+| 5 | Gatekeeper   | Helm install                                 | `gatekeeper` (gatekeeper-system) |
+| 6 | Mimir        | Helm install                                 | `mimir` (monitoring)             |
+| 7 | Loki         | Helm install                                 | `loki` (monitoring)              |
+| 8 | Grafana      | Helm install                                 | `grafana` (monitoring)           |
+| 9 | **demo-app** | **raw kubectl apply**                        | **없음** ← 이 갭을 해결                 |
+
+### 클러스터 상태 확인
+
+```bash
+# 전체 Helm release 확인 — demo 네임스페이스에는 release가 없음
+helm list -A
+helm list -n demo    # 빈 결과 확인
+```
+
+### 실습 11-1. Chart 구조 분석 및 helm template 렌더링
+
+```bash
+# 1. 차트 파일 구조 확인
+tree lab/03-argocd/apps/demo-app/
+
+# 2. _helpers.tpl 확인 — Gatekeeper 필수 라벨이 헬퍼에 정의됨
+cat lab/03-argocd/apps/demo-app/templates/_helpers.tpl
+
+# 3. helm template으로 렌더링 (클러스터 변경 없음, 로컬에서 검증)
+helm template demo-app lab/03-argocd/apps/demo-app/
+
+# 4. Gatekeeper 필수 라벨 확인 — 모든 리소스에 app, env, team 라벨 존재
+helm template demo-app lab/03-argocd/apps/demo-app/ | grep -E "app:|env:|team:"
+
+# 5. helm lint — 문법 오류 검증
+helm lint lab/03-argocd/apps/demo-app/
+# ==> Linting lab/03-argocd/apps/demo-app/
+# [INFO] Chart.yaml: icon is recommended
+# 1 chart(s) linted, 0 chart(s) failed
+```
+
+### 실습 11-2. helm install / upgrade / rollback
+
+```bash
+# 1. 기존 raw 리소스 정리 (이미 있다면)
+kubectl delete -f lab/06-demo-app/namespace.yaml --ignore-not-found
+
+# 2. helm install — chart에서 Namespace, Deployment, Service, SA 모두 생성
+helm install demo-app lab/03-argocd/apps/demo-app/ -n demo --create-namespace
+
+# 3. 배포 확인
+kubectl get all -n demo
+helm list -n demo
+# NAME       NAMESPACE  REVISION  STATUS    CHART           APP VERSION
+# demo-app   demo       1         deployed  demo-app-0.1.0  1.0.0
+
+# 4. helm upgrade — replicas 변경
+helm upgrade demo-app lab/03-argocd/apps/demo-app/ -n demo \
+  --set backend.replicas=3
+
+# 5. 히스토리 확인
+helm history demo-app -n demo
+# REVISION  STATUS      DESCRIPTION
+# 1         superseded  Install complete
+# 2         deployed    Upgrade complete
+
+# 6. rollback — 이전 버전으로 즉시 복원
+helm rollback demo-app 1 -n demo
+kubectl get pods -n demo -l app=backend
+# → 다시 2개로 복원
+```
+
+### 실습 11-3. 환경별 values 전략
+
+```bash
+# 1. stg 환경 렌더링 — 리소스 2배
+helm template demo-app lab/03-argocd/apps/demo-app/ \
+  -f lab/03-argocd/apps/demo-app/values-stg.yaml | grep -A3 "resources:"
+
+# 2. prod 환경 렌더링 — replicas 4, 이미지 태그 고정, 리소스 4배
+helm template demo-app lab/03-argocd/apps/demo-app/ \
+  -f lab/03-argocd/apps/demo-app/values-prod.yaml | grep -E "replicas:|image:"
+
+# 3. loadGenerator 조건부 활성화
+helm template demo-app lab/03-argocd/apps/demo-app/ \
+  --set loadGenerator.enabled=true | grep "kind: Job"
+# kind: Job    ← enabled=true일 때만 렌더링됨
+```
+
+**Lab vs Production 환경 전략 비교**:
+
+| 구분        | Lab                             | Production                                      |
+|-----------|---------------------------------|-------------------------------------------------|
+| values 관리 | values.yaml + values-{env}.yaml | Umbrella Chart의 global values + subchart values |
+| 환경 분기     | `-f values-stg.yaml` 플래그        | ArgoCD ApplicationSet + values 파일 자동 매핑         |
+| 이미지 태그    | latest (개발 편의)                  | 고정 버전 (예: 0.9.2) — Harbor 미러링                   |
+| 시크릿       | 미사용                             | External Secrets Operator + Vault               |
+| 조건부 배포    | `.enabled` 플래그                  | subchart `condition` 필드                         |
+
+### 실습 11-4. ArgoCD + Helm 통합 배포
+
+```bash
+# 1. ArgoCD Application 생성 (Helm source type)
+kubectl apply -f - <<'EOF'
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app-helm
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/<your-repo>/interview-prep.git
+    targetRevision: main
+    path: lab/03-argocd/apps/demo-app
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo
+  syncPolicy:
+    automated:
+      selfHeal: true    # 누군가 수동 변경 → 자동 복구
+      prune: true        # Git에서 삭제 → 클러스터에서도 삭제
+EOF
+
+# 2. ArgoCD에서 동기화 상태 확인
+argocd app get demo-app-helm
+
+# 3. selfHeal 테스트 — 수동 변경 시 자동 복구
+kubectl scale deploy -n demo backend --replicas=5
+# → 몇 초 후 ArgoCD가 감지하여 values.yaml의 replicas: 2로 복원
+
+# 4. 중요: helm list에 안 나오는 이유
+helm list -n demo
+# → ArgoCD 배포 시 빈 결과
+# ArgoCD는 내부적으로 helm template만 사용하여 manifest를 생성한 뒤
+# kubectl apply로 배포한다. helm install/upgrade를 사용하지 않으므로
+# Helm release 히스토리가 생성되지 않는다.
+# 이는 의도된 동작이며, ArgoCD가 자체적으로 배포 히스토리를 관리한다.
+```
+
+### Helm 포인트
+
+**Q1. Helm vs Kustomize 선택 기준은?**
+
+```
+Helm: 패키지 매니저 관점 — 차트 버전 관리, 릴리즈 히스토리, 조건부 렌더링, 외부 차트 의존성
+├── 적합: 복잡한 앱 (10+ 마이크로서비스), 환경별 값 차이가 큰 경우, 오픈소스 차트 활용
+├── 장점: helm rollback, dependency 관리, 커뮤니티 차트 에코시스템
+└── 단점: Go template 복잡성, 디버깅 어려움 (helm template으로 검증 필수)
+
+Kustomize: 오버레이 관점 — base + overlay 패턴, 순수 YAML, kubectl 내장
+├── 적합: 단순한 환경별 차이 (replicas, 리소스만), YAML 직접 관리 선호
+├── 장점: 학습 곡선 낮음, kubectl 내장, 원본 YAML 유지
+└── 단점: 조건부 렌더링 없음, 버전/롤백 관리 부재
+
+Production 현황: Helm Umbrella Chart (Kustomize는 일부 ConfigMap overlay에만 사용)
+```
+
+**Q2. Umbrella Chart 패턴과 장단점은?**
+
+```
+구조:
+umbrella-chart/
+├── Chart.yaml (dependencies: subchart 10개 나열)
+├── values.yaml (global + 각 subchart 오버라이드)
+└── charts/
+    ├── backend/
+    ├── frontend/
+    ├── redis/
+    └── ... (10개)
+
+장점:
+├── 단일 helm install로 전체 스택 배포
+├── global values로 공통 값 (이미지 레지스트리, env) 일괄 주입
+└── condition 필드로 subchart 선택적 활성화/비활성화
+
+단점:
+├── 차트 크기 증가 → CI 빌드 시간 증가
+├── 하나의 subchart 변경 → 전체 umbrella 배포 트리거
+└── 버전 충돌 관리 복잡 (subchart 간 CRD 의존성)
+
+대안: ArgoCD App of Apps 패턴 (각 subchart를 독립 Application으로 분리)
+```
+
+**Q3. helm template vs helm install의 차이 (ArgoCD 내부 동작)?**
+
+```
+helm template: Go template 렌더링만 수행 → YAML 출력 → 클러스터 변경 없음
+helm install:  렌더링 + kubectl apply + Secret에 release 히스토리 저장
+
+ArgoCD의 Helm 처리:
+1. helm template으로 manifest 생성
+2. 생성된 manifest를 kubectl apply (ArgoCD의 sync 엔진)
+3. helm install을 사용하지 않음 → helm list에 표시되지 않음
+4. 배포 히스토리는 ArgoCD가 자체 관리 (Application 리소스 + Git 커밋)
+
+이유: ArgoCD는 "렌더링"과 "배포"를 분리하여 GitOps 원칙(Git = Single Source of Truth) 유지
+```
+
+**Q4. Helm Hook과 ArgoCD Sync Wave의 관계는?**
+
+```
+Helm Hook: pre-install, post-install 등 lifecycle hook
+├── DB 마이그레이션 (pre-upgrade), 스모크 테스트 (post-install)
+└── helm.sh/hook annotation으로 지정
+
+ArgoCD Sync Wave: 리소스 배포 순서 제어
+├── argocd.argoproj.io/sync-wave: "0" (낮을수록 먼저)
+└── Namespace(-1) → ConfigMap(0) → Deployment(1) → Job(2)
+
+관계:
+├── ArgoCD는 Helm Hook을 인식하여 Sync Wave로 변환
+├── pre-install → sync-wave: -1 (먼저 실행)
+├── post-install → sync-wave: 1 (나중에 실행)
+└── hook-delete-policy도 ArgoCD가 처리
+
+Production 패턴: Sync Wave로 통일 (Helm Hook 대신)
+├── Helm Hook은 helm install 시에만 동작 → ArgoCD에서는 불완전
+└── Sync Wave + Sync Phase(PreSync/Sync/PostSync)로 완전한 순서 제어
+```
+
+---
+
+## 12. 방화벽 오픈 및 Harbor 미러링 가이드
+
+> 사내 DC 환경에서는 외부 인터넷 접근이 제한되어 있다. K8s 컴포넌트를 설치하려면 보안팀에 방화벽 오픈을 요청하거나, Jump Host에서 이미지를 미리 다운로드하여 Harbor에 올려두어야 한다.
+
+### 12-1. 컨테이너 이미지 레지스트리 (Harbor 미러링 대상)
+
+보안팀에 방화벽 오픈 요청할 레지스트리 도메인 목록:
+
+| # | 도메인                    | 포트  | 용도             | 사용 컴포넌트                                                                  |
+|---|------------------------|-----|----------------|--------------------------------------------------------------------------|
+| 1 | `registry-1.docker.io` | 443 | Docker Hub 이미지 | Kong, Istio, Gatekeeper, Mimir, Loki, Tempo, Grafana, OTel, AlertManager |
+| 2 | `quay.io`              | 443 | Red Hat 레지스트리  | Cilium, ArgoCD, Grafana sidecar, Alloy config-reloader                   |
+| 3 | `ghcr.io`              | 443 | GitHub 레지스트리   | ArgoCD (Dex, Redis Exporter)                                             |
+| 4 | `public.ecr.aws`       | 443 | AWS 퍼블릭 레지스트리  | ArgoCD (Redis)                                                           |
+| 5 | `registry.k8s.io`      | 443 | K8s 공식 이미지     | Kind 노드 이미지에 번들링 (CoreDNS, etcd 등)                                       |
+| 6 | `docker.io`            | 443 | Docker Hub 인증  | `auth.docker.io`, `production.cloudflare.docker.com` 포함                  |
+
+### 12-2. 컴포넌트별 이미지 목록
+
+**Cilium v1.19.1**
+
+| 이미지                | 전체 경로                                                                                     |
+|--------------------|-------------------------------------------------------------------------------------------|
+| Agent              | `quay.io/cilium/cilium:v1.19.1`                                                           |
+| Operator           | `quay.io/cilium/operator-generic:v1.19.1`                                                 |
+| Hubble Relay       | `quay.io/cilium/hubble-relay:v1.19.1`                                                     |
+| Hubble UI Backend  | `quay.io/cilium/hubble-ui-backend:v0.13.3`                                                |
+| Hubble UI Frontend | `quay.io/cilium/hubble-ui:v0.13.3`                                                        |
+| Certgen            | `quay.io/cilium/certgen:v0.3.2`                                                           |
+| Envoy              | `quay.io/cilium/cilium-envoy:v1.31.5-1742306043-95dcc258b0448b2ef1445466e60a0e7dcdc6b85f` |
+
+**Kong Gateway 3.9 (chart ingress-0.22.0)**
+
+| 이미지                | 전체 경로                                              |
+|--------------------|----------------------------------------------------|
+| Gateway            | `docker.io/kong:3.9`                               |
+| Ingress Controller | `docker.io/kong/kubernetes-ingress-controller:3.5` |
+
+**Istio v1.29.0**
+
+| 이미지            | 전체 경로                                |
+|----------------|--------------------------------------|
+| istiod (Pilot) | `docker.io/istio/pilot:1.29.0`       |
+| ztunnel        | `docker.io/istio/ztunnel:1.29.0`     |
+| CNI            | `docker.io/istio/install-cni:1.29.0` |
+
+**ArgoCD v3.3.2 (chart argo-cd-9.4.5)**
+
+| 이미지    | 전체 경로                                              |
+|--------|----------------------------------------------------|
+| ArgoCD | `quay.io/argoproj/argocd:v3.3.2`                   |
+| Dex    | `ghcr.io/dexidp/dex:v2.44.0`                       |
+| Redis  | `public.ecr.aws/docker/library/redis:8.2.3-alpine` |
+
+**Gatekeeper v3.21.1**
+
+| 이미지        | 전체 경로                                               |
+|------------|-----------------------------------------------------|
+| Gatekeeper | `docker.io/openpolicyagent/gatekeeper:v3.21.1`      |
+| CRDs       | `docker.io/openpolicyagent/gatekeeper-crds:v3.21.1` |
+
+**LGTM 관측성 스택**
+
+| 이미지                      | 전체 경로                                                            |
+|--------------------------|------------------------------------------------------------------|
+| Mimir 3.0.1              | `docker.io/grafana/mimir:3.0.1`                                  |
+| Mimir Gateway (nginx)    | `docker.io/nginxinc/nginx-unprivileged:1.29-alpine`              |
+| Loki 3.6.5               | `docker.io/grafana/loki:3.6.5`                                   |
+| Tempo 2.9.0              | `docker.io/grafana/tempo:2.9.0`                                  |
+| Grafana 12.3.1           | `docker.io/grafana/grafana:12.3.1`                               |
+| Alloy v1.13.0            | `docker.io/grafana/alloy:v1.13.0`                                |
+| OTel Collector           | `docker.io/otel/opentelemetry-collector-contrib:0.146.1`         |
+| AlertManager             | `docker.io/prom/alertmanager:v0.30.1`                            |
+| Loki Canary              | `docker.io/grafana/loki-canary:3.6.5`                            |
+| k8s-sidecar (Grafana)    | `docker.io/kiwigrid/k8s-sidecar:1.30.9`                          |
+| Config Reloader (Alloy)  | `quay.io/prometheus-operator/prometheus-config-reloader:v0.81.0` |
+| Rollout Operator (Mimir) | `docker.io/grafana/rollout-operator:v0.32.0`                     |
+
+**데모 앱**
+
+| 이미지               | 전체 경로                                   |
+|-------------------|-----------------------------------------|
+| Backend (httpbin) | `docker.io/kennethreitz/httpbin:latest` |
+| Frontend (curl)   | `docker.io/curlimages/curl:latest`      |
+
+### 12-3. Helm Chart 레포지토리
+
+| # | 컴포넌트       | Helm Repo URL                                           | 다운로드 명령                                                                                        |
+|---|------------|---------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| 1 | Cilium     | `https://helm.cilium.io/`                               | `helm pull cilium/cilium --version 1.19.1`                                                     |
+| 2 | Kong       | `https://charts.konghq.com/`                            | `helm pull kong/ingress --version 0.22.0`                                                      |
+| 3 | Istio      | `https://istio-release.storage.googleapis.com/charts`   | `helm pull istio/base istio/istiod istio/cni istio/ztunnel --version 1.29.0`                   |
+| 4 | ArgoCD     | `https://argoproj.github.io/argo-helm`                  | `helm pull argo/argo-cd --version 9.4.5`                                                       |
+| 5 | Gatekeeper | `https://open-policy-agent.github.io/gatekeeper/charts` | `helm pull gatekeeper/gatekeeper --version 3.21.1`                                             |
+| 6 | Grafana 계열 | `https://grafana.github.io/helm-charts`                 | `helm pull grafana/mimir-distributed grafana/loki grafana/tempo grafana/grafana grafana/alloy` |
+
+### 12-4. 추가 외부 리소스 (사전 다운로드 필요)
+
+| 리소스                     | URL                                                                                             | 용도                              |
+|-------------------------|-------------------------------------------------------------------------------------------------|---------------------------------|
+| Gateway API CRDs        | `https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.0/standard-install.yaml` | Kong install.sh에서 kubectl apply |
+| Grafana Dashboard 15520 | `https://grafana.com/api/dashboards/15520/revisions/2/download`                                 | Kubernetes Overview 대시보드        |
+| Grafana Dashboard 1860  | `https://grafana.com/api/dashboards/1860/revisions/37/download`                                 | Node Exporter 대시보드              |
+
+에어갭 환경에서는 대시보드 JSON을 사전 다운로드하여 ConfigMap으로 주입하는 방식으로 변경해야 한다.
+
+### 12-5. 런타임 외부 접근 (설치 후)
+
+설치가 끝나면 대부분의 컴포넌트는 외부 접근이 필요 없다. 예외 항목만 정리:
+
+| 컴포넌트         | 외부 접근 필요 여부 | 상세                                                                                 |
+|--------------|-------------|------------------------------------------------------------------------------------|
+| ArgoCD       | 필요          | Git 레포지토리 접근 (사내 GitLab 사용 시 내부 통신으로 해결)                                           |
+| Grafana      | 조건부         | `gnetId` 기반 대시보드를 런타임에 grafana.com에서 다운로드 시도. 에어갭에서는 ConfigMap 방식으로 대체             |
+| AlertManager | 조건부         | Slack/PagerDuty webhook 사용 시 해당 엔드포인트 접근 필요                                        |
+| 나머지 전체       | 불필요         | Cilium, Kong, Istio, Gatekeeper, Mimir, Loki, Tempo, OTel, Alloy 모두 클러스터 내부 통신만 사용 |
+
+### 12-6. Harbor 미러링 스크립트 예시
+
+```bash
+#!/bin/bash
+# Jump Host (외부 네트워크 접근 가능)에서 실행
+HARBOR="registry.example.com"
+
+# Cilium 이미지 미러링
+for img in \
+  "quay.io/cilium/cilium:v1.19.1" \
+  "quay.io/cilium/operator-generic:v1.19.1" \
+  "quay.io/cilium/hubble-relay:v1.19.1" \
+  "quay.io/cilium/hubble-ui-backend:v0.13.3" \
+  "quay.io/cilium/hubble-ui:v0.13.3"; do
+  docker pull "$img"
+  NEW_TAG="${HARBOR}/cilium/${img##*/}"
+  docker tag "$img" "$NEW_TAG"
+  docker push "$NEW_TAG"
+done
+
+# Istio 이미지 미러링
+for img in \
+  "docker.io/istio/pilot:1.29.0" \
+  "docker.io/istio/ztunnel:1.29.0" \
+  "docker.io/istio/install-cni:1.29.0"; do
+  docker pull "$img"
+  NEW_TAG="${HARBOR}/istio/${img##*/}"
+  docker tag "$img" "$NEW_TAG"
+  docker push "$NEW_TAG"
+done
+
+# Helm chart도 Harbor Chart Repository에 push
+helm pull cilium/cilium --version 1.19.1
+helm push cilium-1.19.1.tgz oci://${HARBOR}/helm-charts/
+```
+
+Harbor에 이미지를 올린 후에는 각 Helm chart의 values.yaml에서 이미지 경로를 오버라이드한다:
+
+```yaml
+# 예: Cilium values.yaml에 추가
+image:
+  repository: registry.example.com/cilium/cilium
+  useDigest: false
+```
+
+---
+
+## 13. 일상 운영 명령어 모음
 
 ### 디버깅
 
@@ -1982,7 +2530,7 @@ helm get values -n monitoring grafana
 
 ---
 
-## 12. 트러블슈팅 레퍼런스
+## 14. 트러블슈팅 레퍼런스
 
 ### Pod이 Pending 상태
 
