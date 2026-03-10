@@ -429,6 +429,7 @@ mjx-container {
 
   @include bp.lg {
     margin-left: v.$sidebar-width;
+    transition: margin-left 0.35s ease;
   }
 
   @include bp.xxxl {

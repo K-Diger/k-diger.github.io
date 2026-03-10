@@ -85,6 +85,26 @@
   }
 }
 
+#sidebar-collapse-trigger {
+  display: none;
+
+  @include bp.lg {
+    display: block;
+    margin-left: -0.5rem;
+    color: var(--text-muted-color);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  @include bp.lt(bp.get(lg)) {
+    display: none !important;
+  }
+}
+
 #mode-toggle-mobile {
   display: none;
 

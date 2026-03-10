@@ -44,6 +44,12 @@
       <i class="fas fa-bars fa-fw"></i>
     </button>
 
+    {% if page.layout == 'post' %}
+    <button type="button" id="sidebar-collapse-trigger" class="btn btn-link" aria-label="Toggle Sidebar">
+      <i class="fas fa-outdent fa-fw"></i>
+    </button>
+    {% endif %}
+
     <div id="topbar-title">
       {% if page.layout == 'home' %}
         {{- site.data.locales[include.lang].title | default: site.title -}}
@@ -98,3 +104,33 @@
     })();
   </script>
 {% endunless %}
+
+<script>
+  (() => {
+    const ATTR = 'sidebar-collapsed';
+    const STORAGE_KEY = 'sidebar-collapsed';
+    const btn = document.getElementById('sidebar-collapse-trigger');
+    if (!btn) return;
+
+    const icon = btn.querySelector('i');
+
+    function apply(collapsed) {
+      document.body.toggleAttribute(ATTR, collapsed);
+      if (icon) {
+        icon.classList.toggle('fa-outdent', !collapsed);
+        icon.classList.toggle('fa-indent', collapsed);
+      }
+    }
+
+    // restore saved state
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'true') apply(true);
+
+    btn.addEventListener('click', () => {
+      const isCollapsed = document.body.hasAttribute(ATTR);
+      const next = !isCollapsed;
+      apply(next);
+      localStorage.setItem(STORAGE_KEY, String(next));
+    });
+  })();
+</script>

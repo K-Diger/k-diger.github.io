@@ -39,6 +39,10 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
     }
   }
 
+  @include bp.lg {
+    transition: transform 0.35s ease;
+  }
+
   @include bp.xxxl {
     width: v.$sidebar-width-large;
   }
@@ -257,6 +261,26 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
   #main-wrapper {
     @include bp.lt(bp.get(lg)) {
       transform: translateX(v.$sidebar-width);
+    }
+  }
+}
+
+$sidebar-collapsed: 'sidebar-collapsed';
+
+[#{$sidebar-collapsed}] {
+  #sidebar {
+    @include bp.lg {
+      transform: translateX(-100%);
+    }
+  }
+
+  #main-wrapper {
+    @include bp.lg {
+      margin-left: 0;
+    }
+
+    @include bp.xxxl {
+      margin-left: 0;
     }
   }
 }
