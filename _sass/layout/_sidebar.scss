@@ -267,20 +267,22 @@ $sidebar-display: 'sidebar-display'; /* the attribute for sidebar display */
 
 $sidebar-collapsed: 'sidebar-collapsed';
 
-[#{$sidebar-collapsed}] {
+body[#{$sidebar-collapsed}] {
   #sidebar {
     @include bp.lg {
-      transform: translateX(-100%);
+      transform: translateX(-100%) !important;
+      visibility: hidden;
+      transition: transform 0.35s ease, visibility 0s 0.35s;
     }
   }
 
   #main-wrapper {
     @include bp.lg {
-      margin-left: 0;
+      margin-left: 0 !important;
     }
 
     @include bp.xxxl {
-      margin-left: 0;
+      margin-left: 0 !important;
     }
   }
 }

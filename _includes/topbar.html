@@ -129,8 +129,10 @@
     btn.addEventListener('click', () => {
       const isCollapsed = document.body.hasAttribute(ATTR);
       const next = !isCollapsed;
+      console.log('[sidebar-toggle] clicked, collapsed:', next);
       apply(next);
       localStorage.setItem(STORAGE_KEY, String(next));
+      console.log('[sidebar-toggle] body has attr:', document.body.hasAttribute(ATTR));
     });
   })();
 </script>
