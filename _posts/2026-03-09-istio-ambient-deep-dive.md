@@ -1,5 +1,5 @@
 ---
-title: "Istio Ambient Mesh 완전 정복 - ztunnel, HBONE, Waypoint Proxy (공식문서 Deep Dive)"
+title: "Istio Ambient Mesh - ztunnel, HBONE, Waypoint Proxy (공식문서 Deep Dive)"
 date: 2026-03-09
 categories: [Kubernetes, Istio]
 tags: [istio, ambient-mesh, ztunnel, hbone, waypoint, service-mesh, sidecar-less, l4, l7]

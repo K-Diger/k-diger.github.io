@@ -1,5 +1,5 @@
 ---
-title: "Istio Sidecar 모드 완전 정복 - 아키텍처, 트래픽 관리, 보안, Observability (공식문서 Deep Dive)"
+title: "Istio Sidecar 모드 - 아키텍처, 트래픽 관리, 보안, Observability (공식문서 Deep Dive)"
 date: 2026-03-09
 categories: [Kubernetes, Istio]
 tags: [istio, service-mesh, envoy, sidecar, mtls, traffic-management, security, observability, xds, spiffe]

@@ -1,5 +1,5 @@
 ---
-title: "Istio Gateway 완전 정복 - Ingress Gateway, Egress Gateway, Kubernetes Gateway API (공식문서 Deep Dive)"
+title: "Istio Gateway - Ingress Gateway, Egress Gateway, Kubernetes Gateway API (공식문서 Deep Dive)"
 date: 2026-03-09
 categories: [Kubernetes, Istio]
 tags: [istio, gateway, ingress, egress, gateway-api, virtualservice, httproute, tls, north-south]

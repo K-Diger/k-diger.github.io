@@ -1,5 +1,5 @@
 ---
-title: "Helm 완전 정복 - 아키텍처, Chart 개발, Template 엔진, OCI Registry, Provenance (공식문서 Deep Dive)"
+title: "Helm - 아키텍처, Chart 개발, Template 엔진, OCI Registry, Provenance (공식문서 Deep Dive)"
 date: 2026-03-09
 categories: [Kubernetes, DevOps]
 tags: [helm, chart, template, values, hooks, library-chart, oci-registry, provenance, kubernetes]

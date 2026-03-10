@@ -1,5 +1,5 @@
 ---
-title: "OPA Gatekeeper 완전 정복 - Rego, ConstraintTemplate, Mutation, Audit, External Data (공식문서 Deep Dive)"
+title: "OPA Gatekeeper - Rego, ConstraintTemplate, Mutation, Audit, External Data (공식문서 Deep Dive)"
 date: 2026-03-09
 categories: [Kubernetes, Security]
 tags: [opa, gatekeeper, rego, constraint-template, mutation, audit, policy-as-code, admission-controller, kubernetes]

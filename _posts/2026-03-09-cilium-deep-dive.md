@@ -1,5 +1,5 @@
 ---
-title: "Cilium 완전 정복 - eBPF 기반 Kubernetes 네트워킹, 보안, 관측성 (공식문서 Deep Dive)"
+title: "Cilium - eBPF 기반 Kubernetes 네트워킹, 보안, 관측성 (공식문서 Deep Dive)"
 date: 2026-03-09
 categories: [Kubernetes, Networking]
 tags: [cilium, ebpf, hubble, cni, network-policy, kubernetes, observability, lb-ipam, service-mesh]
