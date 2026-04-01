@@ -1,29 +1,31 @@
 @mixin styles {
   color-scheme: dark;
 
-  /* Framework color - 더 깊고 편안한 배경 */
-  --main-bg: rgb(16 20 24);
-  --mask-bg: rgb(45 52 59);
-  --main-border-color: rgb(55 65 75);
+  /* Framework color - 눈부심을 줄인 차분한 다크 배경 */
+  --main-bg: rgb(24 28 33);
+  --mask-bg: rgb(52 59 66);
+  --main-border-color: rgb(62 72 83);
 
   /* Common color */
-  --text-color: rgb(230 237 243);
-  --text-muted-color: #a0a9b8;
-  --text-muted-highlight-color: #c1c9d2;
-  --heading-color: #e1e8ed;
-  --label-color: #b8c5d1;
-  --blockquote-border-color: rgb(88 110 117);
-  --blockquote-text-color: #a0a9b8;
+  --text-color: rgb(214 221 228);
+  --text-muted-color: #a6b0bc;
+  --text-muted-highlight-color: #c8d1d9;
+  --heading-color: #e0e7ec;
+  --label-color: #c0cad4;
+  --text-emphasis-color: #e3eaef;
+  --blockquote-border-color: rgb(93 113 127);
+  --blockquote-text-color: #b4bec9;
+  --blockquote-bg: rgb(31 37 44 / 76%);
   --link-color: rgb(100 181 246);
-  --link-underline-color: rgb(66 150 214);
-  --button-bg: #1e2328;
-  --btn-border-color: #3a434d;
+  --link-underline-color: rgb(73 156 219);
+  --button-bg: #22282f;
+  --btn-border-color: #414b56;
   --btn-backtotop-color: var(--text-color);
-  --btn-backtotop-border-color: #2a3138;
-  --card-header-bg: #252b32;
-  --checkbox-color: rgb(130 142 155);
+  --btn-backtotop-border-color: #313941;
+  --card-header-bg: #2a3138;
+  --checkbox-color: rgb(136 148 161);
   --checkbox-checked-color: var(--link-color);
-  --img-bg: radial-gradient(circle, rgb(20 24 28) 0%, rgb(35 40 46) 100%);
+  --img-bg: radial-gradient(circle, rgb(28 33 39) 0%, rgb(40 46 53) 100%);
   --shimmer-bg: linear-gradient(
       90deg,
       rgb(255 255 255 / 0%) 0%,
@@ -32,47 +34,50 @@
   );
 
   /* Sidebar - 더 차분하고 세련된 사이드바 */
-  --site-title-color: #d4dae0;
-  --site-subtitle-color: #a0a9b8;
-  --sidebar-bg: #1a1f24;
-  --sidebar-border-color: #2a3138;
-  --sidebar-muted-color: #8a95a3;
-  --sidebar-active-color: rgb(230 237 243 / 95%);
-  --sidebar-hover-bg: #242a31;
-  --sidebar-btn-bg: #202529;
-  --sidebar-btn-color: #9aa5b1;
-  --avatar-border-color: rgb(180 190 200 / 80%);
+  --site-title-color: #d7dee5;
+  --site-subtitle-color: #a7b1bd;
+  --sidebar-bg: #1e2329;
+  --sidebar-border-color: #313940;
+  --sidebar-muted-color: #93a0ad;
+  --sidebar-active-color: rgb(224 231 236 / 96%);
+  --sidebar-hover-bg: #272e36;
+  --sidebar-btn-bg: #23292f;
+  --sidebar-btn-color: #a0abb6;
+  --avatar-border-color: rgb(186 196 206 / 80%);
 
   /* Topbar - 깔끔하고 현대적인 상단바 */
-  --topbar-bg: rgb(16 20 24 / 85%);
+  --topbar-bg: rgb(24 28 33 / 84%);
   --topbar-text-color: var(--text-color);
-  --search-border-color: rgb(70 80 90);
-  --search-icon-color: rgb(130 142 155);
+  --search-border-color: rgb(79 92 105);
+  --search-icon-color: rgb(136 148 161);
   --input-focus-border-color: rgb(100 181 246);
 
   /* Home page - 편안한 읽기 환경 */
-  --post-list-text-color: rgb(190 200 210);
+  --post-list-text-color: rgb(194 204 214);
   --btn-patinator-text-color: var(--text-color);
-  --btn-paginator-hover-color: #2a3138;
+  --btn-paginator-hover-color: #313941;
 
   /* Posts - 높은 가독성을 위한 색상 */
   --toc-highlight: rgb(100 181 246);
-  --toc-popup-border-color: #3a434d;
+  --toc-popup-border-color: #414b56;
   --tag-hover: rgb(60 80 100);
-  --tb-odd-bg: #1e2328;
-  --tb-even-bg: rgb(24 28 33);
+  --tb-odd-bg: #20262d;
+  --tb-even-bg: rgb(28 33 40);
   --tb-border-color: var(--tb-odd-bg);
+  --table-head-bg: rgb(31 37 44 / 85%);
+  --table-head-text-color: #d9e2e9;
+  --table-head-border-color: #4f5d6d;
   --footnote-target-bg: rgb(100 181 246);
-  --btn-share-color: #8a95a3;
-  --btn-share-hover-color: #c1c9d2;
-  --card-bg: #1a1f24;
-  --card-hover-bg: #252b32;
-  --card-shadow: rgb(8 12 16 / 80%) 0 8px 24px 0,
-  rgb(55 65 75 / 30%) 0 0 0 1px;
-  --kbd-wrap-color: #8a95a3;
-  --kbd-text-color: #e1e8ed;
-  --kbd-bg-color: #252b32;
-  --prompt-text-color: rgb(230 237 243 / 80%);
+  --btn-share-color: #93a0ad;
+  --btn-share-hover-color: #c8d1d9;
+  --card-bg: #1d232a;
+  --card-hover-bg: #273039;
+  --card-shadow: rgb(10 14 18 / 78%) 0 8px 24px 0,
+  rgb(62 72 83 / 26%) 0 0 0 1px;
+  --kbd-wrap-color: #94a0ab;
+  --kbd-text-color: #e0e7ec;
+  --kbd-bg-color: #293039;
+  --prompt-text-color: rgb(218 225 232 / 86%);
   --prompt-tip-bg: rgb(27 94 32 / 70%);
   --prompt-tip-icon-color: rgb(102 187 106);
   --prompt-info-bg: rgb(25 118 210 / 70%);
@@ -83,33 +88,37 @@
   --prompt-danger-icon-color: rgb(244 143 177);
 
   /* Tags - 더 명확한 태그 시스템 */
-  --tag-border: rgb(70 90 110);
-  --tag-shadow: rgb(20 24 28);
-  --dash-color: rgb(80 95 110);
-  --search-tag-bg: #252b32;
+  --tag-border: rgb(76 96 116);
+  --tag-shadow: rgb(28 33 39);
+  --dash-color: rgb(86 101 116);
+  --search-tag-bg: #293039;
 
   /* Categories - 세련된 카테고리 디자인 */
-  --categories-border: rgb(70 80 90 / 60%);
-  --categories-hover-bg: rgb(45 52 59);
-  --categories-icon-hover-color: #e1e8ed;
+  --categories-border: rgb(79 92 105 / 60%);
+  --categories-hover-bg: rgb(52 59 66);
+  --categories-icon-hover-color: #e0e7ec;
 
   /* Archive - 깔끔한 아카이브 */
-  --timeline-node-bg: rgb(130 142 155);
-  --timeline-color: rgb(80 95 110);
+  --timeline-node-bg: rgb(136 148 161);
+  --timeline-color: rgb(86 101 116);
   --timeline-year-dot-color: var(--timeline-color);
 
-  /* Code highlight colors - 개선된 코드 가독성 */
-  --language-border-color: #3a434d;
-  --highlight-bg-color: #0d1117;
-  --highlighter-rouge-color: #e6edf3;
-  --highlight-lineno-color: #6e7681;
-  --inline-code-bg: rgb(255 255 255 / 10%);
-  --code-color: #e6edf3;
-  --code-header-text-color: #9198a1;
-  --code-header-muted-color: #3a434d;
-  --code-header-icon-color: #7d8590;
+  /* Code highlight colors - halation을 줄인 코드 가독성 */
+  --language-border-color: #414b56;
+  --highlight-bg-color: #11161d;
+  --highlighter-rouge-color: #dbe3ea;
+  --highlight-lineno-color: #88929d;
+  --inline-code-bg: rgb(34 42 52 / 88%);
+  --inline-code-border-color: rgb(71 83 96 / 88%);
+  --code-color: #dbe3ea;
+  --code-comment-color: #9ea8b3;
+  --code-header-bg: #161c24;
+  --code-header-border-color: #303844;
+  --code-header-text-color: #a6b0ba;
+  --code-header-muted-color: #4a5563;
+  --code-header-icon-color: #8b96a2;
   --clipboard-checked-color: #2ea043;
-  --filepath-text-color: #e6edf3;
+  --filepath-text-color: #e2e8ee;
 
   .light {
     display: none;
@@ -141,11 +150,11 @@
   #archives li:nth-child(odd) {
     background-image: linear-gradient(
         to left,
-        rgb(16 20 24),
-        rgb(35 40 46),
-        rgb(35 40 46),
-        rgb(35 40 46),
-        rgb(16 20 24)
+        rgb(24 28 33),
+        rgb(40 46 53),
+        rgb(40 46 53),
+        rgb(40 46 53),
+        rgb(24 28 33)
     );
   }
 
@@ -157,7 +166,7 @@
   /* --- 개선된 구문 하이라이트 테마 (GitHub Dark 기반) --- */
 
   .highlight .gp {
-    color: #8b949e;
+    color: var(--code-comment-color);
   }
 
   .highlight table td {
@@ -186,13 +195,13 @@
   .highlight .cpf,
   .highlight .c1,
   .highlight .cs {
-    color: #8b949e;
+    color: var(--code-comment-color);
     font-style: italic;
   }
 
   .highlight .cp {
     color: #ff7b72;
-    font-weight: bold;
+    font-weight: 600;
   }
 
   .highlight .nt {
@@ -202,7 +211,7 @@
   .highlight .o,
   .highlight .ow {
     color: #ff7b72;
-    font-weight: bold;
+    font-weight: 600;
   }
 
   .highlight .p,
@@ -223,7 +232,7 @@
   .highlight .gh {
     color: #1f6feb;
     background-color: transparent;
-    font-weight: bold;
+    font-weight: 600;
   }
 
   .highlight .k,
@@ -232,14 +241,14 @@
   .highlight .kr,
   .highlight .kv {
     color: #ff7b72;
-    font-weight: bold;
+    font-weight: 600;
   }
 
   .highlight .kc,
   .highlight .kt,
   .highlight .kd {
     color: #79c0ff;
-    font-weight: bold;
+    font-weight: 600;
   }
 
   .highlight .s,
@@ -348,7 +357,7 @@
   .language-yaml .highlight .c1,
   .language-yml .highlight .c,
   .language-yml .highlight .c1 {
-    color: #808080; /* IntelliJ 회색 for comments */
+    color: var(--code-comment-color); /* IntelliJ 회색 for comments */
     font-style: italic;
   }
 
@@ -425,7 +434,7 @@
   .language-shell .highlight .c1,
   .language-sh .highlight .c,
   .language-sh .highlight .c1 {
-    color: #8b949e; /* 회색 for comments */
+    color: var(--code-comment-color); /* 회색 for comments */
     font-style: italic;
   }
 

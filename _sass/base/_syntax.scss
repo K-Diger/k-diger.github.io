@@ -76,7 +76,8 @@ code {
     overflow-wrap: break-word;
     border-radius: v.$radius-sm;
     background-color: var(--inline-code-bg);
-    font-weight: 450;
+    border: 1px solid var(--inline-code-border-color);
+    font-weight: 500;
   }
 
   &.filepath {
@@ -118,6 +119,7 @@ div[class^='language-'] {
   @extend %rounded;
   @extend %code-snippet-bg;
 
+  overflow: hidden;
   box-shadow: var(--language-border-color) 0 0 0 1px;
 
   .content > & {
@@ -187,8 +189,12 @@ div {
   justify-content: space-between;
   align-items: center;
   height: v.$code-header-height;
-  margin-left: 0.75rem;
-  margin-right: 0.25rem;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0.75rem;
+  padding-right: 0.5rem;
+  background-color: var(--code-header-bg);
+  border-bottom: 1px solid var(--code-header-border-color);
 
   /* the label block */
   span {
