@@ -262,7 +262,31 @@ flowchart LR
 
 오브젝트는 "이렇게 되어 있으면 좋겠다"는 기록일 뿐이다. 그것을 실제로 만드는 프로그램들이 컴포넌트다.
 
-### 2.1 컨트롤 플레인과 노드
+### 2.1 이름부터 보면 역할이 보인다
+
+컴포넌트 이름을 외우기 어려웠는데, 어원을 알고 나니 훨씬 잘 붙었다.
+
+**쿠버네티스라는 이름 자체가 그리스어 조타수에서 왔다.** 그래서 로고가 배의 방향타이고, 주변 도구 이름도 항해에서 따온 것이 많다.
+
+| 이름 | 어디서 왔는가 | 그래서 무엇을 하는가 |
+|---|---|---|
+| kubelet | kube + let(작은 프로그램) | 노드마다 붙어서 파드가 제대로 도는지 지킨다 |
+| kubectl | kube + control | 클러스터를 조종하는 명령줄 도구 |
+| kubeadm | kube + admin | 클러스터를 세우는 관리자용 도구 |
+| kube-proxy | kube + proxy | 서비스로 온 트래픽을 실제 파드로 넘긴다 |
+| etcd | /etc + distributed | 설정을 담는 `/etc`를 여러 대에 분산한 것 |
+| Pod | 고래나 돌고래의 무리 | 컨테이너 여럿을 한 묶음으로 다룬다 |
+| Helm | 배의 조타 장치 | 쿠버네티스 위 애플리케이션을 조종하는 패키지 매니저 |
+| Istio | 그리스어로 돛 | 서비스 사이 트래픽을 다루는 메시 |
+| Knative | kube + native | 쿠버네티스 위의 서버리스 |
+| Kind | Kubernetes in Docker | 도커 컨테이너를 노드로 삼는 로컬 클러스터 |
+| k3s | k8s의 경량판 | 엣지나 IoT를 겨냥한 작은 배포판 |
+
+**`etcd`의 어원이 특히 도움이 됐다.** 리눅스에서 `/etc`가 설정 파일이 있는 곳이고, 그것을 여러 대에 나눠 갖는 것이 `etcd`다. **"클러스터의 설정 파일"** 이라고 생각하면 백업이 왜 그렇게 중요한지도 함께 설명된다.
+
+`kubelet`의 `-let`도 그렇다. 작은 프로그램이라는 뜻이고, 실제로 노드마다 하나씩 붙어 도는 작은 에이전트다.
+
+### 2.2 컨트롤 플레인과 노드
 
 클러스터는 두 부분으로 나뉜다.
 
@@ -299,7 +323,7 @@ flowchart TB
 
 이 그림에서 눈에 띄는 것이 있다. **모든 화살표가 API 서버를 향한다.** 컴포넌트끼리 직접 대화하지 않는다.
 
-### 2.2 kube-apiserver
+### 2.3 kube-apiserver
 
 클러스터로 들어가는 유일한 문이다. `kubectl`도, kubelet도, 컨트롤러도 전부 여기를 거친다.
 
@@ -312,7 +336,7 @@ flowchart TB
 
 컴포넌트끼리 직접 통신하지 않고 전부 여기를 거치게 만든 이유가 있다. **인증, 인가, 감사 로그를 한 곳에서 처리할 수 있고, 컴포넌트끼리는 서로를 몰라도 된다.** 스케줄러는 kubelet의 존재를 모르고, kubelet도 스케줄러를 모른다. 둘 다 API 서버만 안다.
 
-### 2.3 etcd
+### 2.4 etcd
 
 클러스터의 모든 상태가 저장되는 키-값 저장소다. Raft라는 합의 알고리즘으로 여러 대가 같은 데이터를 유지한다.
 
@@ -330,7 +354,7 @@ ETCDCTL_API=3 etcdctl snapshot save /backup/etcd-snapshot.db \
 ETCDCTL_API=3 etcdctl snapshot status /backup/etcd-snapshot.db --write-out=table
 ```
 
-### 2.4 kube-scheduler
+### 2.5 kube-scheduler
 
 **아직 노드가 정해지지 않은 Pod를 보고, 어느 노드에 놓을지 결정**하는 컴포넌트다. 실행은 하지 않는다. `spec.nodeName` 필드를 채워 넣는 것이 전부다.
 
@@ -356,7 +380,7 @@ kubectl top node
 
 두 값이 크게 다르면 `requests`가 현실과 어긋나 있다는 뜻이다.
 
-### 2.5 kube-controller-manager
+### 2.6 kube-controller-manager
 
 여러 컨트롤러를 하나의 프로세스로 묶어 실행한다. 컨트롤러가 무엇인지부터 본다.
 
@@ -385,7 +409,7 @@ flowchart LR
 
 여기서 **선언형(declarative)** 이라는 말의 의미가 분명해진다. 명령형이면 "Pod를 만들어라"를 한 번 실행하고 끝난다. 선언형이면 "Pod가 3개인 상태"를 적어두고, 컨트롤러가 계속 그 상태를 유지한다. 노드가 죽어도, 누가 Pod를 지워도 다시 맞춘다.
 
-### 2.6 kubelet
+### 2.7 kubelet
 
 각 노드에서 도는 에이전트다. **API 서버로부터 자기 노드에 할당된 Pod 명세를 받아 컨테이너를 실행하고, 그 상태를 다시 보고한다.**
 
@@ -414,7 +438,7 @@ ls /etc/kubernetes/manifests/
 
 이 파일을 고치면 kubelet이 알아채고 해당 Pod를 다시 띄운다. `kubectl delete`로는 지워지지 않는다. 파일을 옮겨야 한다.
 
-### 2.7 kube-proxy와 컨테이너 런타임
+### 2.8 kube-proxy와 컨테이너 런타임
 
 **kube-proxy**는 Service의 가상 IP로 온 트래픽을 실제 Pod로 보내는 규칙을 노드에 설치한다. 기본 모드에서는 iptables 규칙을, 대규모에서는 IPVS를 쓴다. 최근 CNI 중에는 kube-proxy를 아예 대체하는 것들도 있다.
 
@@ -429,7 +453,7 @@ flowchart LR
 
 계층이 나뉜 이유는 교체 가능하게 하기 위해서다. kubelet은 CRI만 알면 되고, containerd를 CRI-O로 바꿔도 kubelet 코드는 그대로다.
 
-### 2.8 kubectl apply를 하면 무슨 일이 일어나는가
+### 2.9 kubectl apply를 하면 무슨 일이 일어나는가
 
 지금까지 본 컴포넌트를 이어 붙이면 처음 질문 하나가 풀린다.
 
