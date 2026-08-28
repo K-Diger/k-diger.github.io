@@ -920,7 +920,7 @@ PUT /_ilm/policy/logs_policy
 
 #### 6.2.1 ARS의 탄생 배경과 진화
 
-ARS는 **[C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.cs.cmu.edu/~dga/papers/c3-nsdi2015.pdf)** 논문을 엘라스틱서치에 맞게 구현한 것이다.
+ARS는 **[C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.usenix.org/system/files/conference/nsdi15/nsdi15-paper-suresh.pdf)** 논문을 엘라스틱서치에 맞게 구현한 것이다.
 
 **도입 일정과 배경:**
 
@@ -2344,7 +2344,7 @@ PUT /_watcher/watch/cluster_health_alert
 ### 10.4 연구 논문
 
 - [PacificA: Replication in Log-Based Distributed Storage Systems](https://www.microsoft.com/en-us/research/publication/pacifica-replication-in-log-based-distributed-storage-systems/) - Microsoft Research
-- [C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.cs.cmu.edu/~dga/papers/c3-nsdi2015.pdf) - CMU Research
+- [C3: Cutting Tail Latency in Cloud Data Stores via Adaptive Replica Selection](https://www.usenix.org/system/files/conference/nsdi15/nsdi15-paper-suresh.pdf) - CMU Research
 
 ### 10.5 GitHub 이슈 및 구현
 
@@ -2395,12 +2395,10 @@ PUT /_watcher/watch/cluster_health_alert
 
 ### 운영 시 참고할 내용
 
-**샤드 설계**: 데이터 크기(20-40GB), 검색 성능(1000 QPS), 인프라 제약(노드당 2-3개)을 종합 고려하여 적정 샤드 수 결정
-
-**상태 관리**: Green(정상) → Yellow(레플리카 부족) → Red(프라이머리 손실) 순서로 심각도 증가. Yellow는 레플리카 조정, Red는 데이터 손실 각오한 강제 할당 필요
-
-**성능 최적화**: 인덱싱 시 리프레시 간격 증가+레플리카 0개, 검색 시 라우팅 활용+캐시 최적화, ARS로 자동 부하 분산
-
-**장애 대응**: 계획된 노드 제거는 exclude 설정→이동 완료 확인 순서, 응급 상황은 강제 할당→복구 속도 조정으로 빠른 복구
-
-**모니터링**: 클러스터 상태, 샤드 분배, 노드 성능, 인덱스 통계를 정기 모니터링하고 Watcher로 자동 알림 설정
+| 영역 | 정리 |
+|---|---|
+| 샤드 설계 | 데이터 크기(20~40GB), 검색 성능(샤드당 1000 QPS), 인프라 제약(노드당 2~3개)을 함께 놓고 샤드 수를 정한다 |
+| 상태 관리 | Green에서 Yellow(레플리카 부족), Red(프라이머리 손실) 순으로 심각해진다. Yellow는 레플리카를 조정하고, Red는 데이터 손실을 각오한 강제 할당이 필요하다 |
+| 성능 최적화 | 인덱싱할 때는 리프레시 간격을 늘리고 레플리카를 0으로 둔다. 검색할 때는 라우팅과 캐시를 쓰고, 부하 분산은 ARS에 맡긴다 |
+| 장애 대응 | 계획된 노드 제거는 exclude 설정 후 이동 완료를 확인하는 순서로 하고, 응급 상황은 강제 할당 후 복구 속도를 조정한다 |
+| 모니터링 | 클러스터 상태, 샤드 분배, 노드 성능, 인덱스 통계를 정기적으로 보고 알림을 걸어둔다 |

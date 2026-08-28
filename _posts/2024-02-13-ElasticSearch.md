@@ -1,6 +1,6 @@
 ---
 
-title: ElasticSearch, 형태소 분석기  적용
+title: "ElasticSearch에 형태소 분석기 적용하기"
 date: 2024-02-13
 categories: [ElasticSearch]
 tags: [ElasticSearch]
@@ -79,7 +79,22 @@ Lucene이 수행하는 단계는 다음과 같은 두 가지가 있다.
 
 2. 구문 분석 쿼리, 인덱스 탐색 후 결과를 반환한다.
 
-![img_2.png](https://github.com/K-Diger/K-Diger.github.io/blob/main/images/lucene/lucene-diagram.png?raw=true)
+```mermaid
+flowchart TB
+    subgraph IDX["1. 색인 (Indexing)"]
+        D["원본 문서<br/>PDF, HTML, 텍스트"] --> EX["텍스트 추출"]
+        EX --> AN["Analyzer<br/>토큰 분리 → 불용어 제거 → 정규화"]
+        AN --> IW["IndexWriter"]
+        IW --> INV[("역 인덱스<br/>Term → 문서 ID 목록")]
+    end
+    subgraph SRC["2. 검색 (Searching)"]
+        Q["검색어"] --> QP["QueryParser"]
+        QP --> QO["Query 객체"]
+        QO --> IS["IndexSearcher"]
+        INV --> IS
+        IS --> TD["TopDocs<br/>문서 ID + 적합도 점수"]
+    end
+```
 
 ---
 

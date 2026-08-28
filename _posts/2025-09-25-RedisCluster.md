@@ -1,6 +1,6 @@
 ---
 
-title: 공식문서로 알아보는 Redis Cluster 스펙
+title: "Redis Cluster는 키를 어떻게 나누고 장애를 어떻게 감지하는가"
 date: 2025-09-25
 categories: [Redis]
 tags: [Redis]
@@ -11,13 +11,33 @@ mermaid: true
 
 ---
 
-# 참고 자료
+## 참고자료
 
-[Redis Cluster Sepecification](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/)
+- [Redis Cluster Specification](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/)
+- [Redis Cluster Tutorial](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/)
+- [Redis - Cluster failover](https://redis.io/docs/latest/commands/cluster-failover/)
+- [Redis - Replication](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/)
 
-# Redis 클러스터 구성 및 동작 원리
+---
 
-## 1. Redis 클러스터 전체 아키텍처
+## 배경
+
+Redis를 한 대로 쓰다가 데이터가 늘어나면서 나눠야 할 시점이 왔다. 방법을 찾다 보니 **클라이언트에서 키를 해싱해서 나누는 방식**과 **Redis Cluster를 쓰는 방식**이 나왔다.
+
+앞의 방식은 노드를 늘리거나 줄일 때 키가 통째로 재배치된다는 것이 걸렸다. Cluster는 그 문제를 어떻게 푸는지 궁금해서 공식 스펙 문서를 읽었다.
+
+정리하면서 확인하고 싶었던 것들이다.
+
+- 키를 노드에 나누는 기준이 무엇이고, 노드를 추가하면 어떻게 되는가?
+- 클라이언트는 어느 노드에 물어봐야 하는지 어떻게 아는가?
+- 노드 하나가 죽은 것을 누가 어떻게 판단하는가?
+- 여러 키를 한 번에 다루는 명령은 어떻게 되는가?
+
+---
+
+## Redis 클러스터 구성 및 동작 원리
+
+### 1. Redis 클러스터 전체 아키텍처
 
 **공식 문서 인용:**
 > "Redis Cluster is a full mesh where every node is connected with every other node using a TCP connection. In a cluster of N nodes, every node has N-1 outgoing TCP connections, and N-1 incoming connections."
@@ -64,7 +84,7 @@ mermaid: true
 **공식 문서의 클러스터 버스 설명:**
 > "Every Redis Cluster node has an additional TCP port for receiving incoming connections from other Redis Cluster nodes. This port will be derived by adding 10000 to the data port"
 
-## 2. 해시 슬롯 분산 메커니즘
+### 2. 해시 슬롯 분산 메커니즘
 
 **공식 문서의 키 분산 알고리즘:**
 > "The cluster's key space is split into 16384 slots... The base algorithm used to map keys to hash slots is the following: `HASH_SLOT = CRC16(key) mod 16384`"
@@ -113,7 +133,7 @@ mermaid: true
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## 3. 클러스터 내부 통신 구조
+### 3. 클러스터 내부 통신 구조
 
 **공식 문서의 클러스터 버스 프로토콜:**
 > "Node-to-node communication happens exclusively using the Cluster bus and the Cluster bus protocol: a binary protocol composed of frames of different types and sizes"
@@ -150,7 +170,7 @@ mermaid: true
                             └────────────────────────────────────┘
 ```
 
-## 4. 리디렉션 메커니즘
+### 4. 리디렉션 메커니즘
 
 **공식 문서의 MOVED 리디렉션:**
 > "If the hash slot is served by the node, the query is simply processed, otherwise the node will check its internal hash slot to node map, and will reply to the client with a MOVED error"
@@ -229,7 +249,7 @@ Step 4: 정상 응답
                     └──────────────┘
 ```
 
-## 5. 장애 감지 및 페일오버 과정
+### 5. 장애 감지 및 페일오버 과정
 
 **공식 문서의 장애 감지 플래그:**
 > "There are two flags that are used for failure detection that are called PFAIL and FAIL. PFAIL means Possible failure, and is a non-acknowledged failure type. FAIL means that a node is failing and that this condition was confirmed by a majority of masters"
@@ -290,7 +310,7 @@ Step 5: 설정 전파
                                     └─────────────┘
 ```
 
-## 6. 설정 전파 메커니즘
+### 6. 설정 전파 메커니즘
 
 **공식 문서의 설정 전파 규칙:**
 > "Rule 1: If a hash slot is unassigned (set to NULL), and a known node claims it, I'll modify my hash slot table"
@@ -346,7 +366,7 @@ Step 5: 설정 전파
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## 7. 공식 문서의 실제 출력 예시
+### 7. 공식 문서의 실제 출력 예시
 
 **CLUSTER NODES 명령 출력 (공식 문서에서):**
 
@@ -369,7 +389,7 @@ d289c575dcbc4bdd2931585fd4339089e461a27d 127.0.0.1:6381 master - 1318428931 1318
       2) (integer) 7004   ← 레플리카 포트
 ```
 
-## 8. 레플리카 마이그레이션
+### 8. 레플리카 마이그레이션
 
 **공식 문서의 레플리카 마이그레이션 시나리오:**
 > "Master A has a single replica A1. Master A fails. A1 is promoted as new master. Three hours later A1 fails... No other replica is available for promotion since node A is still down."
@@ -421,6 +441,28 @@ FAIL state and has the smallest node ID."
 
 ---
 
-**출처 및 정확성:**
-이 모든 내용은 Redis 공식 클러스터 스펙 문서(https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/)를 기반으로 작성되었으며, 실제 구현체와 동일한 동작을 보장합니다. 베스트 프랙티스로 활용하시기 바랍니다.
+## 정리하며
 
+처음 던진 질문들에 대한 답이다.
+
+**키를 나누는 기준.** 해시 슬롯이다. 키를 CRC16으로 해싱해서 16384로 나눈 나머지가 슬롯 번호가 되고, 슬롯이 노드에 배정된다.
+
+**노드가 아니라 슬롯에 배정한다는 것이 핵심**이다. 노드를 추가하면 슬롯 일부를 새 노드로 옮기면 되고, **옮기지 않은 슬롯의 키는 그대로 있다.** 클라이언트에서 노드 수로 나누는 방식이 노드가 바뀔 때마다 거의 모든 키의 위치가 바뀌는 것과 대비된다.
+
+**16384라는 숫자에도 이유가 있다.** 노드끼리 슬롯 배정 정보를 비트맵으로 주고받는데, 16384비트면 2킬로바이트다. 이 크기라면 하트비트 메시지에 매번 실어 보내도 부담이 없다.
+
+**클라이언트가 어디로 물어봐야 하는지 아는 방법.** 처음에는 모른다. 아무 노드에나 물어보고, 그 노드가 자기 것이 아니면 `MOVED` 응답으로 올바른 노드를 알려준다. **클라이언트가 그 정보를 캐시해서 다음부터는 바로 간다.**
+
+슬롯을 옮기는 중에는 `ASK`라는 다른 응답이 온다. `MOVED`는 "앞으로 계속 저기로 가라"이고 `ASK`는 "이번만 저기로 가라"다. **이동이 아직 안 끝났으니 캐시를 갱신하면 안 된다는 뜻**이다.
+
+**노드가 죽은 것을 누가 판단하는가.** 혼자 판단하지 않는다. 어떤 노드가 응답을 안 하면 일단 "아마 죽은 것 같다"고 표시하고, 그 판단을 하트비트에 실어 다른 노드들에게 알린다. **과반수의 마스터가 같은 판단을 하면 그때 확정된다.**
+
+혼자 판단하게 두면 네트워크가 잠깐 끊긴 노드가 멀쩡한 노드를 죽었다고 처리할 수 있다. 과반수를 요구해서 그 오판을 막는다.
+
+**여러 키를 한 번에 다루는 명령.** 키들이 같은 슬롯에 있어야만 된다. 서로 다른 노드에 흩어져 있으면 Redis가 처리할 방법이 없다.
+
+그래서 **해시 태그**가 있다. 키 이름에 중괄호를 넣으면 그 안의 문자열만으로 슬롯을 계산한다. `user:{1000}:profile`과 `user:{1000}:settings`는 같은 슬롯에 들어간다.
+
+**함께 다뤄야 할 키를 미리 묶어두는 설계가 필요하다는 뜻**이고, 이건 클러스터로 옮기기 전에 정해야 한다. 나중에 키 이름을 바꾸는 것은 곧 전체 재배치다.
+
+스펙 문서를 읽고 나서 남은 감각은 **슬롯이라는 중간 층 하나가 많은 것을 가능하게 한다는 것**이었다. 키를 노드에 직접 매핑하지 않고 슬롯을 거치게 한 것만으로 노드 추가와 제거가 부분 이동이 됐고, 그 배정 정보가 작아서 노드끼리 계속 주고받을 수 있게 됐다.

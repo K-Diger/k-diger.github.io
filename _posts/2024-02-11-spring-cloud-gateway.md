@@ -1,49 +1,95 @@
 ---
 
-title: Spring Cloud Gateway 공식문서 적용
+title: "Spring Cloud Gateway 공식문서 전수 정리"
 date: 2024-02-11
-categories: [Gateway]
-tags: [Gateway]
+categories: [Spring, Gateway]
+tags: [SpringCloudGateway, APIGateway, WebFlux, Filter, Routing]
 layout: post
 toc: true
 math: true
 mermaid: true
-published: false
 
 ---
 
-- [Spring Cloud Gateway Reference](https://cloud.spring.io/spring-cloud-gateway/reference/html/)
+## 참고자료
+
+- [Spring Cloud Gateway Reference](https://docs.spring.io/spring-cloud-gateway/reference/)
+- [Route Predicate Factories](https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway-server-webflux/request-predicates-factories.html)
+- [GatewayFilter Factories](https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway-server-webflux/gatewayfilter-factories.html)
+- [Global Filters](https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway-server-webflux/global-filters.html)
+- [Actuator API](https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway-server-webflux/actuator-api.html)
+- [CORS Configuration](https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway-server-webflux/cors-configuration.html)
+
+이 글은 Spring Cloud 2023.0.x 기준으로 정리했다. **4.2 이후로는 설정 키가 `spring.cloud.gateway.server.webflux.*` 아래로 옮겨졌으므로**, 최신 버전을 쓴다면 공식문서에서 키 이름을 확인해야 한다.
 
 ---
 
-# API Gateway가 왜 필요한가?
+## 배경
 
-MSA환경은 각 도메인 서비스에 여러 대의 인스턴스를 할당하여 스케일 아웃을 통해 확장성/가용성의 이점을 얻을 수 있다.
+마이크로서비스를 나눠놓고 나니 **클라이언트가 어디로 요청해야 하는지**가 문제가 됐다.
 
-그렇다면 클라이언트는 UserService라는 도메인 서비스가 스케일 아웃이 된다면 확장된 서비스의 IP주소, 포트번호 등을 매번 갱신해줘야 사용할 수 있게된다.
+서비스마다 주소가 다르고, 인스턴스가 늘어나면 주소도 늘어난다. 클라이언트가 그걸 다 알고 있어야 한다면 서비스를 나눈 대가만 지불하고 이득은 못 얻는 셈이다.
 
-하지만 이 방법은 언제 어느 갯수만큼 확장될지 모르는 Auto-Scaling환경에 부적합하다. 만약 인스턴스가 1시간동안 10분을 주기로 1개의 인스턴스가 스케일 아웃이 된다면 10분마다 클라이언트 코드를 수정하고 배포해야하기 때문이다.
+정리하면서 확인하고 싶었던 것들이다.
 
-이러한 문제를 해결하기 위해 API Gateway가 적절한 도구로써 채택되었다.
+- 게이트웨이가 없으면 정확히 무엇이 곤란한가?
+- Route, Predicate, Filter는 각각 무엇을 맡는가?
+- 필터의 실행 순서는 어떻게 정해지는가?
+- 게이트웨이 자체가 단일 장애점이 되지는 않는가?
 
-API Gateway는 각 도메인 서비스에 대한 라우팅과 더불어 요청 데이터를 마이크로서비스에 도달하기 전 사전에 검증할 수 있는 역할도 수행할 수 있다.
-
-API 게이트웨이의 역할은 유동적이지만 일반적으로
-
-- 인증
-- 라우팅
-- 요청 속도 제한
-- 모니터링
-- 분석
-- 정책 필터링
-- 알림
-- 보안
-
-등이 있다.
+공식문서를 처음부터 끝까지 따라가면서 정리했다.
 
 ---
 
-# Spring Cloud Gateway 주요 요소
+## 1. API Gateway가 왜 필요한가
+
+첫 질문이다.
+
+마이크로서비스는 서비스마다 인스턴스를 여러 대 띄워서 확장한다. 여기서 문제가 생긴다.
+
+**클라이언트가 인스턴스 주소를 알아야 한다.** UserService가 세 대로 늘어나면 그 세 대의 주소를 알아야 하고, 어느 것을 부를지도 정해야 한다.
+
+자동 확장 환경에서는 이게 성립하지 않는다. **10분마다 인스턴스가 하나씩 늘어나는 상황이면 10분마다 클라이언트를 고쳐서 배포해야 한다.**
+
+게이트웨이가 앞에 서면 클라이언트는 게이트웨이 주소 하나만 알면 된다.
+
+```mermaid
+flowchart LR
+    C["클라이언트"] --> G["API Gateway<br/>주소 하나"]
+    G --> U1["UserService 1"]
+    G --> U2["UserService 2"]
+    G --> U3["UserService 3"]
+    G --> O["OrderService"]
+    G --> P["PaymentService"]
+```
+
+**뒤에서 몇 대가 뜨고 지는지 클라이언트는 모른다.**
+
+라우팅만 하는 것도 아니다. 요청이 각 서비스에 닿기 전에 공통으로 처리할 것들을 여기서 한다.
+
+| 역할 | 왜 게이트웨이에서 하는가 |
+|---|---|
+| 인증 | 서비스마다 인증을 구현하면 중복이고 빠뜨리기 쉽다 |
+| 라우팅 | 클라이언트가 주소를 알 필요가 없어진다 |
+| 요청 속도 제한 | 서비스에 닿기 전에 막는 것이 싸다 |
+| 모니터링 | 모든 요청이 지나가므로 전체를 볼 수 있다 |
+| 보안 헤더 | 응답마다 붙일 헤더를 한 곳에서 관리한다 |
+
+### 1.1 그런데 단일 장애점이 되지 않는가
+
+네 번째 질문을 여기서 먼저 답해둔다. **된다.**
+
+모든 요청이 게이트웨이를 지나가므로 게이트웨이가 죽으면 전부 멈춘다. 그래서 다뤄야 할 것들이 있다.
+
+**게이트웨이 자체를 여러 대 띄운다.** 앞에 로드밸런서를 둔다. 게이트웨이는 상태를 안 갖도록 만들어야 이게 가능하다.
+
+**게이트웨이에 로직을 넣지 않는다.** 여기에 비즈니스 로직이 들어가기 시작하면 배포가 잦아지고, 배포가 잦으면 장애 확률이 올라간다. 게이트웨이는 통과시키는 일만 해야 한다.
+
+**타임아웃과 서킷 브레이커를 건다.** 뒤쪽 서비스 하나가 느려졌을 때 게이트웨이의 처리 자원이 거기 묶이면, 멀쩡한 서비스로 가는 요청까지 못 받는다. 뒤에서 다루는 `CircuitBreaker` 필터가 이 문제를 위한 것이다.
+
+---
+
+## 2. Spring Cloud Gateway 주요 요소
 
 - Route
 - Predicate
@@ -53,7 +99,7 @@ API 게이트웨이의 역할은 유동적이지만 일반적으로
 
 ---
 
-# Route
+## 3. Route
 
 인스턴스 고유 식별자(ID), 목적지 인스턴스의 실제 주소를 통해 Gateway가 요청을 목적지로 라우팅해준다.
 
@@ -83,7 +129,7 @@ spring:
 
 ---
 
-# Predicate
+## 4. Predicate
 
 Spring Cloud Gateway에서는 Java8에 도입된 Predicate를 사용한다.
 
@@ -106,9 +152,9 @@ spring:
 
 ---
 
-## Spring Cloud Gateway가 지원하는 11가지 Predicate Factory
+### 4.1 기본 제공 Predicate Factory 11가지
 
-### 1,2,3 : Time After/Before/Between 판별
+#### 1,2,3 : Time After/Before/Between 판별
 
 ```yaml
 spring:
@@ -149,7 +195,7 @@ spring:
 
 위 Predicate는 해당 시간 사이대의 요청을 라우팅 uri로 보낸다는 의미이다.
 
-### 4,5 : Cookie, Header 판별
+#### 4,5 : Cookie, Header 판별
 
 ```yaml
 spring:
@@ -179,7 +225,7 @@ spring:
 
 위 Predicate는 요청 Header를 확인하여 **Header 이름**이 `X-Request-Id`인 내용이 있다면 그 값이 **정규식**에 해당하는 `\d+`에 해당하는지 확인한다.
 
-### 6. Method 판별
+#### 6. Method 판별
 
 ```yaml
 spring:
@@ -194,7 +240,7 @@ spring:
 
 위 Predicate는 요청 Method를 확인하여 Predicate조건에 부합하는지 확인하는 것이다.
 
-### 7,8 : HOST, Path, Query 판별
+#### 7,8 : HOST, Path, Query 판별
 
 ```yaml
 spring:
@@ -232,7 +278,7 @@ spring:
 
 그 경로의 값은 `ServerWebExchangeUtils.URI_TEMPLATE_VARIABLES_ATTRIBUTE`이라는 변수에 담겨있다.
 
-### 9. Query
+#### 9. Query
 
 ```yaml
 spring:
@@ -251,7 +297,7 @@ spring:
 
 `gree`로 시작하는 Query Parameter를 가진 내용이 있으면 Predicate는 참이된다.
 
-### 10. 원격 요청 주소 판별
+#### 10. 원격 요청 주소 판별
 
 ```yaml
 spring:
@@ -291,7 +337,7 @@ Spring Cloud Gateway는 `XForwardedRemoteAddressResolver`를 가지고 있으며
 - maxTrustedIndex: 3 -> 결과: 0.0.0.1
 - maxTrustedIndex: [4, Integer.MAX_VALUE] -> 결과: 0.0.0.1
 
-### 11. 가중치 그룹 판별
+#### 11. 가중치 그룹 판별
 
 ```yaml
 spring:
@@ -314,7 +360,7 @@ spring:
 
 ---
 
-# Filter
+## 5. Filter
 
 위에서 살펴본 Predicate에 해당하는 요청에 대해 필터를 둘 수 있다.
 
@@ -347,9 +393,9 @@ spring:
 
 ---
 
-## Spring Cloud Gateway가 지원하는 30가지 Filter Factory
+### 5.1 기본 제공 Filter Factory 30가지
 
-### 1. Header 추가
+#### 1. Header 추가
 
 ```yaml
 spring:
@@ -366,7 +412,7 @@ spring:
 
 Predicate에 해당하는 요청이라면, `X-Request-Red`라는 Header에 `Blue-{segment}`라는 값을 추가하여 라우팅을 적용할 수 있다.
 
-### 2. QueryParameter 추가
+#### 2. QueryParameter 추가
 
 ```yaml
 spring:
@@ -383,7 +429,7 @@ spring:
 
 Predicate에 해당하는 요청이라면, `foo`라는 QueryParameter에 `bar-{segment}`라는 값을 추가하여 라우팅을 적용할 수 있다.
 
-### 3. 응답 Header 추가
+#### 3. 응답 Header 추가
 
 ```yaml
 spring:
@@ -398,7 +444,7 @@ spring:
 
 응답 Header에 `X-Response-Red`라는 이름을 갖고 `Blue`라는 값을 추가할 수 있다.
 
-### 4. 중복 응답 Header 제거
+#### 4. 중복 응답 Header 제거
 
 ```yaml
 spring:
@@ -415,7 +461,7 @@ spring:
 
 보통 API Gateway 뒷단의 마이크로서비스들이 CORS설정을 추가하는 등의 동일한 Header 조작을 수행할 때 사용된다.
 
-### 5. 서킷브레이커 적용
+#### 5. 서킷브레이커 적용
 
 API Gateway는 서킷브레이커와 궁합이 좋다. 여기서 서킷 브레이커를 적용하여 Fault Tolerance를 마련할 수 있다.
 
@@ -441,7 +487,7 @@ spring:
 
 요청 URL 서비스에 서킷 브레이커를 적용하여 서킷 브레이커에 의해 접근이 차단되었을 때 라우팅 될 fallback주소를 명시할 수 있다.
 
-### 6. Fallback Header 적용
+#### 6. Fallback Header 적용
 
 ```yaml
 spring:
@@ -476,7 +522,7 @@ FallbackUri로 전달되는 요청의 Header에 추가하는 기능이다.
 - rootCauseExceptionTypeHeaderName ("Root-Cause-Exception-Type")
 - rootCauseExceptionMessageHeaderName ("Root-Cause-Exception-Message")
 
-### 7. Request Header 매핑
+#### 7. Request Header 매핑
 
 ```yaml
 spring:
@@ -491,7 +537,7 @@ spring:
 
 요청 Header에 `X-Request-Red`라는 값이 있다면 `Blue`라는 Header 이름으로 값을 매핑시켜 라우팅을 적용한다.
 
-### 8. Request URI Prefix 적용
+#### 8. Request URI Prefix 적용
 
 ```yaml
 spring:
@@ -506,7 +552,7 @@ spring:
 
 모든 요청의 경로에 `/mypath`라는 접두사가 붙는다. 즉, `https://example.org/hello`라고 요청한다면 `https://example.org/mypath/hello`로 라우팅이 적용된다.
 
-### 9. PreserveHostHeader (요청 Header를 클라가 보낸것으로? 서버가 지정한 것으로?)
+#### 9. PreserveHostHeader (요청 Header를 클라가 보낸것으로? 서버가 지정한 것으로?)
 
 ```yaml
 spring:
@@ -523,7 +569,7 @@ spring:
 
 위 설정은 클라이언트 측에서 보낸 Header를 그대로 사용하겠다는 의미이다.
 
-### 10. 요청 제한 (RateLimiter)
+#### 10. 요청 제한 (RateLimiter)
 
 ```yaml
 spring:
@@ -549,7 +595,7 @@ RequestRateLimiter는 특정 요청의 비율을 제한하는 데 사용된다.
 
 따라서 위 설정은 `초당 최대 10개`의 요청을 허용하며, 버스트 요청을 처리할 수 있도록 `20개까지의 용량`을 가진다.
 
-### 11. 리다이렉션
+#### 11. 리다이렉션
 
 ```yaml
 spring:
@@ -564,7 +610,7 @@ spring:
 
 `https://example.org`로 요청이 오면 `https://acme.org`로 리다이렉트한다.
 
-### 12. 요청 Header 제거
+#### 12. 요청 Header 제거
 
 ```yaml
 spring:
@@ -579,7 +625,7 @@ spring:
 
 `X-Request-Foo`에 해당하는 Header를 지운 후 라우팅을 적용한다.
 
-### 13. Response Header 제거
+#### 13. Response Header 제거
 
 ```yaml
 spring:
@@ -594,7 +640,7 @@ spring:
 
 `X-Response-Foo`에 해당하는 Header를 지운다.
 
-### 14. 요청 QueryParameter 제거
+#### 14. 요청 QueryParameter 제거
 
 ```yaml
 spring:
@@ -609,7 +655,7 @@ spring:
 
 `red`에 해당하는 QueryParameter를 지운 후 라우팅을 적용한다.
 
-### 15. 요청 경로 재작성
+#### 15. 요청 경로 재작성
 
 ```yaml
 spring:
@@ -628,7 +674,7 @@ spring:
 
 ++ YAML 문법에의해 따라 `$`를 표기하려면 `$\`로 대체해야 한다.
 
-### 16. Response 발원지 경로 재작성
+#### 16. Response 발원지 경로 재작성
 
 응답이 어떤 서버로부터 왔는지에 대한 정보를 재작성할 수 있다.
 
@@ -654,7 +700,7 @@ spring:
 - `AS_IN_REQUEST`: 원래 요청 경로에 **버전이 없는 경우에만 버전이 제거**된다.
 - `ALWAYS_STRIP`: 원래 요청 경로에 **버전이 포함되어 있더라도 버전은 항상 제거**된다.
 
-### 17. Response Header 재작성
+#### 17. Response Header 재작성
 
 `Header name`, `regexp`, `replacement`를 매개변수로 받아 Response Header를 재작성한다.
 
@@ -671,7 +717,7 @@ spring:
 
 위 예시는 `X-Response-Red`라는 Response Header 값을 ` password=[^&]+`로 정규식 검사한뒤 `password=***`로 대체한다.
 
-### 18. 세션 저장 (마이크로서비스 간 세션 공유)
+#### 18. 세션 저장 (마이크로서비스 간 세션 공유)
 
 WebSession::save 작업을 강제로 수행하도록 한 후 라우팅을 적용한다.
 
@@ -690,7 +736,7 @@ spring:
 
 Spring Security와 Spring Session을 통합하고 다른 마이크로서비스간 인증/인가가 수행되었음을 보장하려는 경우에 이 기능은 필수이다.
 
-### 19. 보안 Header 추가
+#### 19. 보안 Header 추가
 
 ```yaml
 spring:
@@ -713,7 +759,7 @@ spring:
 - X-Download-Options (noopen)
 - X-Permitted-Cross-Domain-Policies (none)
 
-### 20. Request Path 셋팅
+#### 20. Request Path 셋팅
 
 ```yaml
 spring:
@@ -733,7 +779,7 @@ spring:
 - RewritePath
   - 이 필터는 경로의 일부를 다른 값으로 대체할 수 있게 해주는 정규 표현식(regex) 매개변수를 받아 좀 더 복잡한 경로 변형을 할 수 있다.
 
-### 21. Request Header 셋팅
+#### 21. Request Header 셋팅
 
 ```yaml
 spring:
@@ -748,7 +794,7 @@ spring:
 
 요청 헤더에 `X-Request-Red`로 들어온 값을 Blue로 대체한다.
 
-### 22. Response Header 셋팅
+#### 22. Response Header 셋팅
 
 ```yaml
 spring:
@@ -763,7 +809,7 @@ spring:
 
 응답 헤더의 `X-Response-Red`값을 Blue로 대체한다.
 
-### 23. Response Status 셋팅
+#### 23. Response Status 셋팅
 
 ```yaml
 spring:
@@ -792,7 +838,7 @@ spring:
 
 위와 같이 원래의 응답 코드를 헤더에 따로 담을 수도 있다.
 
-### 24. Request Path StripPrefix 적용
+#### 24. Request Path StripPrefix 적용
 
 이 필터는 parts라는 하나의 매개변수를 받는다. 요청 경로에 제거할 부분의 수를 나타낸다.
 
@@ -811,7 +857,7 @@ spring:
 
 /name/foo/bar라는 요청 경로가 있다면, `StripPrefix=2`옵션은 `/name/foo 부분을 제거`하고, `/bar`로 요청 경로를 변경한다.
 
-### 25. Retry
+#### 25. Retry
 
 ```yaml
 spring:
@@ -837,7 +883,7 @@ spring:
 
 최대 재시도 횟수, 응답 Status Code + Method, backoff를 매개변수로 이 조건들에 부합한다면 재시도를 할 수 있도록 한다.
 
-### 26. Request Size Set
+#### 26. Request Size Set
 
 ```yaml
 spring:
@@ -856,7 +902,7 @@ spring:
 
 요청 데이터의 크기를 제한할 수 있다.
 
-### 27. Request Host Set
+#### 27. Request Host Set
 
 ```yaml
 spring:
@@ -875,7 +921,7 @@ spring:
 
 요청을 허용할 호스트를 지정할 수 있다.
 
-### 28. Modify Request Body
+#### 28. Modify Request Body
 
 ```java
 @Bean
@@ -909,7 +955,7 @@ static class Hello {
 
 요청 받은 JSON Body를 Class로 역직렬화하여 요청 본문을 조작할 수 있다.
 
-### 29. Modify Response Body
+#### 29. Modify Response Body
 
 ```java
 @Bean
@@ -925,7 +971,7 @@ public RouteLocator routes(RouteLocatorBuilder builder) {
 
 응답할 Body를 조작할 수 있다.
 
-### 30. Default Filters (모든 route 설정에 필터를 적용하기)
+#### 30. Default Filters (모든 route 설정에 필터를 적용하기)
 
 ```yaml
 spring:
@@ -938,7 +984,7 @@ spring:
 
 ---
 
-## Gateway Global Filter간 순서 정하기
+## 6. 필터 실행 순서
 
 ```java
 @Bean
@@ -961,23 +1007,52 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
 }
 ```
 
-GlobalFilter를 상속받은 CustomFilter를 구현했을 때 이 필터를 적용하기 위한 우선순위를 지정할 수 있다.
+세 번째 질문의 답이다. **`Ordered`를 구현해서 `getOrder()`가 돌려주는 숫자로 정한다. 숫자가 작을수록 먼저 실행된다.**
 
-숫자가 낮을수록 먼저 수행된다.
+여기서 알아둬야 할 것이 있다. **게이트웨이 필터는 요청과 응답 양쪽을 지나간다.**
 
-## Gateway Metric 생성 (actuator)
+```mermaid
+flowchart TB
+    R["요청 도착"] --> F1["필터 A (order -1)<br/>chain.filter() 앞부분"]
+    F1 --> F2["필터 B (order 0)<br/>chain.filter() 앞부분"]
+    F2 --> S["실제 서비스 호출"]
+    S --> F2B["필터 B<br/>chain.filter() 뒷부분"]
+    F2B --> F1B["필터 A<br/>chain.filter() 뒷부분"]
+    F1B --> RES["응답 반환"]
+```
+
+`chain.filter(exchange)`를 부르기 전 코드가 요청 처리(pre)이고, 그 뒤에 이어 붙인 코드가 응답 처리(post)다.
+
+**응답 쪽은 순서가 뒤집힌다.** 요청은 order가 작은 것부터, 응답은 큰 것부터 지나간다.
+
+```java
+@Override
+public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    log.info("pre: 요청이 서비스로 가기 전");
+
+    return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+        log.info("post: 응답이 클라이언트로 가기 전");
+    }));
+}
+```
+
+**post 부분을 `then(...)`으로 붙이는 이유가 여기 있다.** Spring Cloud Gateway는 WebFlux 기반이라 `chain.filter()`가 즉시 결과를 돌려주지 않고 `Mono`를 돌려준다. 그 뒤에 실행할 것을 `then`으로 이어 붙여야 응답 시점에 실행된다.
+
+`chain.filter()` 다음 줄에 그냥 코드를 쓰면 **응답을 기다리지 않고 바로 실행된다.** 서블릿 기반 필터처럼 생각하면 여기서 틀린다.
+
+## 7. 지표 수집
 
 `spring-boot-starter-actuator`의존성을 추가하면
 
 ```yaml
-
 spring:
   cloud:
     gateway:
-      metrics: enabled
+      metrics:
+        enabled: true   # 기본값이 true다
 ```
 
-위 설정이 자동으로 활성화 되어 Gateway의 라우팅 지표를 남길 수 있게된다. (/actuator/metrics/gateway.requests)
+`/actuator/metrics/gateway.requests`에서 라우팅 지표를 볼 수 있다.
 
 지표의 속성은 아래와 같다.
 
@@ -996,7 +1071,7 @@ spring:
 
 ---
 
-# Gateway Timeout 설정
+## 8. 타임아웃
 
 아래와 같이 모든 라우팅에 타임아웃을 적용할 수 있다.
 
@@ -1018,20 +1093,23 @@ spring:
 spring:
   cloud:
     gateway:
-      - id: per_route_timeouts
-        uri: https://example.org
-        predicates:
-          - name: Path
-            args:
-              pattern: /delay/{timeout}
-        metadata:
-          response-timeout: 200
-          connect-timeout: 200
+      routes:
+        - id: per_route_timeouts
+          uri: https://example.org
+          predicates:
+            - name: Path
+              args:
+                pattern: /delay/{timeout}
+          metadata:
+            response-timeout: 200   # 밀리초
+            connect-timeout: 200    # 밀리초
 ```
+
+라우팅별 설정은 `metadata` 아래에 두고 **둘 다 밀리초 단위**다. 전역 설정의 `response-timeout`이 `Duration`을 받는 것과 다르다.
 
 ---
 
-# Gateway CORS 허용
+## 9. CORS
 
 아래와 같이 모든 라우팅에 CORS를 허용하는 구문을 만들 수 있다.
 
@@ -1047,17 +1125,20 @@ spring:
             - GET
 ```
 
-# Gateway Actuator 활성화 하기
+## 10. Actuator로 라우팅 상태 보기
 
 ```yaml
 management:
-    endpoint:
-      gateway:
-        enabled: true # default value
-      web:
-        exposure:
-          include: gateway
+  endpoint:
+    gateway:
+      enabled: true      # 기본값
+  endpoints:
+    web:
+      exposure:
+        include: gateway
 ```
+
+**`endpoint`와 `endpoints`가 다른 키다.** 개별 엔드포인트를 켜는 것은 `endpoint`, 웹으로 노출할 목록을 정하는 것은 `endpoints`다. 여기를 헷갈리면 설정을 다 넣었는데 경로가 안 열린다.
 
 위 설정으로 액추에이터를 활성화 시킨 후 Endpoint로 접속하여 모니터링을 할 수 있다.
 
@@ -1075,7 +1156,7 @@ management:
 
 ---
 
-# Custom Predicate 작성하기
+## 11. Predicate 직접 만들기
 
 ```java
 public class MyRoutePredicateFactory extends AbstractRoutePredicateFactory<HeaderRoutePredicateFactory.Config> {
@@ -1104,7 +1185,7 @@ public class MyRoutePredicateFactory extends AbstractRoutePredicateFactory<Heade
 
 ---
 
-# Custom PreFilter 작성하기
+## 12. PreFilter 직접 만들기
 
 공식문서에 따르면 커스텀 필터를 만들 때 그 네이밍은 `~~~GatewayFilterFactory`로 끝나야한다.
 
@@ -1137,7 +1218,7 @@ public class PreGatewayFilterFactory extends AbstractGatewayFilterFactory<PreGat
 
 ---
 
-# Custom PostFilter 작성하기
+## 13. PostFilter 직접 만들기
 
 공식문서에 따르면 커스텀 필터를 만들 때 그 네이밍은 `~~~GatewayFilterFactory`로 끝나야한다.
 
@@ -1170,7 +1251,7 @@ public class PostGatewayFilterFactory extends AbstractGatewayFilterFactory<PostG
 
 ---
 
-# Custom Global Filter 작성하기
+## 14. Global Filter 직접 만들기
 
 `Custom Global Filter`를 작성하려면 `GlobalFilter 인터페이스를 구현`해야한다. 이 필터는 모든 요청에 적용된다.
 
@@ -1202,9 +1283,9 @@ public GlobalFilter customGlobalPostFilter() {
 
 ---
 
-# Spring Cloud Gateway 셋팅
+## 15. 전체 설정 예시
 
-## build.gradle(.kts) 의존성 추가
+### build.gradle(.kts) 의존성 추가
 
 ```groovy
 extra["springCloudVersion"] = "2023.0.0"
@@ -1223,17 +1304,16 @@ dependencyManagement {
 
 추가적으로, Service Discovery와 궁합이 좋기 때문에 이를 활용하여 라우팅에 도움을 받는 것이 좋다.
 
-## rootApplication
+### rootApplication
 
 ```java
 @SpringBootApplication
 @EnableDiscoveryClient
 public class GatewayServiceApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(GatewayServiceApplication.class, args);
     }
-
 }
 ```
 
@@ -1241,7 +1321,7 @@ public class GatewayServiceApplication {
 
 ---
 
-## application.yml
+### application.yml
 
 ```yaml
 server:
@@ -1361,4 +1441,24 @@ eureka:
 
 ```
 
-위와 같이 커스텀 필터를 모든 라우팅에 적용하고 유레카를 통해 각 마이크로서비스에 로드밸런싱 하는 설정을 적용할 수 있다.
+`uri: lb://AUTH-SERVICE`에서 `lb`가 로드밸런서를 뜻한다. **실제 주소가 아니라 서비스 이름을 쓰면 유레카에서 등록된 인스턴스 목록을 받아 그중 하나로 보낸다.** 인스턴스가 늘고 줄어도 설정을 안 고쳐도 되는 것이 이 부분 덕분이다.
+
+`spring.main.web-application-type: reactive`도 짚어둔다. **Spring Cloud Gateway는 WebFlux 위에서 동작하므로 서블릿 기반으로 뜨면 안 된다.**
+
+의존성에 `spring-boot-starter-web`이 함께 들어가 있으면 스프링 부트가 서블릿 쪽을 골라버리고, 게이트웨이가 라우팅을 아예 못 한다. **이 설정을 넣는 것보다 `spring-boot-starter-web`을 안 넣는 것이 근본적인 해결이다.**
+
+---
+
+## 정리하며
+
+처음 던진 질문들에 대한 답이다.
+
+**게이트웨이가 없으면 무엇이 곤란한가.** 클라이언트가 모든 서비스의 인스턴스 주소를 알아야 한다. 자동 확장 환경에서는 주소가 계속 바뀌므로 그때마다 클라이언트를 고쳐 배포해야 한다. 인증이나 속도 제한 같은 공통 처리도 서비스마다 중복 구현하게 된다.
+
+**Route, Predicate, Filter가 각각 맡는 것.** Route는 "어디로 보낼지"를 담는 묶음이고, Predicate는 "이 요청이 이 Route에 해당하는가"를 판단하는 조건이며, Filter는 요청과 응답을 지나가면서 손보는 부분이다. 셋이 한 세트로 하나의 라우팅 규칙을 이룬다.
+
+**필터 실행 순서.** `Ordered`의 `getOrder()` 값이 작을수록 먼저 실행된다. 요청 방향은 작은 것부터, 응답 방향은 큰 것부터 지나간다. WebFlux 기반이라 응답 시점 처리는 `chain.filter()` 다음 줄이 아니라 `then(...)`으로 이어 붙여야 한다.
+
+**단일 장애점이 되지 않는가.** 된다. 게이트웨이를 상태 없이 만들어 여러 대로 띄우고, 여기에 비즈니스 로직을 넣지 않고, 뒤쪽 서비스에 타임아웃과 서킷 브레이커를 걸어야 한다. 특히 뒤쪽 하나가 느려졌을 때 게이트웨이의 처리 자원이 거기 묶이면 멀쩡한 서비스로 가는 요청까지 막힌다.
+
+문서를 전부 따라가고 나서 남은 감각은 **게이트웨이가 판단을 하는 곳이 아니라 규칙을 적용하는 곳**이라는 것이었다. Predicate와 Filter 팩토리가 이렇게 많은 이유도 "설정으로 표현할 수 있게" 만들려는 것이었고, 코드를 써야 할 것 같으면 대개 그건 뒤쪽 서비스가 할 일이었다.

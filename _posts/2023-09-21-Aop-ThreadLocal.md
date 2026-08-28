@@ -1,36 +1,55 @@
 ---
 
-title: 사용자 인증/인가 관심사 분리 (Thread Local)
+title: "인증 정보를 어디에 둘 것인가, AOP와 ThreadLocal 내부 뜯어보기"
 date: 2023-09-21
-categories: [SHORTS]
-tags: [SHORTS]
+categories: [Spring, Java]
+tags: [AOP, ThreadLocal, Interceptor, Authentication, Kotlin]
 layout: post
 toc: true
 math: true
 mermaid: true
-published: false
 
 ---
 
-# 사용자 인증/인가 관심사 분리 문제 해결 과정
+## 참고자료
 
-## 왜 이런 과정이 필요했는지?
-
-기존 코드에는 특정 API 컨트롤러마다 사용자 인증 정보를 가져오는 로직이 반복되고있었다.
-
-컨트롤러에서 이에 대한 관심사를 해결하는 것 보다는 이를 분리하는게 더 역할에 맞다고 생각해서 이를 분리하기로 했다.
+- [Java SE 17 - ThreadLocal Javadoc](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/ThreadLocal.html)
+- [OpenJDK - ThreadLocal.java 소스](https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/lang/ThreadLocal.java)
+- [Spring Framework - TransactionSynchronizationManager Javadoc](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/support/TransactionSynchronizationManager.html)
+- [Spring Framework - RequestContextHolder Javadoc](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/context/request/RequestContextHolder.html)
+- [Spring Security - Authentication Architecture](https://docs.spring.io/spring-security/reference/servlet/authentication/architecture.html)
 
 ---
 
-## 구체적으로 어떻게 구현한건지?
+## 배경
 
-HTTP Connection을 맺고 있는 Thread의 ThreadLocal에 서버에서 직접 발급하고 데이터베이스에서 관리하는 사용자의 UUID를 등록된 인증 정보를 보관하도록 하고
+컨트롤러마다 인증 정보를 꺼내는 코드가 똑같이 반복되고 있었다.
 
-이 인증 정보를 사용할 수 있는 로직을 전역적으로 선언하여 Spring 내부의 계층에서 자유롭게 사용할 수 있는 로직을 작성했다.
+```kotlin
+@GetMapping("/news")
+fun getNews(@RequestHeader("Authorization") token: String): NewsResponse {
+    val memberId = resolveToken(token)
+    val member = memberRepository.findByUniqueId(memberId) ?: throw ...
+    // 여기서부터 진짜 로직
+}
+```
 
-그리고 이 로직을 사용할 수 있는 대상을 애노테이션으로 지정할 수 있게 하여 반복되어 등장하는 사용자 인증 정보를 꺼내는 로직을 제거했다.
+컨트롤러가 할 일이 아니라고 생각해서 분리하기로 했다. 방법을 찾다가 스프링 시큐리티가 `SecurityContextHolder`로 하는 방식이 눈에 들어왔고, 그 안이 `ThreadLocal`이라는 것을 알게 됐다.
 
-### Auth.kt
+정리하면서 확인하고 싶었던 것들이다.
+
+- `ThreadLocal`은 어떻게 스레드마다 다른 값을 갖는가?
+- `ThreadLocal`에 담아두면 컨트롤러, 서비스, 리포지토리 어디서든 꺼낼 수 있는데 그 원리가 무엇인가?
+- 다 쓰고 나서 지워야 한다는데 안 지우면 정확히 무슨 일이 벌어지는가?
+- 이 방식으로 만든 인증은 토큰 기반인가 세션 기반인가?
+
+---
+
+## 1. 만든 것
+
+애노테이션 하나로 인증을 걸 수 있게 만들었다.
+
+### 1.1 애노테이션
 
 ```kotlin
 @Target(AnnotationTarget.FUNCTION)
@@ -38,41 +57,68 @@ HTTP Connection을 맺고 있는 Thread의 ThreadLocal에 서버에서 직접 �
 annotation class Auth
 ```
 
-### AuthAspect.kt
+`AnnotationRetention.RUNTIME`이 필요하다. AOP가 실행 중에 리플렉션으로 읽어야 하기 때문이다.
+
+### 1.2 저장소
+
+```kotlin
+object AuthContext {
+
+    private val USER_CONTEXT: ThreadLocal<Member> = ThreadLocal()
+
+    fun set(member: Member) = USER_CONTEXT.set(member)
+
+    fun getMember(): Member = USER_CONTEXT.get()
+        ?: throw ShortsBaseException.from(
+            shortsErrorCode = ShortsErrorCode.E401_UNAUTHORIZED,
+            resultErrorMessage = "인증 정보를 찾을 수 없습니다.",
+        )
+
+    fun clear() = USER_CONTEXT.remove()
+}
+```
+
+`object`로 만들었으니 싱글턴이다. **싱글턴인데 스레드마다 다른 값을 갖는다**는 것이 `ThreadLocal`의 성질이고, 이게 뒤에서 볼 내용의 핵심이다.
+
+### 1.3 애스펙트
 
 ```kotlin
 @Aspect
 @Component
 class AuthAspect(
     private val httpServletRequest: HttpServletRequest,
-    private val memberRepository: MemberRepository
+    private val memberRepository: MemberRepository,
 ) {
 
     @Around("@annotation($SHORTS_PACKAGE)")
-    fun memberId(pjp: ProceedingJoinPoint): Any {
+    fun memberId(pjp: ProceedingJoinPoint): Any? {
         val memberId = resolveToken(httpServletRequest)
             ?: throw ShortsBaseException.from(
                 shortsErrorCode = ShortsErrorCode.E401_UNAUTHORIZED,
-                "Request Header에 memberId가 존재하지 않습니다."
+                resultErrorMessage = "Request Header에 인증 정보가 존재하지 않습니다.",
             )
 
         val member = memberRepository.findByUniqueId(memberId)
             ?: throw ShortsBaseException.from(
                 shortsErrorCode = ShortsErrorCode.E404_NOT_FOUND,
-                resultErrorMessage = "존재하지 않는 유저입니다. memberId : $memberId"
+                resultErrorMessage = "존재하지 않는 유저입니다.",
             )
 
-        AuthContext.USER_CONTEXT.set(member)
-        return pjp.proceed(pjp.args)
+        AuthContext.set(member)
+        try {
+            return pjp.proceed(pjp.args)
+        } finally {
+            AuthContext.clear()
+        }
     }
 
     private fun resolveToken(request: HttpServletRequest): String? {
         val bearerToken = request.getHeader(AUTHORIZATION)
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(PREFIX_BEARER)) {
-            return bearerToken.substring(7)
+        return if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(PREFIX_BEARER)) {
+            bearerToken.substring(PREFIX_BEARER.length)
+        } else {
+            null
         }
-
-        return null
     }
 
     companion object {
@@ -83,838 +129,396 @@ class AuthAspect(
 }
 ```
 
-### AuthContext.kt
+**처음 작성했을 때 빠뜨렸던 것이 `try`와 `finally`다.** 왜 이게 없으면 안 되는지는 3절에서 다룬다.
+
+반환 타입도 처음에는 `Any`로 썼는데 `Any?`가 맞다. `pjp.proceed()`는 `void` 메서드에서 `null`을 돌려주기 때문이다. 코틀린에서 `Any`로 받으면 그 순간 NPE가 난다.
+
+### 1.4 싱글턴에 HttpServletRequest를 주입한 것
+
+`@Aspect`는 싱글턴 빈인데 요청마다 달라지는 `HttpServletRequest`를 생성자로 받고 있다. 처음에는 이게 왜 되는지 몰랐다.
+
+**스프링이 실제 요청 객체가 아니라 프록시를 주입하기 때문이다.** 이 프록시는 메서드가 호출될 때마다 현재 스레드에 묶인 요청을 찾아 넘긴다. 그리고 그 "현재 스레드에 묶인 요청"을 들고 있는 것이 `RequestContextHolder`이고, 그 안이 또 `ThreadLocal`이다.
+
+**결국 같은 구조가 두 겹으로 쌓여 있는 것**이다.
+
+### 1.5 사용
 
 ```kotlin
-object AuthContext {
+@Auth
+@GetMapping("/news")
+fun getNews(): NewsResponse {
+    val member = AuthContext.getMember()   // 파라미터로 안 받아도 된다
+    // ...
+}
+```
 
-    val USER_CONTEXT: ThreadLocal<Member> = ThreadLocal()
+서비스 계층에서도 그대로 꺼낼 수 있다. 파라미터로 넘길 필요가 없다.
 
-    fun getMember(): Member {
-        USER_CONTEXT.get()?.let {
-            return USER_CONTEXT.get()
-        } ?: throw ShortsBaseException.from(
-            shortsErrorCode = ShortsErrorCode.E401_UNAUTHORIZED,
-            resultErrorMessage = "인증 체크 중에 ThreadLocal 값을 꺼내오는 중에 문제가 발생했습니다."
-        )
+---
+
+## 2. ThreadLocal 내부 뜯어보기
+
+첫 질문과 두 번째 질문의 답이 여기 있다.
+
+### 2.1 get()부터
+
+```java
+public T get() {
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null) {
+        ThreadLocalMap.Entry e = map.getEntry(this);
+        if (e != null) {
+            @SuppressWarnings("unchecked")
+            T result = (T)e.value;
+            return result;
+        }
+    }
+    return setInitialValue();
+}
+```
+
+첫 줄이 전부를 설명한다. **`Thread.currentThread()`로 지금 실행 중인 스레드를 가져온다.**
+
+그리고 그 스레드에서 맵을 꺼낸다.
+
+```java
+ThreadLocalMap getMap(Thread t) {
+    return t.threadLocals;
+}
+```
+
+**`threadLocals`는 `Thread` 객체의 인스턴스 필드다.**
+
+여기가 핵심이다. 값을 담고 있는 것은 `ThreadLocal` 객체가 아니라 **스레드 객체 자신**이다.
+
+```mermaid
+flowchart TB
+    subgraph T1["Thread A"]
+        M1["threadLocals: ThreadLocalMap"]
+        M1 --> E1["Entry(AuthContext.USER_CONTEXT, MemberA)"]
+    end
+    subgraph T2["Thread B"]
+        M2["threadLocals: ThreadLocalMap"]
+        M2 --> E2["Entry(AuthContext.USER_CONTEXT, MemberB)"]
+    end
+    TL["ThreadLocal 객체<br/>(싱글턴, 값 없음)"]
+    E1 -.키로 사용.-> TL
+    E2 -.키로 사용.-> TL
+```
+
+**`ThreadLocal` 객체는 값을 담고 있지 않다. 맵의 키일 뿐이다.**
+
+그래서 `AuthContext`가 싱글턴이어도 문제가 없다. 스레드 A가 `get()`을 부르면 A의 맵에서 찾고, 스레드 B가 부르면 B의 맵에서 찾는다. **같은 키로 서로 다른 맵을 뒤진다.**
+
+### 2.2 set()
+
+```java
+public void set(T value) {
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null) {
+        map.set(this, value);
+    } else {
+        createMap(t, value);
     }
 }
 ```
 
----
-
-## 사용자는 그러면 어떻게 자신의 UUID를 가지고 있는가?
-
-클라이언트의 로컬 스토리지나 내부 DB에 저장하여 매 요청마다 인증 헤더에 실어 보내야한다.
-
----
-
-## 해당 UUID가 탈취되었을 때의 문제점과 해결방안은?
-
-DB에서 탈취된 것으로 판단된 UUID를 제거하여 피해를 막는 사후조치를 해야할 것 같다.
-
----
-
-## 이 과정 자체가 그러면 토큰 기반 방식의 인증 방법일까? 세션 기반 방식의 인증 방법일까?
-
-세션 기반 인증 방식으로 볼 수 있을 것 같다.
-
----
-
-### 위 질의 응답에 관한 근거
-
-사용자의 UUID를 서버에서 직접 발급하고 서버 내부에서 관리하는 것이므로 세션 기반 인증 방식에 가깝다고 할 수 있을 것 같다.
-
-하지만 서버 내부의 메모리에서 해당 인증 정보를 관리하는 것이 아닌 DB에 저장되어있는 내용을 관리하는 것이기 때문에 완전한 세션방식이라고 하기엔 조금 어려울 수도 있을 것 같다.
-
-세션 기반 인증에서는 서버 측에서 세션을 관리하고, 클라이언트에게 세션 ID를 부여하여 이를 사용자 식별에 활용한다.
-
----
-
-## 공격자로부터 클라이언트의 인증 정보가 탈취되었음을 서버측에서는 어떻게 알 수 있을까?
-
-- 클라이언트의 UUID가 이전에 없던 위치에서 사용되었거나, 단기간 내에 많은 요청이 발생하는 경우 이상행동으로 간주하여 해당 세션을 무효화한다.
-
-- 클라이언트의 로그인 위치를 기록하고, 동일한 UUID가 다른 지역에서 사용되는 경우 해당 세션을 무효화한다.
-
----
-
-## 토큰 기반 인증 방식 장/단점
-
-- 장점 1. 확장성과 분산화
-  - JWT는 토큰을 생성하고 검증하는 키를 기반으로 동작하며, 토큰에 필요한 정보를 담을 수 있어서 서버 간에 토큰을 공유하거나 전달할 수 있어 확장성이 뛰어나고 분산 환경에서 사용하기 용이하다.
-
-- 장점 2. 상태 없음(Stateless)
-  - 서버 측에서 토큰을 검증하고 필요한 정보를 추출하므로, 서버는 클라이언트의 상태를 저장할 필요가 없어 리소스가 절약 될 수 있다.
-
-- 장점 3. 유연한 사용자 권한 관리
-  - 토큰 내에 사용자 권한과 관련된 정보를 포함하여 사용자 권한 관리가 용이하며, 토큰의 내용을 이용하여 권한 검사를 수행할 수 있다.
-
-- 단점 1. 토큰 크기와 보안
-  - JWT는 탈취될 가능성이 있다. 중요한 정보를 토큰에 포함시키면 보안 문제가 발생할 수 있다.
-
-- 단점 2. 토큰 유효성 검증의 어려움
-  - 토큰이 변조되지 않았는지 확인하기 위해 서명을 검증해야 하기 때문에 서명 검증 과정이 추가로 필요하며, 이에 따른 복잡성이 발생할 수 있다.
-
----
-
-## 서버 측 세션(Session) 기반 인증 방식 장/단점
-
-- 장점 1. 보안성
-  - 세션은 서버에 저장되므로 클라이언트에 노출되지 않는다. 토큰 기반 인증에 비해 보안성이 높다.
-
-- 장점 2. 세션 탈취 시 대처가능
-  - 세션을 사용하면 만료 시간을 쉽게 조절하고 조절할 수 있으며, 만료 시간이 지나면 자동으로 세션을 무효화시킬 수 있다.
-
-- 단점 1. 상태 유지
-  - 세션은 서버 측에서 상태를 유지해야 하므로, 서버의 메모리를 사용하게 되어 클라이언트가 많을 때 성능 저하가 발생할 수 있다.
-
-- 단점 2. 확장성
-  - 분산 환경에서 각 서버마다 발급하는 세션을 관리하기 위해 세션 클러스터를 운영해야하는 복잡성이 증가한다.
-
----
-
-# 참고자료
-
-[Catsbi's Blog](https://catsbi.oopy.io/3ddf4078-55f0-4fde-9d51-907613a44c0d)
-
-[Gmarket Tech Blog](https://dev.gmarket.com/62)
-
-# Thread Local이란?
-
-특정 쓰레드만 접근할 수 있는 저장소로, 쓰레드별로 할당되는 저장소이다. (쓰레드 내부에 내부 저장소를 제공하는 것!)
-
-# 코드로 살펴보기
-
-## ThreadLocal.java 전체 코드
+같은 구조다. 현재 스레드를 가져오고, 그 스레드의 맵에 넣는다. 맵이 없으면 만든다.
 
 ```java
-public class ThreadLocal<T> {
-
-    private final int threadLocalHashCode = nextHashCode();
-
-    private static final AtomicInteger nextHashCode = new AtomicInteger();
-
-    private static final int HASH_INCREMENT = 0x61c88647;
-
-    private static int nextHashCode() {
-        return nextHashCode.getAndAdd(HASH_INCREMENT);
-    }
-
-    protected T initialValue() {
-        return null;
-    }
-
-    public static <S> ThreadLocal<S> withInitial(Supplier<? extends S> supplier) {
-        return new SuppliedThreadLocal<>(supplier);
-    }
-
-    public ThreadLocal() {
-    }
-
-    public T get() {
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        if (map != null) {
-            ThreadLocalMap.Entry e = map.getEntry(this);
-            if (e != null) {
-                @SuppressWarnings("unchecked")
-                T result = (T)e.value;
-                return result;
-            }
-        }
-        return setInitialValue();
-    }
-
-    boolean isPresent() {
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        return map != null && map.getEntry(this) != null;
-    }
-
-    private T setInitialValue() {
-        T value = initialValue();
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        if (map != null) {
-            map.set(this, value);
-        } else {
-            createMap(t, value);
-        }
-        if (this instanceof TerminatingThreadLocal) {
-            TerminatingThreadLocal.register((TerminatingThreadLocal<?>) this);
-        }
-        return value;
-    }
-
-    public void set(T value) {
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        if (map != null) {
-            map.set(this, value);
-        } else {
-            createMap(t, value);
-        }
-    }
-
-     public void remove() {
-         ThreadLocalMap m = getMap(Thread.currentThread());
-         if (m != null) {
-             m.remove(this);
-         }
-     }
-
-    ThreadLocalMap getMap(Thread t) {
-        return t.threadLocals;
-    }
-
-    void createMap(Thread t, T firstValue) {
-        t.threadLocals = new ThreadLocalMap(this, firstValue);
-    }
-
-    static ThreadLocalMap createInheritedMap(ThreadLocalMap parentMap) {
-        return new ThreadLocalMap(parentMap);
-    }
-
-    T childValue(T parentValue) {
-        throw new UnsupportedOperationException();
-    }
-
-    static final class SuppliedThreadLocal<T> extends ThreadLocal<T> {
-
-        private final Supplier<? extends T> supplier;
-
-        SuppliedThreadLocal(Supplier<? extends T> supplier) {
-            this.supplier = Objects.requireNonNull(supplier);
-        }
-
-        @Override
-        protected T initialValue() {
-            return supplier.get();
-        }
-    }
-
-    static class ThreadLocalMap {
-
-        static class Entry extends WeakReference<ThreadLocal<?>> {
-            Object value;
-
-            Entry(ThreadLocal<?> k, Object v) {
-                super(k);
-                value = v;
-            }
-        }
-
-        private static final int INITIAL_CAPACITY = 16;
-
-        private Entry[] table;
-
-        private int size = 0;
-
-        private int threshold; // Default to 0
-
-        private void setThreshold(int len) {
-            threshold = len * 2 / 3;
-        }
-
-        private static int nextIndex(int i, int len) {
-            return ((i + 1 < len) ? i + 1 : 0);
-        }
-
-        private static int prevIndex(int i, int len) {
-            return ((i - 1 >= 0) ? i - 1 : len - 1);
-        }
-
-        ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
-            table = new Entry[INITIAL_CAPACITY];
-            int i = firstKey.threadLocalHashCode & (INITIAL_CAPACITY - 1);
-            table[i] = new Entry(firstKey, firstValue);
-            size = 1;
-            setThreshold(INITIAL_CAPACITY);
-        }
-
-        private ThreadLocalMap(ThreadLocalMap parentMap) {
-            Entry[] parentTable = parentMap.table;
-            int len = parentTable.length;
-            setThreshold(len);
-            table = new Entry[len];
-
-            for (Entry e : parentTable) {
-                if (e != null) {
-                    @SuppressWarnings("unchecked")
-                    ThreadLocal<Object> key = (ThreadLocal<Object>) e.get();
-                    if (key != null) {
-                        Object value = key.childValue(e.value);
-                        Entry c = new Entry(key, value);
-                        int h = key.threadLocalHashCode & (len - 1);
-                        while (table[h] != null)
-                            h = nextIndex(h, len);
-                        table[h] = c;
-                        size++;
-                    }
-                }
-            }
-        }
-
-        private Entry getEntry(ThreadLocal<?> key) {
-            int i = key.threadLocalHashCode & (table.length - 1);
-            Entry e = table[i];
-            if (e != null && e.refersTo(key))
-                return e;
-            else
-                return getEntryAfterMiss(key, i, e);
-        }
-
-        private Entry getEntryAfterMiss(ThreadLocal<?> key, int i, Entry e) {
-            Entry[] tab = table;
-            int len = tab.length;
-
-            while (e != null) {
-                if (e.refersTo(key))
-                    return e;
-                if (e.refersTo(null))
-                    expungeStaleEntry(i);
-                else
-                    i = nextIndex(i, len);
-                e = tab[i];
-            }
-            return null;
-        }
-
-        private void set(ThreadLocal<?> key, Object value) {
-
-            Entry[] tab = table;
-            int len = tab.length;
-            int i = key.threadLocalHashCode & (len-1);
-
-            for (Entry e = tab[i];
-                 e != null;
-                 e = tab[i = nextIndex(i, len)]) {
-                if (e.refersTo(key)) {
-                    e.value = value;
-                    return;
-                }
-
-                if (e.refersTo(null)) {
-                    replaceStaleEntry(key, value, i);
-                    return;
-                }
-            }
-
-            tab[i] = new Entry(key, value);
-            int sz = ++size;
-            if (!cleanSomeSlots(i, sz) && sz >= threshold)
-                rehash();
-        }
-
-        private void remove(ThreadLocal<?> key) {
-            Entry[] tab = table;
-            int len = tab.length;
-            int i = key.threadLocalHashCode & (len-1);
-            for (Entry e = tab[i];
-                 e != null;
-                 e = tab[i = nextIndex(i, len)]) {
-                if (e.refersTo(key)) {
-                    e.clear();
-                    expungeStaleEntry(i);
-                    return;
-                }
-            }
-        }
-
-        private void replaceStaleEntry(ThreadLocal<?> key, Object value,
-                                       int staleSlot) {
-            Entry[] tab = table;
-            int len = tab.length;
-            Entry e;
-
-            int slotToExpunge = staleSlot;
-            for (int i = prevIndex(staleSlot, len);
-                 (e = tab[i]) != null;
-                 i = prevIndex(i, len))
-                if (e.refersTo(null))
-                    slotToExpunge = i;
-
-            for (int i = nextIndex(staleSlot, len);
-                 (e = tab[i]) != null;
-                 i = nextIndex(i, len)) {
-
-                if (e.refersTo(key)) {
-                    e.value = value;
-
-                    tab[i] = tab[staleSlot];
-                    tab[staleSlot] = e;
-
-                    if (slotToExpunge == staleSlot)
-                        slotToExpunge = i;
-                    cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);
-                    return;
-                }
-
-                if (e.refersTo(null) && slotToExpunge == staleSlot)
-                    slotToExpunge = i;
-            }
-
-            // If key not found, put new entry in stale slot
-            tab[staleSlot].value = null;
-            tab[staleSlot] = new Entry(key, value);
-
-            // If there are any other stale entries in run, expunge them
-            if (slotToExpunge != staleSlot)
-                cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);
-        }
-
-        private int expungeStaleEntry(int staleSlot) {
-            Entry[] tab = table;
-            int len = tab.length;
-
-            // expunge entry at staleSlot
-            tab[staleSlot].value = null;
-            tab[staleSlot] = null;
-            size--;
-
-            // Rehash until we encounter null
-            Entry e;
-            int i;
-            for (i = nextIndex(staleSlot, len);
-                 (e = tab[i]) != null;
-                 i = nextIndex(i, len)) {
-                ThreadLocal<?> k = e.get();
-                if (k == null) {
-                    e.value = null;
-                    tab[i] = null;
-                    size--;
-                } else {
-                    int h = k.threadLocalHashCode & (len - 1);
-                    if (h != i) {
-                        tab[i] = null;
-
-                        // Unlike Knuth 6.4 Algorithm R, we must scan until
-                        // null because multiple entries could have been stale.
-                        while (tab[h] != null)
-                            h = nextIndex(h, len);
-                        tab[h] = e;
-                    }
-                }
-            }
-            return i;
-        }
-
-        private boolean cleanSomeSlots(int i, int n) {
-            boolean removed = false;
-            Entry[] tab = table;
-            int len = tab.length;
-            do {
-                i = nextIndex(i, len);
-                Entry e = tab[i];
-                if (e != null && e.refersTo(null)) {
-                    n = len;
-                    removed = true;
-                    i = expungeStaleEntry(i);
-                }
-            } while ( (n >>>= 1) != 0);
-            return removed;
-        }
-
-        private void rehash() {
-            expungeStaleEntries();
-
-            // Use lower threshold for doubling to avoid hysteresis
-            if (size >= threshold - threshold / 4)
-                resize();
-        }
-
-        private void resize() {
-            Entry[] oldTab = table;
-            int oldLen = oldTab.length;
-            int newLen = oldLen * 2;
-            Entry[] newTab = new Entry[newLen];
-            int count = 0;
-
-            for (Entry e : oldTab) {
-                if (e != null) {
-                    ThreadLocal<?> k = e.get();
-                    if (k == null) {
-                        e.value = null; // Help the GC
-                    } else {
-                        int h = k.threadLocalHashCode & (newLen - 1);
-                        while (newTab[h] != null)
-                            h = nextIndex(h, newLen);
-                        newTab[h] = e;
-                        count++;
-                    }
-                }
-            }
-
-            setThreshold(newLen);
-            size = count;
-            table = newTab;
-        }
-
-        private void expungeStaleEntries() {
-            Entry[] tab = table;
-            int len = tab.length;
-            for (int j = 0; j < len; j++) {
-                Entry e = tab[j];
-                if (e != null && e.refersTo(null))
-                    expungeStaleEntry(j);
-            }
-        }
-    }
+void createMap(Thread t, T firstValue) {
+    t.threadLocals = new ThreadLocalMap(this, firstValue);
 }
 ```
 
-## ThreadLocal.java 주요 코드
+**스레드 객체의 필드에 직접 대입한다.** 맵은 처음 `set()`을 부를 때 만들어진다.
+
+### 2.3 ThreadLocalMap의 생성자
 
 ```java
-public class ThreadLocal<T> {
-    ThreadLocalMap getMap(Thread t) {
-        return t.threadLocals;
-    }
-
-    void createMap(Thread t, T firstValue) {
-        t.threadLocals = new ThreadLocalMap(this, firstValue);
-    }
-
-    public void set(T value) {
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        if (map != null)
-            map.set(this, value);
-        else
-            createMap(t, value);
-    }
-
-    public T get() {
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        if (map != null) {
-            ThreadLocalMap.Entry e = map.getEntry(this);
-            if (e != null) {
-                @SuppressWarnings("unchecked")
-                T result = (T)e.value;
-                return result;
-            }
-        }
-        return setInitialValue();
-    }
-
-
-    public void remove() {
-        ThreadLocalMap m = getMap(Thread.currentThread());
-        if (m != null)
-            m.remove(this);
-    }
-
-    static class ThreadLocalMap {
-        static class Entry extends WeakReference<ThreadLocal<?>> {
-            Object value;
-
-            Entry(ThreadLocal<?> k, Object v) {
-                super(k);
-                value = v;
-            }
-        }
-    }
-
-    ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
-        table = new Entry[INITIAL_CAPACITY];
-        int i = firstKey.threadLocalHashCode & (INITIAL_CAPACITY - 1);
-        table[i] = new Entry(firstKey, firstValue);
-        size = 1;
-        setThreshold(INITIAL_CAPACITY);
-    }
-
-    static class Entry extends WeakReference<ThreadLocal<?>> {
-        Object value;
-        Entry(ThreadLocal<?> k, Object v) {
-            super(k);
-            value = v;
-        }
-    }
+ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
+    table = new Entry[INITIAL_CAPACITY];
+    int i = firstKey.threadLocalHashCode & (INITIAL_CAPACITY - 1);
+    table[i] = new Entry(firstKey, firstValue);
+    size = 1;
+    setThreshold(INITIAL_CAPACITY);
 }
 ```
 
-## ThreadLocal.get()
+한 줄씩 본다.
 
-코드를 천천히 살펴보면 구성이 보인다.
+**`table = new Entry[INITIAL_CAPACITY]`**
 
-```java
-    public T get() {
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        if (map != null) {
-            ThreadLocalMap.Entry e = map.getEntry(this);
-            if (e != null) {
-                @SuppressWarnings("unchecked")
-                T result = (T)e.value;
-                return result;
-            }
-        }
-        return setInitialValue();
-    }
+`INITIAL_CAPACITY`는 16이다. `HashMap`처럼 배열을 쓰는 해시 테이블이다.
+
+**`firstKey.threadLocalHashCode & (INITIAL_CAPACITY - 1)`**
+
+이 비트 연산이 무엇을 하는지 짚어둔다. `16 - 1`은 이진수로 `1111`이다. 어떤 수와 `1111`을 AND 하면 **하위 4비트만 남는다.**
+
+```text
+    threadLocalHashCode : 1011 0110 1001 0111
+  & (16 - 1)            : 0000 0000 0000 1111
+  ------------------------------------------
+                        : 0000 0000 0000 0111  =  7
 ```
 
-get()메서드의 코드를 살펴보면
+결과는 항상 0에서 15 사이다. **`% 16`과 같은 결과를 내면서 훨씬 빠르다.** 배열 크기가 2의 거듭제곱이어야 성립하는 최적화이고, `HashMap`도 같은 방식을 쓴다.
 
-- ThreadLocal.get() 메서드를 호출하면, `현재 동작 중인 쓰레드`를 가져온 후
-- 해당 `현재 동작 중인 쓰레드`를 통해 `ThreadLocalMap`을 가져온다.
-- 그 후 `ThreadLocalMap`이 존재한다면 해당 `Map의 Entry`를 가져온다.
-- `Entry`가 존재한다면 해당 `Entry의` 존재하는 `value`를 뽑아와 반환한다.
-
-우리가 호출하는 ThreadLocal.get() 메서드를 호출할 때의 데이터가 반환되는 흐름을 아래로 요약할 수 있다.
-
-현재 쓰레드 -> 현재 쓰레드의 ThreadLocalMap -> 현재 쓰레드의 ThreadLocalMap의 Entry -> C현재 쓰레드의 ThreadLocalMap의 Entry의 value
-
-그러면 여기서 의문이 든다.
-
-- get()을 하기 전에 set()은 어떻게 실행되는건가?
-- ThreadLocalMap은 어떻게 구성되어있을까?
-
-## ThreadLocalMap.set()
+**충돌을 막는 것은 이 연산이 아니다.** 충돌을 줄이는 것은 해시값을 만드는 쪽이다.
 
 ```java
-    public void set(T value) {
-        Thread t = Thread.currentThread();
-        ThreadLocalMap map = getMap(t);
-        if (map != null)
-            map.set(this, value);
-        else
-            createMap(t, value);
-    }
+private final int threadLocalHashCode = nextHashCode();
+private static AtomicInteger nextHashCode = new AtomicInteger();
+private static final int HASH_INCREMENT = 0x61c88647;
+
+private static int nextHashCode() {
+    return nextHashCode.getAndAdd(HASH_INCREMENT);
+}
 ```
 
-set() 메서드의 코드를 살펴보면
+**`ThreadLocal` 객체가 만들어질 때마다 `0x61c88647`씩 더한 값을 해시로 쓴다.**
 
-- `현재 동작 중인 쓰레드`를 가져온다.
-- 해당 `현재 동작 중인 쓰레드`를 통해 `ThreadLocalMap`을 가져온다.
-- 그 후 `ThreadLocalMap`이 존재한다면 해당 `Map`에 값을 삽입한다.
-  - 만약 `ThreadLocalMap`이 존재하지 않는다면 map을 생성한 후 삽입한다.
+이 숫자는 황금비에서 나왔다. 이 값을 계속 더해가면서 하위 몇 비트만 잘라내면, **결과가 배열 전체에 고르게 흩어진다.** 순차적으로 1씩 더하면 한쪽에 몰리는데, 이 상수를 쓰면 그런 편중이 생기지 않는다.
 
-get()메서드와 흐름이 거의 비슷하다.
-
-그럼 아직까지도 풀리지 않는 의문인 Map은 어떻게 생겼는지 알아보자.
-
-## createMap
+**`setThreshold(INITIAL_CAPACITY)`**
 
 ```java
-    void createMap(Thread t, T firstValue) {
-        t.threadLocals = new ThreadLocalMap(this, firstValue);
-    }
-```
-
-createMap() 메서드를 살펴보면
-
-- `Thread`와 `저장할 데이터`를 매개변수로 받는다.
-- 그 후 `Thread 객체 내`의 존재하는 `threadLocals 이라는 인스턴스 변수`에 ThreadLocalMap을 삽입한다.
-
-즉, 현재 요청을 처리하고 있는 쓰레드가 인스턴스 변수로 가지고 있는 ThreadLocalMap을 셋팅해주는 것이다.
-
-그러면 ThreadLocalMap()의 생성자가 어떻게 동작하는지만 살펴보면 ThreadLocal이 어떻게 동작하는지 알 수 있을 것이다.
-
-## ThreadLocalMap()
-
-```java
-    ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
-        table = new Entry[INITIAL_CAPACITY];
-        int i = firstKey.threadLocalHashCode & (INITIAL_CAPACITY - 1);
-        table[i] = new Entry(firstKey, firstValue);
-        size = 1;
-        setThreshold(INITIAL_CAPACITY);
-    }
-```
-
-### ThreadLocalMap - 매개변수
-
-- 첫 번째 매개변수로 ThreadLocal에 대한 제네릭을 받고 있는데, 특정 쓰레드만 접근할 수 있는 Key를 가리킨다.
-- 두 번째 매개변수로 Object 타입의 value를 가지고 있는데, 특정 쓰레드가 쓰레드 로컬에 접근하여 얻을 수 있는 데이터를 가리킨다.
-
-매개변수를 살펴봤으니 첫 번째 라인부터 천천히 살펴보겠다.
-
-### ThreadLocalMap - table
-
-```java
-table = new Entry[INITIAL_CAPACITY];
-```
-
-table이라는 변수는 ThreadLocal의 인스턴스 변수로, Entry타입을 가지고 있으며 INITIAL_CAPACITY의 값은 16으로 지정되어있다.
-
-Entry는 아래와 같이 구성되어있다.
-
-```java
-static class Entry extends WeakReference<ThreadLocal<?>> {
-            /** The value associated with this ThreadLocal. */
-            Object value;
-
-            Entry(ThreadLocal<?> k, Object v) {
-                super(k);
-                value = v;
-            }
-        }
-```
-
-Entry는 HashMap처럼 Key, Value를 담기 위한 말 그대로의 Entry이다.
-
-### ThreadLocalMap - 비트 연산
-
-```java
-int i = firstKey.threadLocalHashCode & (INITIAL_CAPACITY - 1);
-```
-
-Entry타입의 table을 셋팅한 후 ThreadLocal에 접근하기 위한 Key의 HashCode를 초기 용량인 16에 -1한 값과 AND 연산을한다.
-
-초기 용량인 16에 대해서 앞으로 들어올 값들에 대해 해시 충돌을 막기위한 과정이다.
-
-### ThreadLocalMap - table 값 할당
-
-```java
-table[i] = new Entry(firstKey, firstValue);
-```
-
-바로 직전 라인에서 계산한 결과를 인덱스로 table의 값을 셋팅한다.
-
-마찬가지로 첫 번째 매개변수는 현재 쓰레드가 가지고 있는 Key, 두 번째 매개변수는 저장할 데이터를 가리킨다.
-
-### ThreadLocalMap - Entry size 갱신
-
-```java
-size = 1;
-```
-
-이전까지의 로직으로 저장한 Entry의 크기에 따라 size를 변경해준다.
-
-### ThreadLocalMap - threshold 갱신
-
-```java
-setThreshold(INITIAL_CAPACITY);
-```
-
-ThreadLocalMap의 threshold값을 설정한다.
-
-threshold는 table 배열의 크기에 기반하여 충돌 및 재조정을 위한 임계치를 설정하는 데 사용된다.
-
-```java
-
-// The next size value at which to resize.
-private int threshold; // Default to 0
-
-/**
- * Set the resize threshold to maintain at worst a 2/3 load factor.
- */
 private void setThreshold(int len) {
     threshold = len * 2 / 3;
 }
 ```
 
-크기를 조정하는 로직은 위와 같다.
+엔트리가 배열 크기의 3분의 2를 넘으면 배열을 늘린다. `HashMap`의 부하율이 0.75인 것과 같은 개념이다.
 
-# ThreaLocal의 구조 요약
-
-ThreadLocal은 스프링만의 특별한 무엇인가가 아니라 Thread와 연계되는 객체였다.
-
-ThradLocal이 구성되고 사용되는 기본 흐름으로는
-
-- `현재 동작 중인 쓰레드`를 가져온 후
-- 해당 `현재 동작 중인 쓰레드`의 `ThreadLocalMap`을 가져온다.
-  - 여기서 ThraedLocalMap에 값을 할당할 수 도 있다.
-- 그 후 `ThreadLocalMap`이 존재한다면 해당 `ThreadLocalMap의 Entry`를 가져온다.
-- `ThreadLocalMap`의 `Entry`는 HashMap과 유사한 `Key, Value` 형태를 가지고 있다.
-  - ThreadLocalMap의 Entry는 `현재 쓰레드의 Key의 HashCode`와 `초기 Map 용량과 AND 연산`을 수행하여 해시 충돌을 방지한다.
-- ThreadLocal에 접근하여 값을 사용하기 위해서는 해당 `Entry의` 존재하는 `value`를 뽑아와 반환한다.
-
-# ThreadLocal의 사용처
-
-## Spring Security
-
-ThreadLocal은 Spring Security에 자주 사용된다.
-
-![](https://img1.daumcdn.net/thumb/R1024x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbeDENY%2FbtrBs0cquNc%2FPkwRQzgyzhoy1ecQrlQOJk%2Fimg.png)
-
-## @Transcation
+### 2.4 Entry가 WeakReference인 이유
 
 ```java
-package org.springframework.transaction.support;
+static class Entry extends WeakReference<ThreadLocal<?>> {
+    Object value;
 
-public abstract class TransactionSynchronizationManager{}
+    Entry(ThreadLocal<?> k, Object v) {
+        super(k);
+        value = v;
+    }
+}
 ```
 
-[Spring.io - TransactionSynchronizationManager](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/support/TransactionSynchronizationManager.html)
+**키를 약한 참조로 들고 있다.**
 
-위 패키지에 해당하는 TransactionSynchronizationManager는 ThreadLocal을 사용하여 트랜잭션간의 동기화 관리자를 저장한다.
+이유가 있다. 맵은 스레드 객체에 붙어 있고, 스레드는 풀에서 오래 살아남는다. 만약 키를 강하게 참조하면, `ThreadLocal` 객체를 아무도 안 쓰게 된 뒤에도 맵이 붙잡고 있어서 회수되지 않는다.
 
-스프링에서 제공하는 Transaction Manager는 크게 두 가지 역할을 갖고 있다.
+약한 참조면 다른 곳에서 참조가 사라지는 순간 GC가 가져간다. 그러면 엔트리의 키가 `null`이 되고, `ThreadLocalMap`은 다음에 `set()`이나 `get()`을 할 때 이런 엔트리를 정리한다.
 
-- 트랜잭션 추상화
-  - PlatformTransactionManager 인터페이스를 사용 방식을 말한다.
-- 리소스 동기화
-  - 트랜잭션을 유지하려면 트랜잭션의 시작부터 끝까지 같은 데이터베이스 커넥션을 유지해야한다.
-    - 결국 같은 커넥션을 동기화하기 위해서 파라미터로 Connection 을 전달하는 방법이 있다.
-    - 하지만 이 방법은 지저분해지고 중복된 코드를 생성할 수 밖에 없다.
+**그런데 값은 강한 참조다.** 여기서 문제가 생긴다.
 
-여기서 리소스 동기화를 위해 스프링에서 제공하는 것이 TransactionSynchronizationManager이다.
+```mermaid
+flowchart LR
+    T["Thread (풀에서 재사용)"] --> M["ThreadLocalMap"]
+    M --> E["Entry"]
+    E -.약한 참조.-> K["ThreadLocal 키<br/>(GC 대상)"]
+    E ==강한 참조==> V["value<br/>(GC 안 됨)"]
+```
 
-이 때 PlatformTransactionManager가 TransactionSynchronizationManager에서 보관하는 커넥션을 가져와서 사용하는 방식이라고 이해하면 된다.
+키가 회수돼서 `null`이 돼도 **값은 그대로 남아 있다.** 그 엔트리를 정리하는 것은 다음번 맵 조작이 일어날 때인데, 그런 일이 없으면 계속 남는다.
 
-TransactionSynchronizationManager는 내부적으로 ThreadLocal를 사용하기 때문에 멀티쓰레드 상황에 Connection을 동기화 할 수 있다.
+**그래서 `remove()`가 필요하다.** 자동 정리에 기대면 안 된다.
 
-따라서 Connection이 필요하면 TransactionSynchronizationManager를 통해 Connection을 가져오면 되고, 이전처럼 파라미터로 Connection을 전달할 필요가 없어진다.
+---
 
-또한, Thread를 기준으로 리소스 및 트랜잭션 동기화를 관리해줄 수 있게된다.
+## 3. 안 지우면 무슨 일이 벌어지는가
 
-### 동작 예시
+세 번째 질문이다. 그리고 앞에서 `finally`를 넣은 이유다.
 
-    트랜잭션 시작:
-        쓰레드 A가 트랜잭션을 시작
-        TransactionSynchronizationManager는 현재 쓰레드에 대한 상태를 유지
+### 3.1 스레드는 재사용된다
 
-    DB 커넥션 확보:
-        쓰레드 A가 DB 커넥션을 확보해야 할 때, 일반적으로 DataSource를 통해 커넥션을 얻는다.
-        TransactionSynchronizationManager는 현재 쓰레드에 대한 ThreadLocal에 커넥션을 저장합니다.
+톰캣은 요청마다 스레드를 새로 만들지 않는다. **스레드 풀에서 꺼내 쓰고 반납한다.**
 
-    다른 쓰레드에서 DB 커넥션 요청:
-        동일한 트랜잭션 내에서 다른 쓰레드 B가 DB 커넥션을 요청합니다.
-        TransactionSynchronizationManager는 현재 쓰레드 B에 대한 ThreadLocal에서 커넥션을 찾지 못한다.
+```mermaid
+sequenceDiagram
+    participant C1 as 요청 1 (사용자 A)
+    participant T as Thread-7
+    participant C2 as 요청 2 (사용자 B)
 
-    커넥션 공유:
-        TransactionSynchronizationManager는 현재 쓰레드 A의 ThreadLocal에 저장된 커넥션을 가져와서 쓰레드 B에게 제공한다.
-        이를 통해 동일한 트랜잭션 내에서 쓰레드 간에 DB 커넥션을 공유한다.
+    C1->>T: 할당
+    T->>T: AuthContext.set(MemberA)
+    T-->>C1: 응답
+    Note over T: remove() 안 함. MemberA가 남아 있음
+    C2->>T: 같은 스레드 재할당
+    T->>T: getMember() -> MemberA
+    Note over T: 사용자 B가 사용자 A의 정보를 본다
+```
 
-    트랜잭션 완료:
-        트랜잭션이 완료되면 TransactionSynchronizationManager는 현재 쓰레드의 ThreadLocal에 저장된 커넥션을 해제 및 ThreadLocal Clear
-        DB 커넥션은 반환 혹은 닫힌다.
+**인증 정보가 남아 있는 상태로 다음 요청이 들어온다.**
 
-## RequestContextHolder
+`@Auth`가 붙은 API라면 `set()`이 덮어쓰니까 문제가 안 드러난다. 그런데 **`@Auth`가 없는 API에서 실수로 `getMember()`를 부르면** 이전 사용자의 정보가 나온다.
+
+인증이 안 된 요청이 인증된 것처럼 동작하고, 그것도 남의 계정으로 동작한다. **버그가 아니라 보안 사고다.**
+
+### 3.2 두 번째 문제, 메모리
+
+값이 강한 참조로 남아 있으므로 그 객체가 회수되지 않는다.
+
+`Member` 하나면 작지만, 여기에 연관 엔티티가 물려 있으면 딸려 온다. 스레드 풀 크기만큼 곱해진다. 톰캣 기본값이 200이면 200개가 계속 살아 있는다.
+
+**애플리케이션을 재배포해도 안 없어지는 경우가 있다.** 웹 애플리케이션 클래스로더가 이 참조 때문에 회수되지 않으면 클래스로더 누수가 된다.
+
+### 3.3 그래서 finally
+
+```kotlin
+AuthContext.set(member)
+try {
+    return pjp.proceed(pjp.args)
+} finally {
+    AuthContext.clear()
+}
+```
+
+**예외가 나도 반드시 지워야 하므로 `finally`여야 한다.** `proceed()` 뒤에 `clear()`를 쓰면 예외가 났을 때 건너뛴다.
+
+### 3.4 인터셉터로 하면
+
+AOP 대신 인터셉터를 쓰면 `afterCompletion`이 그 자리를 대신한다.
+
+```kotlin
+override fun afterCompletion(
+    request: HttpServletRequest,
+    response: HttpServletResponse,
+    handler: Any,
+    ex: Exception?,
+) {
+    AuthContext.clear()
+}
+```
+
+`afterCompletion`은 **예외가 났든 안 났든 항상 불린다.** 뷰 렌더링까지 끝난 뒤에 실행되므로 정리 작업을 두기에 적합하다.
+
+인증처럼 요청 전체에 걸리는 관심사는 애초에 인터셉터 쪽이 자연스럽다. AOP는 특정 메서드를 지목하는 데 강하고, 인터셉터는 요청 단위 처리에 강하다.
+
+---
+
+## 4. ThreadLocal을 쓰는 곳들
+
+### 4.1 스프링 시큐리티
+
+`SecurityContextHolder`가 `ThreadLocal`을 쓴다. 기본 전략이 `ThreadLocalSecurityContextHolderStrategy`다.
+
+```kotlin
+val authentication = SecurityContextHolder.getContext().authentication
+```
+
+컨트롤러든 서비스든 어디서든 이렇게 꺼낼 수 있는 이유가 지금까지 본 구조다.
+
+**스프링 시큐리티도 요청이 끝나면 지운다.** `SecurityContextPersistenceFilter`(최신 버전에서는 `SecurityContextHolderFilter`)가 `finally`에서 `clearContext()`를 부른다. 앞에서 직접 만든 것과 같은 이유다.
+
+### 4.2 트랜잭션 동기화
+
+`TransactionSynchronizationManager`가 `ThreadLocal`로 커넥션을 들고 있다.
+
+트랜잭션을 유지하려면 **시작부터 끝까지 같은 커넥션을 써야 한다.** 방법은 두 가지다.
+
+메서드마다 `Connection`을 파라미터로 넘긴다. 동작은 하지만 서비스 계층 시그니처가 전부 오염된다.
+
+`ThreadLocal`에 담아둔다. 파라미터가 사라진다.
+
+스프링은 후자를 택했다.
+
+```java
+public abstract class TransactionSynchronizationManager {
+    private static final ThreadLocal<Map<Object, Object>> resources =
+            new NamedThreadLocal<>("Transactional resources");
+    // ...
+}
+```
+
+**여기서 예전에 잘못 이해했던 것을 바로잡아 둔다.** "여러 스레드가 커넥션을 공유한다"고 알고 있었는데 정반대다.
+
+`ThreadLocal`은 **스레드 사이에 공유하지 않기 위한 도구**다. 커넥션이 스레드에 묶여 있으므로, 다른 스레드는 그 커넥션에 접근할 수 없다.
+
+**그래서 `@Async`나 별도 스레드로 넘어가면 트랜잭션이 따라가지 않는다.** 새 스레드에는 그 커넥션이 없다. 트랜잭션 안에서 비동기 작업을 띄우면 같은 트랜잭션에 참여할 거라고 기대하기 쉬운데, 실제로는 별개의 트랜잭션이 시작되거나 아예 없다.
+
+### 4.3 RequestContextHolder
 
 ```java
 public abstract class RequestContextHolder {
-
-    private static final boolean jsfPresent =
-            ClassUtils.isPresent("javax.faces.context.FacesContext", RequestContextHolder.class.getClassLoader());
 
     private static final ThreadLocal<RequestAttributes> requestAttributesHolder =
             new NamedThreadLocal<>("Request attributes");
 
     private static final ThreadLocal<RequestAttributes> inheritableRequestAttributesHolder =
             new NamedInheritableThreadLocal<>("Request context");
-
-    ...
 }
 ```
 
-현재 실행 중인 쓰레드에서 어떤 계층에서든 ServletRequest에 접근할 수 있도록 관리하는 유틸 클래스이다.
+**현재 요청을 어느 계층에서든 꺼낼 수 있게 해준다.** 앞에서 `@Aspect`에 `HttpServletRequest`를 주입할 수 있었던 것도 이것 덕분이다.
 
-ThreadLocal기반으로 구성되어있기 때문에 멀티 쓰레드 환경에서 다른 쓰레드에서도 특정 ServletRequest를 사용할 수 있도록 도와준다.
+두 개가 있는 것이 눈에 띈다. `InheritableThreadLocal`은 **자식 스레드를 만들 때 부모의 값을 복사해준다.**
 
-즉, 한 요청을 처리하기 위해 여러 쓰레드가 붙잡고 있을 때 쓰레드 각 A, B, C 간의 ServletRequset를 공유하여 사용할 수 있는 것이다.
+여기도 오해하기 쉬운 부분이다. **"여러 스레드가 공유한다"가 아니라 "스레드를 만드는 시점에 복사한다"이다.**
 
-# ThreadLocal 사용 시 주의점
+이 차이가 실무에서 문제를 만든다. **스레드 풀에서는 제대로 동작하지 않는다.** 풀의 스레드는 요청마다 새로 만들어지지 않으므로, 처음 만들어질 때 딸려온 값이 그대로 굳어 있다. 그래서 스프링은 기본적으로 상속을 끄고, 필요하면 명시적으로 켜게 해뒀다.
 
-ThreadLocal을 사용하고 그 마지막 시점에 도달했을 때는 쓰레드 로컬 내 정보를 지워야한다.
+---
 
-```java
-ThreadLocal.remove()
-```
+## 5. 이 인증 방식은 무엇인가
 
-정보를 지우는 방법은 위 remove()메서드를 호출하면 된다.
+네 번째 질문이다.
 
-A, B라는 쓰레드가 있을 때 만약 A의 쓰레드 로컬의 정보를 지우지 않는다면 B쓰레드에서 이미 모든 처리가 끝난 A 쓰레드 로컬에 접근하게될 가능성이 생겨 자칫 A의 정보를 획득하거나 잘못된 요청을 수행하는 데이터 위/변조 문제가 발생할 수 있기 때문이다.
+만든 방식을 정리하면 이렇다. **서버가 UUID를 발급하고, DB에 저장하고, 클라이언트는 그것을 매 요청 헤더에 실어 보낸다.**
+
+토큰 기반과 세션 기반의 갈림길은 **서버가 상태를 들고 있느냐**다.
+
+| 기준 | 이 방식 | 판정 |
+|---|---|---|
+| 식별자를 서버가 발급하는가 | 그렇다 | 세션 쪽 |
+| 식별자 자체에 정보가 담겨 있는가 | 아니다. 조회 키일 뿐 | 세션 쪽 |
+| 서버가 상태를 들고 있는가 | 그렇다. DB에 있다 | 세션 쪽 |
+| 무효화가 즉시 되는가 | 그렇다. DB에서 지우면 끝 | 세션 쪽 |
+| 저장 위치 | 메모리가 아니라 DB | 통상적인 세션과 다름 |
+
+**세션 기반이다.** 저장 위치가 메모리가 아니라는 것만 다르다.
+
+그리고 이건 흠이 아니다. 서버를 여러 대로 늘리면 메모리 세션은 서버마다 따로 놀게 되므로, 어차피 외부 저장소로 빼야 한다. 스프링 세션이 Redis나 JDBC를 쓰는 것도 같은 이유다.
+
+**JWT와의 차이는 여기서 갈린다.**
+
+JWT는 토큰 안에 정보가 들어 있고 서명으로 검증한다. 서버가 아무것도 저장하지 않아도 되니 확장이 쉽다. **대신 발급한 토큰을 만료 전에 무효화할 방법이 없다.** 탈취를 알아채도 만료를 기다려야 한다. 이걸 해결하려고 차단 목록을 두면, 결국 서버가 상태를 갖게 되어 애초의 장점이 사라진다.
+
+이 방식은 반대다. **매 요청마다 DB를 한 번 조회해야 하지만, 지우면 그 즉시 무효가 된다.**
+
+### 5.1 탈취되면
+
+UUID가 탈취되면 그 자체로 인증이 된다. 뺏어간 쪽과 원래 사용자를 구분할 수 없다.
+
+**사후 조치는 DB에서 해당 UUID를 지우는 것**이고, 이건 앞에서 본 대로 즉시 반영된다.
+
+문제는 **탈취를 어떻게 알아채느냐**다. 서버가 볼 수 있는 신호들이 있다.
+
+같은 UUID가 짧은 시간에 지리적으로 먼 곳에서 쓰이는 경우다. 서울에서 요청이 오고 5분 뒤 다른 대륙에서 오면 물리적으로 불가능하다.
+
+평소와 다른 요청 패턴이 잡히는 경우다. 갑자기 요청 빈도가 뛰거나, 한 번도 안 쓰던 API를 연달아 호출한다.
+
+**다만 이건 전부 탐지이지 예방이 아니다.** 예방 쪽은 다른 층에서 해야 한다.
+
+HTTPS로만 통신해서 중간에서 못 보게 한다. 이게 안 되면 나머지는 의미가 없다.
+
+브라우저라면 `HttpOnly` 쿠키에 담아서 스크립트가 못 읽게 한다. 로컬 스토리지에 두면 XSS 한 번에 통째로 털린다.
+
+유효 기간을 짧게 두고 갱신하게 한다. 탈취되더라도 쓸 수 있는 시간이 줄어든다.
+
+---
+
+## 정리하며
+
+처음 던진 질문들에 대한 답이다.
+
+**`ThreadLocal`이 어떻게 스레드마다 다른 값을 갖는가.** 값을 담고 있는 것은 `ThreadLocal` 객체가 아니라 `Thread` 객체다. 각 스레드가 `threadLocals`라는 필드에 자기 맵을 들고 있고, `ThreadLocal` 객체는 그 맵의 키 역할만 한다. 그래서 싱글턴이어도 스레드마다 다른 값이 나온다.
+
+**어느 계층에서든 꺼낼 수 있는 이유.** 한 요청은 한 스레드가 끝까지 처리하고, 값이 그 스레드에 붙어 있기 때문이다. 컨트롤러에서 넣은 값을 리포지토리에서 꺼낼 수 있는 것은 둘이 같은 스레드에서 실행되기 때문이다. 반대로 스레드가 바뀌면 값이 따라가지 않는다.
+
+**안 지우면 무슨 일이 벌어지는가.** 스레드 풀이 스레드를 재사용하므로 다음 요청이 이전 요청의 값을 보게 된다. 인증 정보라면 남의 계정으로 동작하는 보안 사고다. `Entry`가 값을 강한 참조로 들고 있어서 메모리도 회수되지 않는다. 그래서 `finally`에서 반드시 `remove()`를 불러야 한다.
+
+**이 인증 방식은 무엇인가.** 세션 기반이다. 서버가 식별자를 발급하고 상태를 들고 있으며, 지우면 즉시 무효가 된다. 저장 위치가 메모리가 아니라 DB라는 것만 통상적인 세션과 다르고, 서버를 늘릴 생각이라면 오히려 그쪽이 맞다.
+
+뜯어보고 나서 가장 크게 바뀐 생각은 **`ThreadLocal`이 공유를 위한 도구가 아니라 격리를 위한 도구**라는 것이었다. 스레드 사이에 값을 나누는 것이 아니라 스레드마다 값을 가두는 것이다. 그래서 스레드가 바뀌는 순간 전부 무너지고, 스레드가 재사용되는 순간 정리가 필수가 된다. 이 두 가지가 `ThreadLocal`을 쓸 때 늘 확인해야 할 지점이었다.

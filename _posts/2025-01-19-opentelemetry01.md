@@ -1,9 +1,9 @@
 ---
 
-title: 관찰 가능성 엔지니어링 - Chapter1 (관찰 가능성의 역사와 개념)
+title: "관찰 가능성이란 무엇이고 OpenTelemetry는 왜 나왔는가"
 date: 2025-01-19
-categories: [Opentelementry]
-tags: [Opentelementry]
+categories: [Observability, OpenTelemetry]
+tags: [OpenTelemetry, Observability, Trace, Metric, Log, ContextPropagation]
 layout: post
 toc: true
 math: true
@@ -11,9 +11,36 @@ mermaid: true
 
 ---
 
-## 개요
+## 참고자료
 
-관찰 가능성이라는 용어에는 Trace, Metric, Log를 구성하는 도구의 `원격측정(telemtry)` 데이터를 생성/수집함으로써 소프트웨어 작동의 가시성을 높이는 작업이 포함된다.
+- [OpenTelemetry 공식문서](https://opentelemetry.io/docs/)
+- [OpenTelemetry - What is OpenTelemetry?](https://opentelemetry.io/docs/what-is-opentelemetry/)
+- [OpenTelemetry Specification](https://opentelemetry.io/docs/specs/otel/)
+- [W3C Trace Context](https://www.w3.org/TR/trace-context/)
+- [OpenTelemetry - Signals](https://opentelemetry.io/docs/concepts/signals/)
+
+---
+
+## 배경
+
+지표와 로그는 이미 모으고 있었다. 그런데 장애가 나면 **"어디가 느린가"를 알아내는 데 매번 오래 걸렸다.**
+
+CPU 그래프를 보고, 로그를 뒤지고, 서비스마다 따로 보다가 결국 짐작으로 좁혀 들어가는 식이었다.
+
+관찰 가능성이라는 말이 이 문제를 다룬다고 해서 개념부터 정리하기로 했다.
+
+정리하면서 확인하고 싶었던 것들이다.
+
+- 모니터링과 관찰 가능성은 다른 것인가? 다르다면 무엇이 다른가?
+- 왜 표준이 필요했는가? 도구마다 알아서 하면 안 되는가?
+- 시그널이라는 것이 무엇이고 왜 나눠놓았는가?
+- 서비스를 넘어가는 요청을 어떻게 하나로 잇는가?
+
+---
+
+## 관찰 가능성이 왜 필요해졌는가
+
+관찰 가능성이라는 용어에는 Trace, Metric, Log를 구성하는 도구의 `원격측정(telemetry)` 데이터를 생성/수집함으로써 소프트웨어 작동의 가시성을 높이는 작업이 포함된다.
 
 * 수신된 요청 수의 카운트 유지하기
 * 이벤트 발생 시 로그 추가하기
@@ -65,7 +92,7 @@ MSA로 인해 팀을 구성하는 방식도 변화했다. 각 마이크로서비
 * Zipkin
 * Jaeger
 
-### Opentelemtry의 과거
+### OpenTelemetry가 나오기까지
 
 OpenTracing, OpenCensus라는 두 프로젝트의 병합으로 탄생했다.
 
@@ -79,9 +106,9 @@ graph TD
     B["서비스 B
     OpenCensus SDK"] --> |"OpenCensus
     데이터 포맷"| C
-    C --> |집킨 데이터 포맷| D[(집킨)]
-    C --> |예거 데이터 포맷| E[(예거)]
-    C --> |프로메테우스 데이터 포맷| F[(프로메테우스)]
+    C --> |"집킨 데이터 포맷"| D[("집킨")]
+    C --> |"예거 데이터 포맷"| E[("예거")]
+    C --> |"프로메테우스 데이터 포맷"| F[("프로메테우스")]
 
     style A fill:#2a4055,color:white
     style B fill:#2a4055,color:white
@@ -99,11 +126,11 @@ OpenCensus는 자체적으로 제공하는 SDK와 관련된 강한 의존성을 
 
 이로 인해서 제공하는 내용을 사용하기만해도 되어 간편하게 이용할 수 있었으나 서드파티 라이브러리를 만들고 있는 개발자들에게는 의존성이 강하기 때문에 활용도가 낮아지게됐다.
 
-사용자들은 Trace, Metric을 수집하기 위해 OpenCensus를 사용해야했지만 OpenTracing만 지원하는 라이브러리가 필요할 경우 분산 추적에는 OpenTracing, 메트릭은 OpenCensus를 사용하는 등 표준화가 이루어지지 않았다. 그리고 이 문제를 해결하기 위해 Opentelemetry가 등장했다.
+사용자들은 Trace, Metric을 수집하기 위해 OpenCensus를 사용해야했지만 OpenTracing만 지원하는 라이브러리가 필요할 경우 분산 추적에는 OpenTracing, 메트릭은 OpenCensus를 사용하는 등 표준화가 이루어지지 않았다. 그리고 이 문제를 해결하기 위해 OpenTelemetry가 등장했다.
 
-## OpenTelemtry의 개념
+## OpenTelemetry의 개념
 
-OpenTelemtry의 주요 개념은 다음과 같다.
+OpenTelemetry의 주요 개념은 다음과 같다.
 
 * 시그널
 * 파이프라인
@@ -112,7 +139,7 @@ OpenTelemtry의 주요 개념은 다음과 같다.
 
 ### 시그널
 
-여러 종류의 Telemtry 데이터를 담기위한 규격을 만들기 위해 어떤 데이터 종류들을 담을건지부터 정리해야했다.
+여러 종류의 Telemetry 데이터를 담기위한 규격을 만들기 위해 어떤 데이터 종류들을 담을건지부터 정리해야했다.
 
 이것을 시그널이라고 한다. 아래에 해당하는 종류가 이에 해당할 수 있다.
 
@@ -212,7 +239,7 @@ public class CustomSpanProcessor implements SpanProcessor {
 
 ### 파이프라인
 
-Telemtry의 파이프라인은 아래와 같은 흐름이다.
+Telemetry의 파이프라인은 아래와 같은 흐름이다.
 
 ```mermaid
 graph LR
@@ -266,7 +293,7 @@ Metric → 미터
 
 **익스포터 - 처리된 데이터를 외부 시스템으로 전송**
 
-애플리케이션 컨텍스트를 빠져나가기 직전에, Opentelemetry의 내부 데이터 모델을 익스포터에 맞게 변환하는 역할을한다.
+애플리케이션 컨텍스트를 빠져나가기 직전에, OpenTelemetry의 내부 데이터 모델을 익스포터에 맞게 변환하는 역할을한다.
 
 * OpenTelemetry 프로토콜
 * 콘솔
@@ -347,3 +374,29 @@ classDiagram
 ```
 
 위와 같이 컨텍스트 전파를 활용하여 이전 서비스로부터 요청에 대한 메타데이터를 받아낼 수 있다.
+
+---
+
+## 정리하며
+
+처음 던진 질문들에 대한 답이다.
+
+**모니터링과 관찰 가능성의 차이.** 모니터링은 **미리 정해둔 것을 본다.** CPU 사용률, 응답 시간, 에러율처럼 무엇을 볼지 정하고 그 값을 감시한다.
+
+관찰 가능성은 **미리 정하지 않은 질문에도 답할 수 있는 상태**를 말한다. "어제 오후 3시에 특정 고객의 결제만 느렸는데 왜인가" 같은 질문은 미리 대시보드로 만들어둘 수 없다.
+
+차이가 나는 지점은 **데이터의 세밀함**이다. 미리 집계한 숫자만 있으면 그 집계 기준 밖의 질문에는 답할 수 없다. 개별 요청의 기록이 남아 있어야 나중에 어떤 각도로든 잘라볼 수 있다.
+
+**왜 표준이 필요했는가.** 도구를 바꿀 때마다 애플리케이션 코드를 고쳐야 했기 때문이다. 계측 코드가 특정 벤더의 라이브러리에 묶여 있으면, 백엔드를 바꾸는 결정이 전 서비스 배포가 된다.
+
+그리고 라이브러리 만드는 쪽의 문제도 있었다. **어느 쪽 API로 계측할지 골라야 했고**, 고른 쪽을 안 쓰는 사용자에게는 쓸모가 없어졌다. OpenTracing과 OpenCensus가 나뉘어 있던 시기의 문제가 이것이고, 그 둘이 합쳐진 것이 OpenTelemetry다.
+
+**시그널을 왜 나눴는가.** 데이터의 성격이 다르기 때문이다. 추적은 하나의 요청이 지나간 경로이고, 지표는 시간에 따른 숫자이며, 로그는 시점마다의 사건이다. **저장 방식도 조회 방식도 다르므로 규격을 따로 정의해야 했다.**
+
+대신 **같은 리소스와 같은 컨텍스트를 공유한다.** 그래서 추적에서 이상한 구간을 발견하면 같은 시간대의 지표와 로그로 바로 넘어갈 수 있다. 나눠놓되 이어지게 만든 것이 요점이다.
+
+**서비스를 넘어가는 요청을 어떻게 잇는가.** 컨텍스트 전파다. 요청을 보낼 때 추적 ID와 스팬 ID를 헤더에 실어 보내고, 받는 쪽이 그것을 읽어 자기 스팬의 부모로 삼는다.
+
+**핵심은 이게 표준 헤더 형식이라는 점**이다. 서비스마다 언어와 프레임워크가 달라도 같은 헤더를 읽고 쓰므로 이어진다.
+
+정리하고 나서 남은 감각은 **관찰 가능성이 도구의 문제가 아니라 데이터의 문제**라는 것이었다. 어떤 대시보드를 쓰느냐보다, 나중에 물어볼 질문에 답할 만큼의 정보가 남아 있느냐가 먼저였다.

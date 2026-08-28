@@ -1,9 +1,9 @@
 ---
 
-title: Kafka 정확히 한 번 전송/읽기  적용
+title: "Kafka에서 정확히 한 번은 정말 가능한가"
 date: 2024-09-26
 categories: [Kafka]
-tags: [Kafka]
+tags: [Kafka, Producer, Idempotence, Transaction, ExactlyOnce, Consumer]
 layout: post
 toc: true
 math: true
@@ -11,7 +11,7 @@ mermaid: true
 
 ---
 
-# 참고 자료
+## 참고자료
 
 - [Kafka Producer Internal](https://d2.naver.com/helloworld/6560422)
   - [실전 카프카 개발부터 운영까지 - 프로듀서 내부 동작 원리 ](https://github.com/mash-up-kr/S3A/blob/master/14th_kafka/dohyeon/CH5_%ED%94%84%EB%A1%9C%EB%93%80%EC%84%9C%EC%9D%98%20%EB%82%B4%EB%B6%80%20%EB%8F%99%EC%9E%91%20%EC%9B%90%EB%A6%AC%EC%99%80%20%EA%B5%AC%ED%98%84.md)
@@ -32,7 +32,24 @@ mermaid: true
 
 ---
 
-# 프로듀서 옵션
+## 배경
+
+메시지를 한 번만 처리하고 싶었다. 결제나 정산처럼 두 번 처리되면 곤란한 것들이 있었다.
+
+Kafka 문서에는 "정확히 한 번(exactly once)"이라는 말이 나오는데, 분산 시스템에서 그게 정말 가능한지가 의심스러웠다. **네트워크는 응답을 잃어버리고, 그러면 보낸 쪽은 도착했는지 모른다.** 그 상황에서 어떻게 한 번을 보장하는지 궁금했다.
+
+프로듀서 옵션부터 내부 동작까지 따라가면서 정리했다.
+
+정리하면서 확인하고 싶었던 것들이다.
+
+- `acks` 설정이 실제로 무엇을 기다리는 것인가?
+- 재전송하면 중복이 생기는데 어떻게 한 번으로 만드는가?
+- 프로듀서 쪽이 보장돼도 컨슈머가 두 번 읽으면 소용없는 것 아닌가?
+- 결국 어디까지가 Kafka의 몫이고 어디부터가 내 몫인가?
+
+---
+
+## 프로듀서 옵션
 
 ## 처리량/지연시간 관련 옵션
 
@@ -138,7 +155,7 @@ ack를 받지 못한 경우 재시도를 수행하는 횟수에 대한 옵션이
 
 ---
 
-# 프로듀서 내부 동작 방식
+## 프로듀서 내부 동작 방식
 
 카프카 프로듀서의 구성요소는 3가지이다.
 
@@ -239,7 +256,19 @@ Record의 Serialized Size를 검사한 후 Serialized Size가 **max.request.size
 
 #### append() 호출 시
 
-![](https://d2.naver.com/content/images/2020/08/62686a80-b576-11ea-8839-3eb52b31945d.png)
+```mermaid
+flowchart TB
+    A["append(record)"] --> B["batches에서 해당 TopicPartition의 Deque 조회"]
+    B --> C["Deque의 마지막 RecordBatch 확인"]
+    C --> D{"남은 공간이 있는가"}
+    D -->|있다| E["기존 RecordBatch에 추가"]
+    D -->|없다| F["BufferPool에서 ByteBuffer 할당"]
+    F --> G{"버퍼 풀에 여유가 있는가"}
+    G -->|없다| H["최대 max.block.ms 대기<br/>초과하면 TimeoutException"]
+    G -->|있다| I["새 RecordBatch 생성 후 Deque 끝에 추가"]
+    E --> J["compression.type이 있으면 압축"]
+    I --> J
+```
 
 1. batches에서 추가될 레코드가 들어갈 파티션의 Deque찾는다.
 2. 해당 Deque의 Last에 접근하여 레코드 배치를 확인한 후 추가될 레코드를 저장할 공간이 있는지 확인한다.
@@ -279,7 +308,7 @@ InFlightRequests Deque의 Size는 max.in.flight.requests.per.connection 설정�
 
 ---
 
-# 실제로 활용해보기 (Java, Spring Boot, Docker Compose)
+## 실제로 활용해보기 (Java, Spring Boot, Docker Compose)
 
 Docker Compose를 통해 로컬에서 실제 카프카를 띄워보고 위에서 살펴본 정확히 한 번 전송방식을 구현해본다.
 
@@ -700,3 +729,29 @@ public class CustomKafkaListenerErrorHandler implements KafkaListenerErrorHandle
 그래서 이러한 상황을 대비하여 로직으로 중복 처리하지 않도록 풀어나가야하지만 매 컨슘 시 부가적인 로직이 추가되는 만큼 성능에 악영향이 있을 수 있어 카프카를 사용하는 이점이 꽤 상쇄될 수 있을 것으로 보인다.
 
 정말 민감한 데이터가 아니라면 어느정도는 믿음으로 가도 좋을 것 같다.
+
+---
+
+## 정리하며
+
+처음 던진 질문들에 대한 답이다.
+
+**`acks`가 무엇을 기다리는가.** 몇 개의 복제본이 받았는지를 기다린다. `0`은 안 기다리고, `1`은 리더만 받으면 되고, `all`은 동기화된 복제본 전부가 받아야 한다.
+
+여기서 놓치기 쉬운 것이 있다. **`acks=all`만으로는 부족하다.** 동기화된 복제본이 하나뿐인 상태라면 그 하나만 받고도 성공이 된다. `min.insync.replicas`를 함께 올려야 "최소 몇 개는 받았다"가 보장된다. 이 둘은 한 쌍이다.
+
+**재전송의 중복을 어떻게 없애는가.** 프로듀서에 고유 ID를 주고 메시지마다 순번을 붙인다. 브로커가 파티션별로 마지막 순번을 기억하고 있어서, **같은 순번이 또 오면 저장하지 않고 성공만 응답한다.**
+
+그래서 "보내는 쪽은 여러 번 보내되 저장은 한 번만 되게" 만드는 것이 실제 방식이다. 중복 전송 자체를 막는 것이 아니라 **중복의 결과를 없애는 쪽**이다.
+
+**컨슈머가 두 번 읽으면.** 프로듀서 쪽 보장만으로는 부족한 것이 맞다. 그래서 트랜잭션이 있다. 읽고, 처리하고, 결과를 쓰고, 오프셋을 커밋하는 것을 **하나의 트랜잭션으로 묶는다.** 컨슈머 쪽에서 `isolation.level`을 `read_committed`로 두면 커밋된 것만 읽는다.
+
+**다만 이건 Kafka에서 읽어 Kafka에 쓰는 경우에만 성립한다.** 처리 결과가 DB나 외부 API로 나가면 그 쓰기는 Kafka 트랜잭션 밖이다.
+
+**어디까지가 Kafka의 몫인가.** Kafka 안에서 완결되는 흐름은 Kafka가 보장한다. 그 밖으로 나가는 순간부터는 애플리케이션의 몫이다.
+
+밖으로 나가는 경우의 현실적인 해법은 **여러 번 처리해도 결과가 같게 만드는 것**이다. 메시지에 고유 키를 넣고 처리 이력을 남기거나, 저장할 때 유니크 제약을 걸어 중복을 DB가 막게 한다.
+
+성능도 함께 봐야 한다. 트랜잭션을 쓰면 조율 과정이 붙어서 처리량이 떨어진다. **모든 토픽에 켤 이유는 없고**, 두 번 처리되면 실제로 문제가 되는 흐름에만 적용하는 편이 낫다.
+
+따라가고 나서 남은 결론은 **"정확히 한 번"이 시스템 전체의 성질이 아니라 특정 경로의 성질**이라는 것이었다. Kafka가 보장하는 구간이 어디까지인지 알고, 그 밖은 직접 막아야 한다. 그리고 대부분의 경우 여러 번 처리해도 안전하게 만드는 쪽이 트랜잭션보다 단순하고 빨랐다.

@@ -1,33 +1,85 @@
 ---
 
-title: 김도현의 Real MySQL 정복하기 2편 (그런데... 공식문서를 곁들인) 
+title: "Real MySQL 5장을 공식문서로 다시 읽기, 잠금의 종류와 격리 수준"
 date: 2025-04-13
-categories: [MySQL]
-tags: [MySQL]
+categories: [Database, MySQL]
+tags: [MySQL, InnoDB, Lock, IsolationLevel, GapLock, NextKeyLock]
 layout: post
 toc: true
 math: true
 mermaid: true
-published: false
 
 ---
 
-## 목차
+## 참고자료
 
-### 5.1 트랜잭션
+- [MySQL 8.0 - InnoDB Transaction Model](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-model.html)
+- [MySQL 8.0 - InnoDB Locking](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html)
+- [MySQL 8.0 - Transaction Isolation Levels](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)
+- [MySQL 8.0 - Consistent Nonlocking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-consistent-read.html)
+- [MySQL 8.0 - Locking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html)
+- [MySQL 8.0 - LOCK TABLES](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)
+- [MySQL 8.0 - Locking Functions](https://dev.mysql.com/doc/refman/8.0/en/locking-functions.html)
+- [MySQL 8.0 - Metadata Locking](https://dev.mysql.com/doc/refman/8.0/en/metadata-locking.html)
+- [MySQL 8.0 - Deadlocks in InnoDB](https://dev.mysql.com/doc/refman/8.0/en/innodb-deadlocks.html)
 
-- [트랜잭션 소개](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-model.html)
+---
 
-### 5.2 MySQL 엔진의 잠금 & 5.3 InnoDB 스토리지 엔진 잠금
+## 배경
 
-- [InnoDB 잠금](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html)
-- [테이블 락](https://dev.mysql.com/doc/refman/8.0/en/lock-tables.html)
-- [네임드 락](https://dev.mysql.com/doc/refman/8.0/en/locking-functions.html)
-- [메타데이터 락](https://dev.mysql.com/doc/refman/8.0/en/metadata-locking.html)
+[앞선 글](/posts/Transaction-Lock/)에서 트랜잭션과 락의 개념을 정리했는데, 공식문서를 읽다 보니 거기서 안 다룬 락이 여럿 더 있었다.
 
-### 5.4 MySQL의 격리 수준
+의도 락, 삽입 의도 락, 프레디케이트 락 같은 것들이다. **이름만 봐서는 어디에 쓰이는지 감이 안 잡혔고, 특히 "의도"라는 말이 무슨 뜻인지 몰랐다.**
 
-- [격리 수준](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)
+정리하면서 확인하고 싶었던 것들이다.
+
+- 행을 잠그는데 테이블 락이 왜 함께 필요한가?
+- 갭에 여러 트랜잭션이 동시에 락을 걸 수 있다는데 그게 어떻게 락인가?
+- 같은 UPDATE 문인데 격리 수준에 따라 왜 차단되고 안 되고가 갈리는가?
+- 데드락은 어떻게 감지되고 어느 쪽이 희생되는가?
+
+---
+
+## 5.1 트랜잭션
+
+락 이야기로 들어가기 전에 InnoDB가 트랜잭션을 어떻게 다루는지부터 정리한다.
+
+### 자동 커밋
+
+**MySQL은 기본적으로 문장 하나가 곧 트랜잭션 하나다.** `autocommit`이 켜져 있기 때문이다.
+
+```sql
+SELECT @@autocommit;   -- 기본값 1
+```
+
+`START TRANSACTION`이나 `BEGIN`을 쓰면 그때부터 명시적으로 묶이고, `COMMIT`이나 `ROLLBACK`까지 하나의 트랜잭션이 된다.
+
+**여기서 착각하기 쉬운 것이 있다.** 자동 커밋이 켜져 있어도 각 문장은 여전히 트랜잭션이다. "트랜잭션을 안 쓴다"가 아니라 "문장마다 자동으로 시작하고 끝난다"는 뜻이다.
+
+### 트랜잭션 시작 시점
+
+`START TRANSACTION`을 실행해도 **그 순간 트랜잭션 ID가 배정되지는 않는다.** 실제로 무언가를 읽거나 쓸 때 배정된다.
+
+읽기만 하는 트랜잭션은 더 가볍게 처리된다. 명시적으로 알려줄 수도 있다.
+
+```sql
+START TRANSACTION READ ONLY;
+```
+
+**읽기 전용이라고 알려주면 InnoDB가 트랜잭션 ID 배정 같은 준비 작업을 건너뛴다.** 조회만 하는 긴 트랜잭션이 많다면 이 차이가 쌓인다.
+
+### 트랜잭션과 DDL
+
+**DDL은 롤백되지 않는다.** `CREATE TABLE`이나 `ALTER TABLE`을 트랜잭션 안에서 실행하면 **암묵적으로 커밋이 일어난다.**
+
+```sql
+START TRANSACTION;
+INSERT INTO t VALUES (1);
+CREATE TABLE t2 (a INT);   -- 여기서 앞의 INSERT가 커밋된다
+ROLLBACK;                  -- 되돌릴 것이 없다
+```
+
+마이그레이션 스크립트를 짤 때 이걸 모르면 **롤백했다고 생각한 변경이 남아 있다.**
 
 ---
 
@@ -80,14 +132,36 @@ InnoDB는 표준 행 수준 잠금을 구현하며, 두 가지 유형의 잠금�
 
 ### 의도 락 (Intention Locks)
 
-InnoDB는 행 락과 테이블 락의 공존을 허용하는 다중 세분성 잠금을 지원한다. 이를 위해 InnoDB는 의도 락을 사용한다.
+첫 질문의 답이다. **행을 잠그는데 왜 테이블 락이 함께 필요한가.**
 
-의도 락은 테이블 수준 락으로, 트랜잭션이 나중에 테이블의 행에 어떤 유형의 락(공유 또는 배타적)을 필요로 하는지 나타낸다:
+문제 상황부터 본다. 트랜잭션 A가 어떤 테이블의 100만 행 중 한 행에 배타적 락을 걸고 있다. 그때 트랜잭션 B가 그 테이블 전체에 락을 걸려고 한다.
 
-1. **의도 공유 락(IS)**: 트랜잭션이 테이블의 개별 행에 공유 락을 설정하려는 의도를 나타낸다.
-2. **의도 배타적 락(IX)**: 트랜잭션이 테이블의 개별 행에 배타적 락을 설정하려는 의도를 나타낸다.
+**B는 걸 수 있는지 어떻게 판단하는가.**
 
-예: `SELECT ... FOR SHARE`는 IS 락을 설정하고, `SELECT ... FOR UPDATE`는 IX 락을 설정한다.
+의도 락이 없으면 **100만 행을 전부 확인해야 한다.** 하나라도 잠겨 있으면 안 되기 때문이다. 테이블 락을 걸 때마다 이 확인을 하면 감당이 안 된다.
+
+**의도 락은 이 확인을 한 번으로 줄인다.**
+
+행에 락을 걸기 전에 **"이 테이블 안 어딘가의 행을 잠글 것"이라는 표시를 테이블에 먼저 남긴다.** 그게 의도 락이다.
+
+```mermaid
+flowchart TB
+    A["트랜잭션 A"] --> IX["테이블에 IX 락<br/>(어딘가 행을 잠글 예정)"]
+    IX --> R["행 100번에 X 락"]
+    B["트랜잭션 B<br/>테이블 전체에 X 락 요청"] --> C{"테이블의 의도 락 확인"}
+    C -->|"IX가 있다"| W["대기. 행을 볼 필요 없다"]
+```
+
+**B는 테이블 수준의 락 정보만 보고 판단한다.** 행을 하나도 안 본다.
+
+| 종류 | 무엇을 뜻하는가 | 언제 걸리는가 |
+|---|---|---|
+| 의도 공유 락 (IS) | 개별 행에 공유 락을 걸 예정 | `SELECT ... FOR SHARE` |
+| 의도 배타적 락 (IX) | 개별 행에 배타적 락을 걸 예정 | `SELECT ... FOR UPDATE`, `UPDATE`, `DELETE` |
+
+**의도 락끼리는 서로 충돌하지 않는다.** IX를 가진 트랜잭션이 여럿이어도 문제가 없다. 각자 다른 행을 잠글 수도 있고, 같은 행이면 그때 행 수준에서 충돌한다.
+
+의도 락이 충돌하는 상대는 **테이블 전체를 잠그려는 요청**뿐이다. 그래서 평소 동시성에는 영향이 없고, `LOCK TABLES`나 DDL이 들어올 때만 의미가 생긴다.
 
 테이블 수준 락 유형 호환성은 다음과 같다:
 
@@ -113,8 +187,17 @@ InnoDB는 행 락과 테이블 락의 공존을 허용하는 다중 세분성 �
 
 갭 락은 고유한 인덱스를 사용하여 고유 행을 검색하는 문장에는 필요하지 않다.
 
-주목할 점은 서로 다른 트랜잭션이 동일한 갭에 대해 충돌하는 락을 보유할 수 있다는 것이다. 예를 들어, 트랜잭션 A는 갭에 대한 공유 갭 락을 보유하고 트랜잭션 B는 동일한 갭에 대한 배타적 갭 락을 보유할 수
-있다.
+두 번째 질문이 여기서 나온다. **서로 다른 트랜잭션이 같은 갭에 충돌하는 락을 동시에 가질 수 있다.** 트랜잭션 A가 어떤 갭에 공유 갭 락을 갖고, B가 같은 갭에 배타적 갭 락을 가질 수 있다.
+
+**그러면 그게 어떻게 락인가.**
+
+갭 락이 막는 대상이 무엇인지를 보면 답이 나온다. **갭 락은 다른 갭 락을 막는 것이 아니라 그 갭으로 들어오는 INSERT를 막는다.**
+
+일반적인 락은 "이 자원을 나만 쓰겠다"는 뜻이다. 갭 락은 다르다. **"이 구간이 지금 비어 있다는 사실을 유지하라"는 뜻**에 가깝다.
+
+여러 트랜잭션이 같은 요구를 하는 것은 서로 모순되지 않는다. 다들 "여기는 비어 있어야 한다"고 말하는 것이므로 함께 성립한다. 그래서 충돌하지 않는다.
+
+**막히는 것은 그 요구를 깨는 쪽, 즉 INSERT다.**
 
 갭 락은 READ COMMITTED 격리 수준으로 변경하면 명시적으로 비활성화될 수 있다. 이 경우 검색 및 인덱스 스캔에 대해 갭 락이 비활성화되고 외래 키 제약 조건 검사와 중복 키 검사에만 사용된다.
 
@@ -192,10 +275,14 @@ InnoDB는 네 가지 트랜잭션 격리 수준을 가지고있다.
 -- 현재 세션에 대한 격리 수준 설정
 SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
--- 글로벌 격리 수준 설정
-SET
-GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED;
+-- 서버 전체 기본 격리 수준 설정
+SET GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+-- 현재 값 확인
+SELECT @@transaction_isolation, @@global.transaction_isolation;
 ```
+
+**`SET GLOBAL`은 이미 열려 있는 연결에는 적용되지 않는다.** 그 이후에 새로 맺는 연결부터 적용된다. 서버를 재시작해도 유지하려면 설정 파일에 `transaction-isolation`을 넣어야 한다.
 
 ### 격리 수준별 특징
 
@@ -262,6 +349,8 @@ VALUES (1, 2),
 COMMIT;
 ```
 
+**`b` 컬럼에 인덱스가 없다는 것이 이 예시의 핵심이다.** 인덱스가 없으면 조건에 맞는 행을 찾기 위해 테이블 전체를 훑어야 하고, 훑는 동안 지나가는 행을 전부 잠근다.
+
 **세션 A:**
 
 ```sql
@@ -286,8 +375,119 @@ WHERE b = 2;
 
 **READ COMMITTED에서는:**
 
-- 첫 번째 UPDATE는 읽는 각 행에 대해 X-잠금을 획득하고 수정하지 않는 행에 대해서는 해제한다.
-- 두 번째 UPDATE의 경우, InnoDB는 "반일관적" 읽기를 수행하여 MySQL이 업데이트 조건에 맞는지 결정할 수 있도록 읽는 각 행의 최신 커밋된 버전을 반환한다.
+- 첫 번째 UPDATE는 읽는 각 행에 대해 X 락을 걸지만, **조건에 안 맞아서 수정하지 않는 행은 곧바로 풀어준다.**
+- 두 번째 UPDATE는 반일관적 읽기(semi-consistent read)를 수행한다. **잠긴 행을 만나면 기다리는 대신 언두 로그에서 최신 커밋 버전을 가져와** 조건에 맞는지 먼저 판단한다. 조건에 안 맞으면 잠금을 기다리지 않고 지나간다.
+
+**세 번째 질문의 답이 여기 있다.** 같은 두 문장인데 `REPEATABLE READ`에서는 B가 막히고 `READ COMMITTED`에서는 안 막힌다.
+
+이유가 둘이다. **잠금을 언제 푸는가**와 **잠긴 행을 어떻게 다루는가**다.
+
+| | REPEATABLE READ | READ COMMITTED |
+|---|---|---|
+| 스캔 중 지나간 행의 락 | 트랜잭션 끝까지 유지 | 조건에 안 맞으면 즉시 해제 |
+| 잠긴 행을 만나면 | 기다린다 | 최신 커밋 버전을 읽어 조건부터 확인 |
+| 갭 락 | 사용 | 대부분 사용하지 않음 |
+
+**그래서 `READ COMMITTED`가 동시성이 높다.** 대신 같은 트랜잭션 안에서 두 번 읽었을 때 값이 달라질 수 있다는 것을 받아들여야 한다.
 
 ---
+
+## 5.5 데드락
+
+네 번째 질문이다.
+
+### 데드락이 생기는 모양
+
+**두 트랜잭션이 서로가 가진 락을 기다리면 영원히 안 풀린다.**
+
+```mermaid
+sequenceDiagram
+    participant A as 트랜잭션 A
+    participant R1 as 행 1
+    participant R2 as 행 2
+    participant B as 트랜잭션 B
+
+    A->>R1: X 락 획득
+    B->>R2: X 락 획득
+    A->>R2: X 락 요청 (B가 갖고 있음)
+    B->>R1: X 락 요청 (A가 갖고 있음)
+    Note over A,B: 서로 기다린다
+```
+
+### 어떻게 감지하는가
+
+InnoDB는 **대기 그래프를 만들어서 순환이 생기는지 본다.**
+
+"A가 B를 기다린다"는 관계를 화살표로 그리면 방향 그래프가 되고, **이 그래프에 사이클이 있으면 데드락이다.**
+
+감지되면 InnoDB가 **한쪽을 골라서 강제로 롤백한다.** 그러면 다른 쪽이 진행할 수 있다.
+
+```text
+ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction
+```
+
+### 어느 쪽이 희생되는가
+
+**되돌리는 비용이 적은 쪽**이다. 변경한 행 수가 적고, 언두 로그를 덜 쓴 트랜잭션이 골라진다.
+
+에러 메시지가 `try restarting transaction`인 이유가 여기 있다. **데드락은 예외가 아니라 정상적으로 일어날 수 있는 일이고, 애플리케이션이 재시도하는 것이 전제**다.
+
+```java
+@Retryable(
+    retryFor = { DeadlockLoserDataAccessException.class },
+    maxAttempts = 3,
+    backoff = @Backoff(delay = 100, multiplier = 2)
+)
+@Transactional
+public void updateOrder(Long id) { ... }
+```
+
+**즉시 재시도하면 또 부딪힐 수 있으므로 간격을 두는 편이 낫다.**
+
+### 어떻게 줄이는가
+
+**락을 거는 순서를 맞춘다.** 여러 행을 잠가야 한다면 항상 같은 순서로 잠근다. 앞의 예시에서 A와 B가 둘 다 행 1을 먼저 잠갔다면 데드락이 안 생긴다.
+
+```java
+// ID 순으로 정렬해서 잠근다
+ids.stream().sorted().forEach(this::lockAndUpdate);
+```
+
+**트랜잭션을 짧게 만든다.** 잠근 상태로 오래 있을수록 부딪힐 확률이 올라간다.
+
+**인덱스를 제대로 건다.** 인덱스가 없으면 풀 스캔하면서 필요 없는 행까지 잠그므로 충돌 범위가 넓어진다.
+
+**격리 수준을 낮추는 것도 방법이다.** `READ COMMITTED`는 갭 락을 대부분 안 쓰므로 충돌 지점이 줄어든다.
+
+### 무엇이 부딪혔는지 보기
+
+```sql
+SHOW ENGINE INNODB STATUS;
+```
+
+출력의 `LATEST DETECTED DEADLOCK` 절에 **마지막 데드락의 양쪽 트랜잭션이 어떤 문장을 실행 중이었고 어떤 락을 갖고 기다렸는지**가 그대로 나온다.
+
+기록을 계속 남기려면 이걸 켠다.
+
+```sql
+SET GLOBAL innodb_print_all_deadlocks = ON;
+```
+
+**에러 로그에 모든 데드락이 남는다.** 운영 중에 간헐적으로 나는 데드락을 추적할 때 필요하다.
+
+---
+
+## 정리하며
+
+처음 던진 질문들에 대한 답이다.
+
+**행을 잠그는데 테이블 락이 왜 함께 필요한가.** 누군가 테이블 전체를 잠그려 할 때 100만 행을 다 확인하지 않으려는 것이다. 행을 잠그기 전에 테이블에 "어딘가 행을 잠글 것"이라는 의도 락을 남겨두면, 테이블 락 요청은 그 표시 하나만 보고 판단할 수 있다. 의도 락끼리는 충돌하지 않으므로 평소 동시성에는 영향이 없다.
+
+**갭에 여러 트랜잭션이 동시에 락을 걸 수 있는 이유.** 갭 락이 막는 것은 다른 갭 락이 아니라 그 구간으로 들어오는 INSERT다. "이 구간이 비어 있어야 한다"는 요구를 여럿이 동시에 하는 것은 서로 모순되지 않는다.
+
+**같은 UPDATE가 격리 수준에 따라 갈리는 이유.** `REPEATABLE READ`는 스캔하면서 지나간 행의 락을 트랜잭션 끝까지 들고 있고, `READ COMMITTED`는 조건에 안 맞는 행의 락을 즉시 푼다. 그리고 `READ COMMITTED`는 잠긴 행을 만나도 기다리지 않고 최신 커밋 버전을 읽어 조건부터 확인한다.
+
+**데드락 감지와 희생자 선택.** 대기 관계를 그래프로 만들어 사이클이 생기는지 본다. 감지되면 되돌리는 비용이 적은 쪽을 롤백한다. 에러 메시지가 재시도를 권하는 것처럼, 데드락은 완전히 없앨 대상이 아니라 애플리케이션이 재시도로 흡수해야 하는 것이다.
+
+공식문서를 따라가면서 얻은 것은 **락의 종류가 많은 이유**였다. 처음에는 왜 이렇게 세분화했는지 몰랐는데, 각각이 "무엇을 확인하는 비용을 줄이려고" 또는 "무엇을 허용하려고" 있는 것이었다. 의도 락은 확인 비용을 줄이고, 삽입 의도 락은 서로 다른 위치의 INSERT를 동시에 허용하고, 프레디케이트 락은 순서 개념이 없는 공간 데이터에서 같은 보장을 하려는 것이었다.
 

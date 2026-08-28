@@ -1,402 +1,451 @@
 ---
 
-title: Annotation 이란?
+title: "애노테이션은 주석인데 어떻게 코드 동작을 바꾸는가"
 date: 2022-09-06
-categories: [Java, Spring, Annotation]
-tags: [Java, Spring, Annotation]
+categories: [Java, Spring]
+tags: [Java, Annotation, Reflection, Spring, MetaAnnotation]
 layout: post
 toc: true
 math: true
 mermaid: true
-published: false
 
 ---
 
-# Annotation(어노테이션) 은 무엇인가??
+## 참고자료
 
-구글 번역기를 돌려보면 **"주석"** 이라고 나온다.
-
-
-> Annotations, a form of metadata, provide data about a program that is not part of the program itself.
->
-> Annotations have no direct effect on the operation of the code they annotate.
-
-어노테이션은, 프로그램에 부가적인 데이터를 전달할 수 있는 메타데이터이다.
-
-우리가 코드를 설명하기 위해 달아놓는 일반적인 주석과 다르게,
-
-실제로 코드에 영향을 끼치는 특수 주석이라고 보면 된다.
-
-<br>
-
-### 주석 - javadoc 등장배경
-
-추가적으로, 예전에는 코드를 작성하고 그 코드에 대한 설명을 명세하는 문서를 함께 관리를 하였는데
-
-이 방식이 제대로 적용되지 않는 상황이 빈번하게 발생하여, 코드 + 문서의 개념을 도입하게 된 것이 javadoc 이다.
-
-<br>
-
-### 주석 - Annotation 등장배경
-
-마찬가지로, 문서와 코드와의 버전관리로 인한 문제로 등장하게 된 것이다.
-
-예전에는 XML 파일에 프로젝트 코드에 대한 설정 정보를 셋팅해놓았는데, 같은 프로젝트를 하는 사람이 1000명이 있다고하면... 똑같은 내용이 들어있는 XML 파일을 모두 가지고 있어야했다.
-
-이 역시 관리가 힘들어 지면서 소스코드 계층에서 설정과 관련된 기능을 명시할 수 있도록 하기 위한 것이 Annotation 이다.
+- [The Java Tutorials - Annotations](https://docs.oracle.com/javase/tutorial/java/annotations/index.html)
+- [JLS SE 17 - 9.6 Annotation Interfaces](https://docs.oracle.com/javase/specs/jls/se17/html/jls-9.html#jls-9.6)
+- [java.lang.annotation 패키지 Javadoc](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/annotation/package-summary.html)
+- [Spring Framework - Classpath Scanning and Managed Components](https://docs.spring.io/spring-framework/reference/core/beans/classpath-scanning.html)
+- [Spring Framework - @AliasFor Javadoc](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/annotation/AliasFor.html)
 
 ---
 
-# Annotation(어노테이션)의 용도
+## 배경
 
-### Information for the compiler
+애노테이션을 처음 봤을 때 이름이 헷갈렸다. Annotation은 사전에서 "주석"이라고 나오는데, 주석이면 코드에 영향을 주면 안 되는 것 아닌가.
 
-컴파일러에게 코드 문법 에러를 체크하도록 정보를 제공
+그런데 `@Override`를 잘못 붙이면 컴파일이 안 되고, `@Service`를 붙이면 빈으로 등록되고, `@Transactional`을 붙이면 트랜잭션이 걸린다. 명백히 동작이 바뀐다.
 
-### Compile-time and deployment-time processing
+정리하면서 확인하고 싶었던 것들이다.
 
-어노테이션 정보를 처리하여 코드, XML 파일 등을 생성 가능
+- 주석인데 왜 동작이 바뀌는가? 누가 이걸 읽는가?
+- `@Retention`이 뭘 정하는 것이길래 이걸 안 붙이면 애노테이션이 안 먹는가?
+- `@Service`, `@Controller`, `@Repository`는 정의가 거의 같은데 왜 나눠져 있는가?
+- 애노테이션을 직접 만들면 그것도 동작하게 만들 수 있는가?
 
-### Runtime processing
+명세와 스프링 소스를 보면서 확인했다.
 
-실행시(Runtime) 특정 기능을 실행하도록 정보를 제공
+---
 
-### Build.gradle
+## 1. 애노테이션이 무엇인가
 
+### 1.1 정의
+
+자바 공식 튜토리얼이 애노테이션을 이렇게 정의한다. 프로그램 자체의 일부가 아닌 **프로그램에 관한 데이터를 제공하는 메타데이터의 한 형태**이고, **애노테이션이 붙은 코드의 동작에 직접적인 영향을 주지 않는다.**
+
+여기서 "직접적인 영향을 주지 않는다"가 첫 질문의 답을 담고 있다. **애노테이션 자체는 아무것도 하지 않는다.** 표시만 남긴다.
+
+그 표시를 **누군가 읽고 무언가를 할 때** 동작이 바뀐다. 그 누군가가 세 부류다.
+
+```mermaid
+flowchart LR
+    A["애노테이션<br/>(표시만 남긴다)"] --> C["컴파일러"]
+    A --> P["애노테이션 프로세서<br/>(컴파일 중)"]
+    A --> R["실행 중인 코드<br/>(리플렉션)"]
+    C --> C1["문법 검사<br/>@Override"]
+    P --> P1["코드 생성<br/>롬복, QueryDSL"]
+    R --> R1["동작 결정<br/>스프링"]
+```
+
+**애노테이션은 명령이 아니라 약속이다.** "이런 표시를 붙일 테니 네가 읽고 처리해라"라는 것이고, 읽는 쪽이 없으면 아무 일도 안 일어난다.
+
+### 1.2 일반 주석과 다른 점
+
+`//`나 `/* */`로 쓴 주석은 컴파일 결과물에 남지 않는다. 컴파일러가 버린다.
+
+애노테이션은 **문법의 일부**다. 그래서 컴파일러가 검사하고, 설정에 따라 클래스 파일에 남고, 실행 중에 읽을 수도 있다.
+
+### 1.3 왜 나왔는가
+
+설정을 어디에 둘 것인가의 역사다.
+
+**예전에는 XML에 뒀다.** 자바 코드와 설정 파일이 따로 있었고, 코드를 고치면 XML도 함께 고쳐야 했다.
+
+문제는 **둘이 어긋나도 컴파일러가 모른다는 것**이었다. 클래스 이름을 바꿨는데 XML의 문자열을 안 고치면 실행할 때가 되어서야 알게 된다.
+
+Javadoc이 나온 것도 같은 이유다. 코드 설명 문서를 따로 관리하니 코드와 문서의 버전이 어긋났고, 그래서 코드 안에 넣기로 했다.
+
+**설정을 코드 안으로 가져오면 컴파일러가 검사할 수 있다.** 클래스 이름을 바꾸면 IDE가 애노테이션이 붙은 자리도 함께 바꿔준다. 이것이 애노테이션이 자리 잡은 이유다.
+
+다만 맞바꿈이 있다. **설정이 코드에 흩어진다.** XML은 한 파일을 열면 전체 설정이 보이는데, 애노테이션은 여기저기 흩어져 있어서 전체를 조망하기 어렵다.
+
+---
+
+## 2. 애노테이션은 어떻게 생겼는가
+
+### 2.1 정의하는 법
+
+`@interface`로 선언한다.
+
+```java
+public @interface MyAnnotation {
+    int id();
+    String name() default "unknown";
+    String[] roles() default {};
+}
+```
+
+**인터페이스 선언과 비슷하지만 메서드가 아니라 속성이다.** 괄호가 붙어 있어서 메서드처럼 보이는데, 실제로는 애노테이션에 붙일 값의 이름과 타입을 정하는 것이다.
+
+`default`를 주면 그 속성을 생략할 수 있다.
+
+속성에 쓸 수 있는 타입이 제한되어 있다. 기본형, `String`, `Class`, 열거형, 다른 애노테이션, 그리고 이들의 배열까지다. 임의의 객체는 못 쓴다.
+
+### 2.2 붙이는 법
+
+속성 개수에 따라 세 가지 모양이 나온다.
+
+```java
+// 속성 없음
+@MyMarker
+public class SomeClass { }
+
+// 속성 하나. 이름이 value면 이름을 생략할 수 있다
+@MyAnnotation(1009)
+
+// 속성 여럿
+@MyAnnotation(id = 1009, name = "diger", roles = {"admin", "user"})
+```
+
+**`value`라는 이름이 특별하다.** 속성이 `value` 하나뿐이거나 나머지에 전부 기본값이 있으면 `@MyAnnotation(1009)`처럼 이름 없이 값만 쓸 수 있다. `@RequestMapping("/users")`가 이 규칙 덕분에 짧게 쓰이는 것이다.
+
+속성이 없는 애노테이션을 **마커 애노테이션**이라고 부른다. `@Override`가 그렇다. 값이 필요 없고 "이것이 재정의다"라는 표시만 하면 되기 때문이다.
+
+---
+
+## 3. 표준 애노테이션
+
+자바가 기본으로 제공하는 것들이다. 대부분 컴파일러에게 보내는 신호다.
+
+| 애노테이션 | 무엇을 하는가 |
+|---|---|
+| `@Override` | 상위 타입의 메서드를 재정의한다는 표시. 재정의가 아니면 컴파일 에러 |
+| `@Deprecated` | 더 이상 쓰지 말라는 표시. 쓰면 경고 |
+| `@SuppressWarnings` | 지정한 경고를 표시하지 말라는 지시 |
+| `@SafeVarargs` | 제네릭 가변인자를 안전하게 쓴다는 선언 |
+| `@FunctionalInterface` | 추상 메서드가 하나뿐인 인터페이스라는 표시. 아니면 컴파일 에러 |
+
+**`@Override`가 애노테이션의 성격을 잘 보여준다.** 이걸 안 붙여도 재정의는 동작한다. 붙이면 컴파일러가 "정말 재정의가 맞는지" 검사해준다.
+
+메서드 이름에 오타를 내면 재정의가 아니라 새 메서드가 되는데, 이건 문법적으로 문제가 없어서 컴파일이 된다. 실행할 때 원래 메서드가 호출되면서 이상하게 동작한다. `@Override`가 이걸 컴파일 시점에 잡아준다.
+
+**`@FunctionalInterface`도 같은 성격이다.** 안 붙여도 람다로 쓸 수 있다. 붙이면 나중에 누가 메서드를 하나 더 추가할 때 컴파일 에러가 나면서 막아준다.
+
+---
+
+## 4. 메타 애노테이션
+
+**애노테이션에 붙이는 애노테이션**이다. 내가 만든 애노테이션이 어떻게 취급될지를 정한다.
+
+### 4.1 @Retention
+
+두 번째 질문의 답이다. **이 애노테이션이 언제까지 살아남을지**를 정한다.
+
+```mermaid
+flowchart LR
+    S[".java 소스"] --> C[".class 파일"] --> R["실행 중 JVM"]
+    S -.SOURCE는 여기까지.-x C
+    C -.CLASS는 여기까지.-x R
+    R -.RUNTIME은 여기까지.-> R2["리플렉션으로 읽을 수 있다"]
+```
+
+| 값 | 어디까지 남는가 | 쓰는 곳 |
+|---|---|---|
+| `SOURCE` | 컴파일 전까지 | 롬복, `@Override` |
+| `CLASS` | 클래스 파일까지. 실행 중에는 못 읽는다 | 바이트코드 도구 |
+| `RUNTIME` | 실행 중에도 읽을 수 있다 | 스프링, JPA |
+
+**기본값이 `CLASS`다.** 아무것도 안 붙이면 클래스 파일에는 남지만 리플렉션으로는 못 읽는다.
+
+여기서 "애노테이션을 만들었는데 안 먹는다"는 상황이 나온다. 스프링이나 직접 만든 코드가 리플렉션으로 읽으려면 반드시 `RUNTIME`이어야 한다.
+
+```java
+@Retention(RetentionPolicy.RUNTIME)   // 이게 없으면 리플렉션으로 못 읽는다
+public @interface RequireRole {
+    String value();
+}
+```
+
+`SOURCE`가 쓰이는 이유도 짚어둔다. 롬복의 `@Getter`는 컴파일 시점에 코드를 생성하고 나면 역할이 끝난다. 클래스 파일에 남길 이유가 없으므로 `SOURCE`다.
+
+### 4.2 @Target
+
+**어디에 붙일 수 있는지**를 제한한다.
+
+| 값 | 붙일 수 있는 곳 |
+|---|---|
+| `TYPE` | 클래스, 인터페이스, 열거형, 애노테이션 |
+| `FIELD` | 필드 |
+| `METHOD` | 메서드 |
+| `PARAMETER` | 메서드 매개변수 |
+| `CONSTRUCTOR` | 생성자 |
+| `LOCAL_VARIABLE` | 지역 변수 |
+| `ANNOTATION_TYPE` | 애노테이션 (메타 애노테이션용) |
+| `PACKAGE` | 패키지 |
+| `TYPE_PARAMETER` | 제네릭 타입 매개변수 |
+| `TYPE_USE` | 타입이 쓰이는 모든 자리 |
+
+**안 붙이면 대부분의 자리에 붙일 수 있게 된다.** 그래서 명시하는 편이 낫다. 클래스에만 의미가 있는 애노테이션을 필드에 붙이는 실수를 컴파일러가 막아준다.
+
+여러 개를 함께 지정할 수 있다.
+
+```java
+@Target({ElementType.TYPE, ElementType.METHOD})
+```
+
+### 4.3 나머지
+
+**`@Documented`** 는 Javadoc에 이 애노테이션을 표시하라는 뜻이다.
+
+**`@Inherited`** 는 상속을 허용한다. 부모 클래스에 붙은 애노테이션을 자식 클래스에서도 조회할 수 있게 한다. **클래스에만 적용되고 인터페이스나 메서드에는 적용되지 않는다.**
+
+**`@Repeatable`** 은 같은 애노테이션을 여러 번 붙일 수 있게 한다. 자바 8부터다.
+
+```java
+@Schedule(day = "MON")
+@Schedule(day = "WED")
+public void run() { }
+```
+
+---
+
+## 5. 누가 애노테이션을 읽는가
+
+1.1절의 세 부류를 하나씩 본다.
+
+### 5.1 컴파일러
+
+`@Override`, `@FunctionalInterface` 같은 것들이다. 컴파일러가 표시를 보고 규칙을 검사한다.
+
+### 5.2 애노테이션 프로세서
+
+**컴파일 도중에 끼어들어 코드를 생성하는 프로그램**이다. 롬복과 QueryDSL이 이 방식으로 동작한다.
+
+빌드 설정에서 이 구분이 드러난다.
+
+```gradle
+dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+}
+```
 
-Spring 으로 프로젝트를 진행하다 보면 보게된 의존성 추가 부분이다.
+두 줄이 있는 이유가 있다.
 
-다양한 어노테이션을 제공하는 Lombok 라이브러리를
+**`compileOnly`** 는 컴파일할 때만 클래스패스에 두고 최종 산출물에는 안 넣는다. `@Getter` 같은 애노테이션이 `SOURCE`라서 실행 시점에 필요 없기 때문이다.
 
-**compileOnly** 옵션으로 지정하여 컴파일 시에만 빌드하고 최종 빌드 결과물에는 포함되지 않는다.
+**`annotationProcessor`** 는 컴파일 도중 돌릴 프로세서를 지정한다. 이걸 안 넣으면 애노테이션이 붙어 있어도 코드가 생성되지 않는다.
 
-**annotationProcessor** 옵션은 빌드 함에 있어서 기본적으로 포함되어있는 어노테이션이 아닌경우 명시해주는 옵션이다.
+**둘 다 필요하다는 점**이 처음에 헷갈렸다. 하나는 "이 애노테이션 이름을 알아야 한다", 다른 하나는 "이 애노테이션을 보고 코드를 만들 프로그램을 돌려라"이다.
+
+### 5.3 리플렉션
+
+실행 중에 읽는 방식이다. 스프링이 이걸 쓴다.
+
+```java
+Class<?> clazz = SomeService.class;
+
+// 클래스에 붙은 애노테이션 읽기
+if (clazz.isAnnotationPresent(Service.class)) {
+    Service annotation = clazz.getAnnotation(Service.class);
+    String beanName = annotation.value();
+}
+
+// 메서드에 붙은 애노테이션 읽기
+for (Method method : clazz.getDeclaredMethods()) {
+    RequireRole role = method.getAnnotation(RequireRole.class);
+    if (role != null) {
+        System.out.println(method.getName() + "는 " + role.value() + " 권한이 필요하다");
+    }
+}
+```
+
+**여기서 `@Retention(RUNTIME)`이 필요한 이유가 드러난다.** 클래스 파일에 애노테이션 정보가 남아 있지 않으면 `getAnnotation`이 `null`을 돌려준다.
 
 ---
 
-# Annotation(어노테이션) 타입
+## 6. 스프링의 스테레오타입 애노테이션
 
-### 마커 어노테이션 (Maker Annotation)
+세 번째 질문이다. `@Controller`, `@Service`, `@Repository`의 정의를 보면 거의 같다.
 
-    @NewAnnotation
-    public class DigerClass() {
-    }
+```java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Component
+public @interface Service {
 
-위 코드 처럼 메서드 혹은 클래스 위에 부가정보 없이 선언만 하는 타입이다.
+    @AliasFor(annotation = Component.class)
+    String value() default "";
+}
+```
 
-### 단일 값 어노테이션 (Single Value Annotation)
+```java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Component
+public @interface Controller {
 
-    @NewAnnotation(id = 1009)
-    public class DigerClass() {
-    }
+    @AliasFor(annotation = Component.class)
+    String value() default "";
+}
+```
 
-하나의 값만 입력받을 수 있는 타입이다.
+**`@Repository`도 같은 모양이다.** 그럼 왜 나눴는가.
 
-### 다중 값 어노테이션 (Multi Value Annotation)
+### 6.1 합성 애노테이션
 
-    @NewAnnotation(id = 1009, name = “diger”, roles = {“admin”, “user"})
-    public class DigerClass() {
-    }
+세 애노테이션 모두 `@Component`가 붙어 있다. 이것을 **합성 애노테이션(composed annotation)** 이라고 부른다.
 
-여러 개의 값을 입력받을 수 있는 타입이다.
+```mermaid
+flowchart TB
+    C["@Component<br/>빈 등록 대상이라는 표시"]
+    S["@Service"] --> C
+    R["@Repository"] --> C
+    CT["@Controller"] --> C
+    RC["@RestController"] --> CT
+```
 
----
+스프링의 컴포넌트 스캔은 `@Component`가 붙어 있는지를 본다. 그런데 **직접 붙어 있는지만 보는 것이 아니라 메타 애노테이션까지 따라 올라간다.**
 
-# Java 표준 Annotation
+그래서 `@Service`를 붙이면 그 안의 `@Component` 때문에 빈으로 등록된다.
 
-### @Override
+### 6.2 그럼 왜 나눴는가
 
-컴파일러에 오버라이딩 하는 메서드임을 알린다.
+이유가 셋이다.
 
-### @Deprecated
+**의도를 드러낸다.** 클래스 이름만 봐서는 그 클래스가 어느 계층에 속하는지 알기 어렵다. 애노테이션이 그것을 선언한다.
 
-컴파일러에 앞으로 사용하지 않을 것을 알린다.
+**계층별로 다른 처리를 붙일 수 있다.** `@Repository`가 실제로 그렇다. 스프링이 이 애노테이션이 붙은 클래스에 예외 변환 후처리를 적용한다. 구현체마다 다른 데이터 접근 예외를 스프링의 `DataAccessException` 계층으로 바꿔준다.
 
-### @SuppressWarnings
+**AOP 대상을 계층으로 지정할 수 있다.** 서비스 계층 전체에 로깅을 걸고 싶을 때 애노테이션으로 잡을 수 있다.
 
-컴파일러에 특정 경고 메세지를 표시하지 말라는 것을 알린다.
+```java
+@Pointcut("@within(org.springframework.stereotype.Service)")
+public void serviceLayer() { }
+```
 
-### @SafeVarargs (Java 7)
+**`@Controller`와 `@Service`는 실제 동작 차이가 거의 없다.** `@Controller`는 스프링 MVC가 핸들러를 찾을 때 쓰이므로 기능적 의미가 있지만, `@Service`는 사실상 표시에 가깝다. 그래도 의도를 드러내는 것만으로 값어치가 있다.
 
-제네릭 타입의 가변인자에 사용한다.
+### 6.3 @AliasFor
 
-### @FunctionalInterface (Java 8)
+```java
+@AliasFor(annotation = Component.class)
+String value() default "";
+```
 
-함수형 인터페이스임을 알린다.
+**이 애노테이션의 `value`가 `@Component`의 `value`와 같은 것임을 선언한다.** 그래서 `@Service("userService")`라고 쓰면 그 이름이 `@Component`의 값으로 전달되어 빈 이름이 된다.
 
----
+이게 없으면 두 값이 별개가 되어서, `@Service`에 이름을 줘도 빈 이름에 반영되지 않는다.
 
-# Meta Annotation
-
-다른 어노테이션에 적용되는 어노테이션으로 쉽게 말하면, 다른 어노테이션에게 부가적인 정보를 전달해주는 어노테이션인 것이다.
-
-### @Retention
-
-어노테이션의 생명주기를 설정한다.
-
-RetentionPolicy.SOURCE : 컴파일 전까지만 유효
-
-RetentionPolicy.CLASS : 컴파일러가 클래스를 참조할 때까지 유효
-
-RetentionPolicy.RUNTIME : 컴파일 이후 런타임 시기에도 JVM에 의해 참조가 가능
-
-<br>
-
-### @Target
-
-어노테이션을 어디에 붙여 쓸 건지 지정한다.
-
-> @Target 이 지정된 각 타입에는 어노테이션을 쓸 수 있게된다.
-
-ElementType.PACKAGE : 패키지에 붙이기
-
-ElementType.TYPE : 타입(클래스도 가능)에 붙이기
-
-ElementType.ANNOTATION_TYPE : 어노테이션 타입에 붙이기
-
-ElementType.CONSTRUCTOR : 생성자에 붙이기
-
-ElementType.FIELD : 멤버 변수에 붙이기
-
-ElementType.LOCAL_VARIABLE : 지역 변수에 붙이기
-
-ElementType.METHOD : 메서드에 붙이기
-
-ElementType.PARAMETER : 전달인자에 붙이기
-
-ElementType.TYPE_PARAMETER : 전달인자 타입에 붙이기
-
-ElementType.TYPE_USE : 타입 선언에 붙이기
-
-<br>
-
-### @Documented
-
-해당 어노테이션을 Javadoc에 포함시킴
-
-<br>
-
-### @Inherited
-
-어노테이션의 상속을 가능하게 함
-
-### @Repeatable
-
-Java8 부터 지원하며, 연속적으로 어노테이션을 선언할 수 있게 함
+**참고로 이건 스프링이 만든 기능이지 자바 표준이 아니다.** 자바의 애노테이션에는 상속이나 별칭 개념이 없어서, 스프링이 리플렉션으로 메타 애노테이션을 훑으면서 직접 구현한 것이다.
 
 ---
 
-# Spring 3대 Annotation 들춰보기 (Controller, Service, Repository)
+## 7. 직접 만들어 쓰기
 
-### Annotation - Controller
+네 번째 질문이다. 만들 수 있고, **읽어서 처리하는 코드를 함께 만들어야** 한다.
 
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    @Component
-    public @interface Controller {
+### 7.1 정의
 
-        /**
-         * The value may indicate a suggestion for a logical component name,
-         * to be turned into a Spring bean in case of an autodetected component.
-         * @return the suggested component name, if any (or empty String otherwise)
-         */
-        @AliasFor(annotation = Component.class)
-        String value() default "";
+```java
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)   // 실행 중에 읽어야 하므로 필수
+public @interface RequireRole {
+    String value();
+}
+```
+
+### 7.2 읽는 쪽
+
+메서드 실행 전에 검사하려면 인터셉터나 AOP를 쓴다.
+
+```java
+@Component
+public class RoleCheckInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        if (!(handler instanceof HandlerMethod handlerMethod)) {
+            return true;
+        }
+
+        RequireRole annotation = handlerMethod.getMethodAnnotation(RequireRole.class);
+        if (annotation == null) {
+            return true;   // 애노테이션이 없으면 통과
+        }
+
+        String required = annotation.value();
+        if (!currentUserHasRole(request, required)) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+        return true;
     }
+}
+```
 
-| Target           | Retention               |
-|------------------|-------------------------|
-| ElementType.Type | RetentionPolicy.RUNTIME |
+**여기가 "누가 읽는가"에 해당하는 부분이다.** 이 인터셉터를 등록하지 않으면 애노테이션을 아무리 붙여도 아무 일도 안 일어난다.
 
-#### @Target
+### 7.3 합성 애노테이션 만들기
 
-ElementType.TYPE으로 정의되어, 우리가 흔히 Controller 클래스 파일을 만들었을 때, 해당 클래스에 어노테이션을 붙일 수 있게 해두었다.
+여러 애노테이션을 하나로 묶을 수도 있다.
 
-#### @Retention
+```java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Service
+@Transactional(readOnly = true)
+public @interface QueryService {
+}
+```
 
-런타임 시에도 유지되어야 하므로 RetentionPolicy.RUNTIME으로 작성 해두었다.
+이 하나를 붙이면 빈 등록과 읽기 전용 트랜잭션이 함께 적용된다. **반복해서 함께 쓰이는 조합이 있으면 묶어두는 편이 낫다.**
 
-<br>
+다만 주의할 점이 있다. **묶어두면 무엇이 적용되는지가 한눈에 안 보인다.** 이름을 잘 지어서 무엇이 들어 있는지 짐작되게 해야 한다.
 
-### Annotation - Service
+### 7.4 흔히 걸리는 것들
 
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    @Component
-    public @interface Service {
+**`@Retention`을 빠뜨린다.** 기본값이 `CLASS`라 리플렉션으로 못 읽는다. 가장 흔한 실수다.
 
-        /**
-         * The value may indicate a suggestion for a logical component name,
-         * to be turned into a Spring bean in case of an autodetected component.
-         * @return the suggested component name, if any (or empty String otherwise)
-         */
-        @AliasFor(annotation = Component.class)
-        String value() default "";
+**애노테이션은 붙였는데 읽는 쪽이 없다.** 인터셉터를 등록하지 않았거나 AOP 대상 범위 밖이다.
 
-    }
+**프록시를 안 거쳐서 안 먹는다.** 같은 클래스 안에서 호출하면 AOP 기반 애노테이션이 동작하지 않는다. 자세한 것은 [프록시에 관한 글](/posts/Reflection-DynamicProxy-CGLIB-AOP/)에 정리해두었다.
 
-| Target           | Retention               |
-|------------------|-------------------------|
-| ElementType.Type | RetentionPolicy.RUNTIME |
+**메타 애노테이션이 안 따라온다.** 자바 표준 리플렉션인 `getAnnotation`은 메타 애노테이션을 따라가지 않는다. 스프링에서는 `AnnotatedElementUtils.findMergedAnnotation`을 써야 합성 애노테이션까지 찾는다.
 
-#### @Target
+```java
+// 표준 리플렉션. @Service에 붙은 @Component를 못 찾는다
+clazz.getAnnotation(Component.class);   // null
 
-ElementType.TYPE으로 정의되어, 우리가 흔히 Controller 클래스 파일을 만들었을 때, 해당 클래스에 어노테이션을 붙일 수 있게 해두었다.
-
-#### @Retention
-
-런타임 시에도 유지되어야 하므로 RetentionPolicy.RUNTIME으로 작성 해두었다.
-
-<br>
-
-### Annotation - Repository
-
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    @Component
-    public @interface Repository {
-
-        /**
-         * The value may indicate a suggestion for a logical component name,
-         * to be turned into a Spring bean in case of an autodetected component.
-         * @return the suggested component name, if any (or empty String otherwise)
-         */
-        @AliasFor(annotation = Component.class)
-        String value() default "";
-
-    }
-
-| Target           | Retention               |
-|------------------|-------------------------|
-| ElementType.Type | RetentionPolicy.RUNTIME |
-
-#### @Target
-
-ElementType.TYPE으로 정의되어, 우리가 흔히 Controller 클래스 파일을 만들었을 때, 해당 클래스에 어노테이션을 붙일 수 있게 해두었다.
-
-#### @Retention
-
-런타임 시에도 유지되어야 하므로 RetentionPolicy.RUNTIME으로 작성 해두었다.
+// 스프링 유틸. 메타 애노테이션까지 따라간다
+AnnotatedElementUtils.findMergedAnnotation(clazz, Component.class);   // 찾는다
+```
 
 ---
 
+## 정리하며
 
-> 나는 처음에 @Controller 라는 어노테이션이 정말 자동적으로 엄청난 일을 해주는 것으로 생각했었다.
->
-> 그런데, Spring 이 @Controller 어노테이션을 어떻게 인식하는지를 알아보고, 생각하다가 깨달은 내용은
->
-> 그저 우리가 @Controller 가 붙은 어노테이션에 대한 클래스에 그 역할에 맞는 코드를 작성했던 것이 정답이였다.
->
-> 그러니까, @Controller, @Service, @Repository 이 3가지 주요 어노테이션은 개발자들에게 이건 컨트롤러야. 이건 서비스야. 이건 레포야. 를
->
-> 알려주기 위한 어노테이션이었던 것 뿐, 정말 말 그대로 주석에 해당하는 것이었다....
+처음 던진 질문들에 대한 답이다.
 
----
+**주석인데 왜 동작이 바뀌는가.** 애노테이션 자체는 표시만 남긴다. 그 표시를 읽고 무언가 하는 쪽이 따로 있다. 컴파일러, 애노테이션 프로세서, 리플렉션 세 부류이고, 읽는 쪽이 없으면 아무 일도 일어나지 않는다.
 
-# 그러면 3대 어노테이션에도 달려있는, 진짜진짜 큰일을 해주는 것 같은 @Component 는 ???
+**`@Retention`이 무엇을 정하는가.** 이 애노테이션이 어디까지 살아남을지를 정한다. 기본값이 `CLASS`라 클래스 파일에는 남지만 리플렉션으로는 못 읽는다. 스프링처럼 실행 중에 읽는 쪽이 있으면 반드시 `RUNTIME`이어야 한다.
 
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    @Indexed
-    public @interface Component {
+**`@Service`와 `@Controller`는 왜 나눠져 있는가.** 정의는 거의 같고 둘 다 `@Component`를 메타 애노테이션으로 갖는다. 나눈 이유는 의도를 드러내고, 계층별로 다른 처리를 붙일 수 있고, AOP 대상을 계층으로 지정할 수 있기 때문이다. `@Repository`는 실제로 예외 변환이라는 추가 동작을 갖는다.
 
-        /**
-         * The value may indicate a suggestion for a logical component name,
-         * to be turned into a Spring bean in case of an autodetected component.
-         * @return the suggested component name, if any (or empty String otherwise)
-         */
-        String value() default "";
+**직접 만들면 동작하게 할 수 있는가.** 만들 수 있다. 다만 **애노테이션 정의와 그것을 읽어 처리하는 코드가 한 쌍**이다. 정의만 하고 읽는 쪽을 안 만들면 붙여도 아무 일이 없다.
 
-    }
-
-| Target           | Retention               |
-|------------------|-------------------------|
-| ElementType.Type | RetentionPolicy.RUNTIME |
-
-#### @Target
-
-ElementType.TYPE으로 정의되어, 우리가 흔히 Controller 클래스 파일을 만들었을 때, 해당 클래스에 어노테이션을 붙일 수 있게 해두었다.
-
-#### @Retention
-
-런타임 시에도 유지되어야 하므로 RetentionPolicy.RUNTIME으로 작성 해두었다.
-
-### Indexed
-
-@Component 어노테이션에는 위의 어노테이션들과는 다르게 추가적인 메타 어노테이션이 존재한다.
-
-> Consider the default Component annotation that is meta-annotated with this annotation.
->
-> If a component is annotated with Component, an entry for that component will be added to the index using the org.springframework.stereotype.Component stereotype.
-
-Spring 이 Bean 으로 등록할 수 있도록 컴포넌트를 등록하고 싶을 때, @Indexed 어노테이션을 달아놓으라는 얘기이다.
-
----
-
-# (아니 근데) 컴포넌트스캔의 동작과정이 궁금하다!!
-
-막상 @Component 어노테이션을 까보니까 얘도 별게 없었다..
-
-도대체 그러면 어떻게 @Component 어노테이션을 달면 컴포넌스 스캔의 대상이 되는것인가..?
-
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    @Component
-    public @interface Configuration {
-
-        /**
-         * Explicitly specify the name of the Spring bean definition associated with the
-         * {@code @Configuration} class. If left unspecified (the common case), a bean
-         * name will be automatically generated.
-         * <p>The custom name applies only if the {@code @Configuration} class is picked
-         * up via component scanning or supplied directly to an
-         * {@link AnnotationConfigApplicationContext}. If the {@code @Configuration} class
-         * is registered as a traditional XML bean definition, the name/id of the bean
-         * element will take precedence.
-         * @return the explicit component name, if any (or empty String otherwise)
-         * @see AnnotationBeanNameGenerator
-         */
-        @AliasFor(annotation = Component.class)
-        String value() default "";
-
-        /**
-         * Specify whether {@code @Bean} methods should get proxied in order to enforce
-         * bean lifecycle behavior, e.g. to return shared singleton bean instances even
-         * in case of direct {@code @Bean} method calls in user code. This feature
-         * requires method interception, implemented through a runtime-generated CGLIB
-         * subclass which comes with limitations such as the configuration class and
-         * its methods not being allowed to declare {@code final}.
-         * <p>The default is {@code true}, allowing for 'inter-bean references' via direct
-         * method calls within the configuration class as well as for external calls to
-         * this configuration's {@code @Bean} methods, e.g. from another configuration class.
-         * If this is not needed since each of this particular configuration's {@code @Bean}
-         * methods is self-contained and designed as a plain factory method for container use,
-         * switch this flag to {@code false} in order to avoid CGLIB subclass processing.
-         * <p>Turning off bean method interception effectively processes {@code @Bean}
-         * methods individually like when declared on non-{@code @Configuration} classes,
-         * a.k.a. "@Bean Lite Mode" (see {@link Bean @Bean's javadoc}). It is therefore
-         * behaviorally equivalent to removing the {@code @Configuration} stereotype.
-         * @since 5.2
-         */
-        boolean proxyBeanMethods() default true;
-
-    }
-
-<br>
-
-1. ConfigurationClassParser 가 Configuration 클래스를 파싱한다. @Configuration 어노테이션 클래스를 파싱하는 것이다.
-
-2. ComponentScan 설정을 파싱한다. base-package 에 설정한 패키지를 기준으로 ComponentScanAnnotationParser가 스캔하기 위한 설정을 파싱한다.
-
-3. base-package 설정을 바탕으로 모든 클래스를 로딩한다.
-
-4. ClassLoader가 로딩한 클래스들을 BeanDefinition으로 정의한다. 생성할 빈의 대한 정의를 하는 것이다.
-
-5. 생성할 빈에 대한 정의를 토대로 빈을 생성한다.
+정리하고 나서 남은 감각은 **애노테이션이 명령이 아니라 계약**이라는 것이었다. 붙이는 쪽과 읽는 쪽이 그 이름을 공유하기로 약속한 것이고, 한쪽이 없으면 성립하지 않는다. 애노테이션이 안 먹을 때 확인할 것도 결국 "읽는 쪽이 있는가"와 "읽을 수 있는 상태인가" 둘이다.

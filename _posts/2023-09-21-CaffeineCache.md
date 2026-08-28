@@ -1,745 +1,638 @@
 ---
 
-title: Caffeine Cache란 무엇이고 왜 빠르게 동작하는가?
+title: "Caffeine Cache는 왜 빠른가, W-TinyLFU 내부 뜯어보기"
 date: 2023-09-21
-categories: [SUWIKI, CaffeineCache, LocalCache]
-tags: [SUWIKI, CaffeineCache, LocalCache]
+categories: [Java, Cache]
+tags: [CaffeineCache, LocalCache, TinyLFU, WindowTinyLFU, Eviction, Spring]
 layout: post
 toc: true
 math: true
 mermaid: true
-published: false
 
 ---
 
-# 참고자료
+## 참고자료
 
-[CaffeineCache-1](https://www.sobyte.net/post/2022-04/caffeine/)
-
-[CaffeineCache-2](https://medium.com/naverfinancial/%EB%8B%88%EB%93%A4%EC%9D%B4-caffeine-%EB%A7%9B%EC%9D%84-%EC%95%8C%EC%95%84-f02f868a6192)
-
-[eTag](https://yozm.wishket.com/magazine/detail/1772/)
+- [Caffeine Wiki - Design](https://github.com/ben-manes/caffeine/wiki/Design)
+- [Caffeine Wiki - Efficiency](https://github.com/ben-manes/caffeine/wiki/Efficiency)
+- [Caffeine Wiki - Benchmarks](https://github.com/ben-manes/caffeine/wiki/Benchmarks)
+- [TinyLFU 논문 - A Highly Efficient Cache Admission Policy](https://arxiv.org/abs/1512.00727)
+- [Caffeine - FrequencySketch 소스](https://github.com/ben-manes/caffeine/blob/master/caffeine/src/main/java/com/github/benmanes/caffeine/cache/FrequencySketch.java)
+- [Spring Framework - Cache Abstraction](https://docs.spring.io/spring-framework/reference/integration/cache.html)
+- [RFC 9110 - ETag](https://www.rfc-editor.org/rfc/rfc9110.html#name-etag)
 
 ---
 
-# Caffeine Cache 내부 구현 분석
+## 배경
+
+조회가 몰리는 API에 로컬 캐시를 붙이기로 하고 Caffeine을 골랐다. 벤치마크에서 다른 라이브러리보다 열 배 넘게 빠르다는 숫자를 봤기 때문이다.
+
+그런데 붙이고 나니 궁금한 것이 남았다. **캐시는 결국 해시맵인데 어떻게 그만큼 차이가 나는가.**
+
+정리하면서 확인하고 싶었던 것들이다.
+
+- 캐시를 읽기만 해도 순서 정보를 갱신해야 하는데, 그러면 락이 걸릴 텐데 어떻게 빠른가?
+- LRU와 LFU 중 하나를 고르는 것이 아니라 섞어 쓴다는데 왜 그런가?
+- 빈도를 세려면 항목마다 카운터가 필요할 텐데 메모리를 얼마나 쓰는가?
+- 캐시가 효과가 있는지는 무엇으로 판단하는가?
+
+---
+
+## 1. 캐시가 느려지는 지점
+
+캐시의 자료구조 자체는 해시맵이다. Caffeine도 `ConcurrentHashMap`을 쓴다.
+
+**문제는 조회가 아니라 그 뒤에 따라오는 일이다.**
+
+LRU 캐시를 예로 든다. 항목 하나를 읽으면 "가장 최근에 쓴 것"이라는 표시를 갱신해야 한다. 보통 연결 리스트를 두고 그 항목을 맨 앞으로 옮긴다.
+
+```mermaid
+flowchart LR
+    A["get(key) 호출"] --> B["해시맵에서 값 찾기<br/>(빠르다)"]
+    B --> C["연결 리스트에서 해당 노드를<br/>맨 앞으로 이동"]
+    C --> D["여러 스레드가 동시에 하면<br/>락이 필요하다"]
+```
+
+**여기서 읽기가 쓰기가 된다.** 값을 읽었을 뿐인데 자료구조를 고쳐야 하고, 여러 스레드가 동시에 읽으면 그 리스트를 두고 경쟁한다.
+
+읽기 비중이 높은 캐시일수록 이 경쟁이 심해진다. 캐시를 붙였는데 오히려 느려지는 상황도 여기서 나온다.
+
+**Caffeine이 푼 문제가 이것이다.**
+
+---
+
+## 2. 버퍼로 읽기와 쓰기를 분리하기
+
+첫 질문의 답이다.
+
+### 2.1 읽으면 기록만 남긴다
+
+Caffeine은 `get()`을 할 때 자료구조를 바로 고치지 않는다. **"이 키를 읽었다"는 기록을 버퍼에 남기고 끝낸다.**
+
+```mermaid
+flowchart TB
+    G["get(key)"] --> H["ConcurrentHashMap 조회"]
+    H --> R["읽기 버퍼에 기록만 추가"]
+    R --> V["값 반환. 여기서 끝"]
+    R -.나중에 한꺼번에.-> M["유지보수 작업<br/>순서 갱신, 축출 판단"]
+```
+
+버퍼에 쌓인 기록은 나중에 한꺼번에 처리한다. **읽기 경로에서 락을 잡지 않는다는 뜻이다.**
+
+### 2.2 읽기 버퍼는 스레드마다 나뉘어 있다
+
+버퍼 하나를 여러 스레드가 같이 쓰면 결국 거기서 경쟁이 생긴다. 그래서 Caffeine은 **버퍼를 여러 개로 쪼개고 스레드를 나눠 배정한다.**
+
+스레드 해시로 어느 버퍼에 쓸지 정하므로, 서로 다른 스레드는 대체로 다른 버퍼를 건드린다.
+
+**버퍼가 가득 차면 기록을 그냥 버린다.** 순서 정보가 조금 부정확해지는 대가로 읽기가 절대 막히지 않게 한 것이다.
+
+이 맞바꿈이 성립하는 이유가 있다. **캐시는 정확할 필요가 없다.** 어떤 항목을 조금 늦게 내보내거나 조금 일찍 내보내도 결과는 여전히 맞다. 성능이 떨어질 뿐이다.
+
+### 2.3 쓰기 버퍼는 잃어버리면 안 된다
+
+쓰기는 다르다. `put()` 기록을 버리면 캐시에 값이 안 들어간다.
+
+그래서 쓰기 버퍼는 **가득 차면 늘어난다.** 읽기 버퍼와 정반대 선택이다.
+
+| | 읽기 버퍼 | 쓰기 버퍼 |
+|---|---|---|
+| 구조 | 스레드별로 나뉜 링 버퍼 | 확장 가능한 원형 배열 |
+| 가득 차면 | 기록을 버린다 | 배열을 늘린다 |
+| 이유 | 읽기가 막히면 안 된다 | 쓰기를 잃으면 안 된다 |
+
+### 2.4 유지보수는 언제 도는가
+
+버퍼에 쌓인 것을 처리하는 작업을 유지보수(maintenance)라고 부른다.
+
+**별도 스레드를 계속 돌리지 않는다.** 어떤 요청이 캐시를 건드릴 때 "지금 정리할 때가 됐다" 싶으면 그 요청이 정리를 맡는다. 정리는 한 번에 한 스레드만 수행하고, 나머지는 그냥 지나간다.
+
+전용 스레드를 두지 않으니 유휴 상태에서 자원을 쓰지 않고, 정리 때문에 요청이 막히지도 않는다.
+
+---
+
+## 3. LRU와 LFU를 섞는 이유
+
+두 번째 질문이다. 각각이 무엇에 약한지 보면 답이 나온다.
+
+### 3.1 LRU가 약한 것
+
+**LRU(Least Recently Used)는 가장 오래 안 쓴 것을 내보낸다.**
+
+한 번씩만 읽히는 데이터가 잔뜩 들어오면 무너진다. 배치 작업이 테이블 전체를 훑는 상황을 생각하면 된다.
+
+이 데이터들은 다시 안 읽히는데, **LRU 입장에서는 방금 읽은 것이라 가장 최신이다.** 그래서 정작 자주 쓰이던 데이터가 밀려나 버린다. 이걸 캐시 오염이라고 부른다.
+
+### 3.2 LFU가 약한 것
+
+**LFU(Least Frequently Used)는 가장 적게 쓰인 것을 내보낸다.**
+
+새로 들어온 데이터가 불리하다. **들어오자마자 빈도가 0이니 바로 축출 후보가 된다.** 앞으로 자주 쓰일 데이터여도 기회를 못 얻는다.
+
+반대 방향의 문제도 있다. 예전에 많이 쓰였지만 지금은 안 쓰이는 데이터가 높은 빈도를 유지한 채 자리를 차지한다.
+
+### 3.3 Caffeine의 구성
+
+Caffeine은 캐시를 세 구역으로 나눈다.
+
+```mermaid
+flowchart LR
+    NEW["새 데이터"] --> W["Window<br/>약 1%<br/>LRU"]
+    W -->|"LRU로 밀려남<br/>= Candidate"| T{"TinyLFU 판정"}
+    T -->|승인| P["Probation<br/>Main의 20%<br/>LRU"]
+    T -->|거부| OUT1["축출"]
+    P -->|"다시 읽히면 승격"| PR["Protected<br/>Main의 80%<br/>LRU"]
+    PR -->|"LRU로 밀려남"| P
+    P -->|"가장 오래된 것<br/>= Victim"| T
+    T -->|"Victim이 짐"| OUT2["축출"]
+```
+
+**Window가 LRU인 이유가 3.2의 문제를 푼다.** 새 데이터는 무조건 여기로 들어오고, 빈도와 무관하게 일단 자리를 얻는다. 여기서 버티는 동안 다시 읽히면 빈도가 쌓인다.
+
+**Window에서 밀려날 때 TinyLFU가 판정한다.** 여기서 3.1의 문제를 푼다. 한 번씩만 읽히는 데이터는 빈도가 낮아서 Main으로 못 들어간다. 캐시 오염이 Window 안에서 멈춘다.
+
+**Main이 Probation과 Protected로 나뉜 이유도 있다.** Probation에 들어온 것이 다시 읽히면 Protected로 승격된다. 검증을 한 번 더 거치는 셈이라, 운 좋게 한 번 통과한 데이터가 바로 좋은 자리를 차지하지 못한다.
+
+### 3.4 비율은 고정이 아니다
+
+Window가 1퍼센트, Main이 99퍼센트로 시작하지만 **Caffeine은 이 비율을 실행 중에 조정한다.**
+
+적중률을 관찰하면서 Window를 키웠다 줄였다 하며 어느 쪽이 나은지 찾아간다. 워크로드가 최신성 위주면 Window가 커지고, 빈도 위주면 Main이 커진다.
+
+**하나의 정책으로 모든 워크로드를 커버할 수 없다는 인정**이고, 이 적응 동작이 Caffeine의 적중률이 높은 큰 이유다.
+
+### 3.5 판정 규칙
+
+Window나 Protected에서 밀려난 항목을 Candidate, Probation에서 가장 오래된 항목을 Victim이라고 부른다. 둘의 빈도를 비교한다.
+
+소스의 `admit()` 메서드가 이렇게 생겼다.
 
 ```java
-package com.github.benmanes.caffeine.cache;
+static final int ADMIT_HASHDOS_THRESHOLD = 6;
 
-public final class Caffeine<K, V> {
-  // === Static Constants ===
-  // 통계 카운터 제공자 (기본값: ConcurrentStatsCounter)
-  static final Supplier<StatsCounter> ENABLED_STATS_COUNTER_SUPPLIER = ConcurrentStatsCounter::new;
-  // 로깅을 위한 시스템 로거
-  static final System.Logger logger = System.getLogger(Caffeine.class.getName());
-  // 해시맵 기본 로드 팩터 (0.75)
-  static final double DEFAULT_LOAD_FACTOR = 0.75F;
-  // 설정되지 않음을 나타내는 상수들
-  static final int UNSET_INT = -1;
-  static final int DEFAULT_INITIAL_CAPACITY = 16; // 기본 초기 용량
-  static final int DEFAULT_EXPIRATION_NANOS = 0; // 기본 만료 시간 (나노초)
-  static final int DEFAULT_REFRESH_NANOS = 0; // 기본 리프레시 시간
-
-  // === Instance Variables ===
-  boolean strictParsing = true; // 설정 엄격 검사 여부 (CaffeineSpec 파싱 시)
-  boolean interner; // WeakInterner 사용 여부 (Key 중복 제거)
-  long maximumSize = -1L; // 최대 엔트리 수 (-1: 미설정)
-  long maximumWeight = -1L; // 가중치 기반 최대 크기 (-1: 미설정)
-  int initialCapacity = -1; // 초기 용량 (기본값 16)
-  long expireAfterWriteNanos = -1L; // 쓰기 후 만료 시간 (나노초)
-  long expireAfterAccessNanos = -1L; // 접근 후 만료 시간
-  long refreshAfterWriteNanos = -1L; // 쓰기 후 리프레시 시간
-  @Nullable RemovalListener<? super K, ? super V> evictionListener; // 축출 리스너
-  @Nullable RemovalListener<? super K, ? super V> removalListener; // 제거 리스너
-  @Nullable Supplier<StatsCounter> statsCounterSupplier; // 통계 카운터 제공자
-  @Nullable Weigher<? super K, ? super V> weigher; // 엔트리 가중치 계산기
-  @Nullable Expiry<? super K, ? super V> expiry; // 사용자 정의 만료 정책
-  @Nullable Scheduler scheduler; // 스케줄러 (예: 리프레시용)
-  @Nullable Executor executor; // 비동기 작업 실행자 (기본: ForkJoinPool)
-  @Nullable Ticker ticker; // 시간 측정기 (기본: 시스템 티커)
-  @Nullable Strength keyStrength; // Key 참조 강도 (Strong/Weak/Soft)
-  @Nullable Strength valueStrength; // Value 참조 강도
-
-  // === 생성자 ===
-  private Caffeine() {} // 외부 생성을 막고 newBuilder()로 생성
-
-  // === 유틸리티 메서드 ===
-  // 인자 검증 (조건 불만족 시 IllegalArgumentException)
-  @FormatMethod
-  static void requireArgument(boolean expression, String template, Object... args) { ... }
-  static void requireArgument(boolean expression) { ... }
-
-  // 상태 검증 (조건 불만족 시 IllegalStateException)
-  static void requireState(boolean expression) { ... }
-  @FormatMethod
-  static void requireState(boolean expression, String template, Object... args) { ... }
-
-  // === 설정 메서드 ===
-  // 초기 용량 설정 (해시 테이블 버킷 수)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> initialCapacity(@NonNegative int initialCapacity) {
-    requireState(this.initialCapacity == -1, "initial capacity already set");
-    requireArgument(initialCapacity >= 0, "음수 용량 불가");
-    this.initialCapacity = initialCapacity;
-    return this;
-  }
-
-  // 비동기 작업 실행자 설정 (기본: ForkJoinPool.commonPool())
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> executor(Executor executor) { ... }
-
-  // 스케줄러 설정 (주기적 유지관리 작업용)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> scheduler(Scheduler scheduler) { ... }
-
-  // 최대 엔트리 수 설정 (가중치 미사용 시)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> maximumSize(@NonNegative long maximumSize) {
-    requireState(this.maximumSize == -1L, "maximumSize already set");
-    requireState(this.maximumWeight == -1L, "maximumWeight와 충돌");
-    requireState(this.weigher == null, "weigher와 충돌");
-    this.maximumSize = maximumSize;
-    return this;
-  }
-
-  // 가중치 기반 최대 크기 설정 (weigher 필수)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> maximumWeight(@NonNegative long maximumWeight) { ... }
-
-  // 엔트리 가중치 계산기 설정 (maximumWeight 필요)
-  @CanIgnoreReturnValue
-  public <K1 extends K, V1 extends V> Caffeine<K1, V1> weigher(Weigher<? super K1, ? super V1> weigher) { ... }
-
-  // Key Weak 참조 설정 (GC에 의해 수집 가능)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> weakKeys() {
-    requireState(this.keyStrength == null, "keyStrength already set");
-    this.keyStrength = Strength.WEAK;
-    return this;
-  }
-
-  // Value Weak/Soft 참조 설정
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> weakValues() { ... } // GC 수집 가능
-  
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> softValues() { ... } // 메모리 부족 시 수집
-
-  // 만료 시간 설정 (쓰기/접근 후)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> expireAfterWrite(Duration duration) { ... }
-  
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> expireAfterWrite(@NonNegative long duration, TimeUnit unit) {
-    requireState(this.expireAfterWriteNanos == -1L, "already set");
-    this.expireAfterWriteNanos = unit.toNanos(duration); // 나노초 변환 저장
-    return this;
-  }
-
-  // 사용자 정의 만료 정책 (Expiry 구현체)
-  @CanIgnoreReturnValue
-  public <K1 extends K, V1 extends V> Caffeine<K1, V1> expireAfter(Expiry<? super K1, ? super V1> expiry) { ... }
-
-  // 리프레시 간격 설정 (주기적 재로딩)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> refreshAfterWrite(@NonNegative long duration, TimeUnit unit) { ... }
-
-  // 시간 측정기 설정 (테스트용 Mock 가능)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> ticker(Ticker ticker) { ... }
-
-  // 리스너 설정 (엔트리 제거/축출 시 콜백)
-  @CanIgnoreReturnValue
-  public <K1 extends K, V1 extends V> Caffeine<K1, V1> evictionListener(RemovalListener<? super K1, ? super V1> listener) { ... }
-  
-  @CanIgnoreReturnValue
-  public <K1 extends K, V1 extends V> Caffeine<K1, V1> removalListener(RemovalListener<? super K1, ? super V1> listener) { ... }
-
-  // 통계 기록 활성화 (히트율, 누락률 등)
-  @CanIgnoreReturnValue
-  public Caffeine<K, V> recordStats() { ... }
-
-  // === 빌드 메서드 ===
-  // 수동 캐시 생성 (CacheLoader 없음)
-  public <K1 extends K, V1 extends V> Cache<K1, V1> build() {
-    requireWeightWithWeigher(); // 가중치 검증
-    requireNonLoadingCache(); // 로딩 캐시 전용 설정 검증
-    return isBounded()
-      ? new BoundedLocalCache.BoundedLocalManualCache(this)
-      : new UnboundedLocalCache.UnboundedLocalManualCache(this);
-  }
-
-  // 로딩 캐시 생성 (CacheLoader 제공)
-  public <K1 extends K, V1 extends V> LoadingCache<K1, V1> build(CacheLoader<? super K1, V1> loader) { ... }
-
-  // 비동기 캐시 생성 (AsyncCache)
-  public <K1 extends K, V1 extends V> AsyncCache<K1, V1> buildAsync() { ... }
-
-  // 비동기 로딩 캐시 생성 (AsyncCacheLoader 제공)
-  public <K1 extends K, V1 extends V> AsyncLoadingCache<K1, V1> buildAsync(AsyncCacheLoader<? super K1, V1> loader) { ... }
-
-  // === 내부 검증 메서드 ===
-  // 가중치 관련 설정 일관성 검증
-  void requireWeightWithWeigher() {
-    if (weigher != null && maximumWeight == -1L) {
-      throw new IllegalStateException("Weigher requires maximumWeight");
+boolean admit(Object candidateKeyRef, Object victimKeyRef) {
+    int candidateFreq = frequencySketch().frequency(candidateKeyRef);
+    int victimFreq = frequencySketch().frequency(victimKeyRef);
+    if (candidateFreq > victimFreq) {
+        return true;
+    } else if (candidateFreq >= ADMIT_HASHDOS_THRESHOLD) {
+        int random = ThreadLocalRandom.current().nextInt();
+        return ((random & 127) == 0);
     }
-  }
-
-  // 리프레시 설정 검증 (LoadingCache 전용)
-  void requireNonLoadingCache() {
-    if (refreshAfterWriteNanos != -1L) {
-      throw new IllegalStateException("refreshAfterWrite requires LoadingCache");
-    }
-  }
-
-  // === 기타 지원 메서드 ===
-  // Duration을 나노초로 안전 변환 (오버플로우 대비)
-  static long saturatedToNanos(Duration duration) { ... }
-
-  // 설정 정보 문자열 표현
-  @Override
-  public String toString() { ... }
-
-  // 참조 강도 열거형 (Strong, Weak, Soft)
-  enum Strength {
-    WEAK,  // 약한 참조: GC가 즉시 수집
-    SOFT   // 소프트 참조: 메모리 부족 시 수집
-  }
+    return false;
 }
 ```
 
----
+| 조건 | 결과 | 이유 |
+|---|---|---|
+| Candidate 빈도 > Victim 빈도 | 승인 | 더 자주 쓰이는 쪽을 남긴다 |
+| Candidate 빈도 < 6 | 거부 | 근거가 부족한 데이터를 막는다 |
+| 그 외 | 128분의 1 확률로 승인 | 공격 방어 |
 
-# Caffeine Cache 구조
+**같은 빈도면 기존 데이터가 이긴다.** `>`이지 `>=`가 아니기 때문이다. 확신이 없으면 이미 있는 것을 지키는 쪽이다.
 
-#### 공식문서 버전
+**마지막 무작위 승인이 왜 있는지가 재미있다.**
 
-![](https://raw.githubusercontent.com/ben-manes/caffeine/master/wiki/design/design.png)
+빈도만으로 판정하면 공격이 가능하다. 공격자가 캐시에 있는 키를 알아내서 그 빈도를 계속 올려두면, **정상적인 새 데이터가 영원히 못 들어온다.** 캐시가 오래된 데이터로 굳어버린다.
 
-#### 김도현버전
+128번에 한 번은 빈도와 무관하게 통과시켜서 이 고착을 푼다. 확률이 낮아서 평소 적중률에는 거의 영향이 없다.
 
-![img.png](../images/caffeine/components.png)
-![img.png](../images/caffeine/flow.png)
-
-Caffeine Cache는 ConcurrentHashMap을 사용하여 캐시를 관리한다.
-
-## 캐시 엔트리
-
-캐시 엔트리는 캐시에 저장되는 개별 키-값 쌍으로, 캐시의 기본 저장 단위다.
-
-각 엔트리는 키(Key), 값(Value), 메타데이터(만료 시간, 접근 횟수 등)로 구성된다.
-
-Caffeine Cache에서는 ConcurrentHashMap을 기반으로 엔트리를 관리하여 동시성 문제를 해결한다.
-
-### Caffeine Cache의 메모리 효율성
-
-Caffeine의 TinyLFU 정책은 CountMinSketch 자료구조를 사용하여 빈도수를 추적한다. 공식 문서에 따르면 빈도수 카운터는 4-bit CountMinSketch를 사용하며, 캐시 엔트리당 8바이트만 필요하다.
-
-이처럼 메모리 효율적인 설계로 대규모 엔트리를 처리할 때도 오버헤드가 적다.
-
-고성능 서버 환경에서 이러한 메모리 효율성은 GC 부하 감소와 처리량 향상으로 이어진다.
-
-### 엔트리의 캐시 내 이동 프로세스
-
-- 생성: 새로운 데이터가 put 메서드 호출로 Window Cache에 진입
-- 평가: Window에서 LRU로 방출될 때 TinyLFU를 통해 Probation 진입 여부 결정
-- 승격: Probation에서 접근 빈도가 높아지면 Protected Cache로 이동
-- 방출: TTL 만료, 메모리 제한, 또는 더 높은 가치의 데이터 진입으로 인해 제거
-
-### Caffeine Cache 캐시 엔트리 요약
-
-1. **메모리 사용 최소화**: 엔트리 빈도수 추적에 단 8바이트만 사용하여 메모리 사용 최소화
-2. **GC 부하 감소**: 가비지 컬렉션 빈도와 STW 감소
-3. **적응형 정책**: 워크로드 특성에 따라 캐시 영역 비율을 자동으로 조정해서 성능 최적화
-4. **버퍼링 메커니즘**: 읽기/쓰기 버퍼를 활용해 락 경합 최소화 및 배치 처리로 성능 향상
+**임계값이 6인 것에도 이유가 있다.** 카운터 최댓값이 15이고 감쇠할 때 절반으로 줄어 7이 된다. 그 아래 구간을 "아직 근거가 부족한 후보"로 보고 무작위 승인 대상에서 아예 빼는 것이다.
 
 ---
 
-## 저장 계층 (Storage Layer)
+## 4. 빈도를 어떻게 세는가
 
-ConcurrentHashMap (CHM): 실제 캐시 데이터를 저장하는 동시성 해시맵
+세 번째 질문이다. **모든 키에 카운터를 두면 캐시에 없는 항목의 빈도까지 기억해야 해서 메모리가 감당이 안 된다.**
 
-### Window Cache (1%)
+Caffeine은 CountMinSketch라는 자료구조를 쓴다.
 
-- 모든 신규 데이터의 첫 진입점
-- 버스트 트래픽으로부터 Main Cache 보호
-- LRU 정책으로 공간 확보
-- 방출 데이터는 TinyLFU 정책으로 Probation으로 이동 시도
+### 4.1 원리
 
-### Probation Cache (20%)
+키마다 자리를 주는 것이 아니라, **해시 함수 네 개로 네 자리를 정하고 거기에 각각 1씩 더한다.**
 
-- 새로운 데이터의 유용성 검증 공간
-- TinyLFU 정책으로 데이터 관리
-- 자주 접근되는 데이터는 Protected로 승격
+```mermaid
+flowchart LR
+    K["key"] --> H1["hash1 -> 슬롯 3"]
+    K --> H2["hash2 -> 슬롯 17"]
+    K --> H3["hash3 -> 슬롯 42"]
+    K --> H4["hash4 -> 슬롯 58"]
+```
 
-### Protected Cache (80%)
+빈도를 물어보면 그 네 자리를 읽어서 **가장 작은 값을 답한다.**
 
-- 자주 사용되는 데이터 보관
-- LRU 정책으로 공간 확보
-- 방출 데이터는 TinyLFU로 Probation 이동 시도
+**최솟값을 쓰는 이유가 있다.** 다른 키와 자리가 겹치면 그 값은 실제보다 커진다. 겹침은 값을 부풀리기만 할 뿐 줄이지 못하므로, 네 개 중 가장 작은 것이 실제 값에 가장 가깝다.
 
-## 버퍼 시스템 (Buffer System)
+**과대평가는 있어도 과소평가는 없다**는 성질이 여기서 나온다.
 
-### 읽기 버퍼 (Read Buffer)
+### 4.2 얼마나 쓰는가
 
-- Striped Ring Buffer: 스레드별 분리된 원형 버퍼로 읽기 작업 처리
-- Read Cache: 읽기 작업 임시 저장소
+카운터 하나가 **4비트**다. 최대 15까지 센다.
 
-### 쓰기 버퍼 (Write Buffer)
+`long` 하나가 64비트이므로 카운터 16개가 들어간다. 테이블 크기를 최대 항목 수에 맞추므로 **항목 하나당 8바이트** 정도가 든다.
 
-- Circular Array Buffer: 확장 가능한 원형 배열로 쓰기 작업 처리
-- Write Cache: 쓰기 작업 임시 저장소
+항목이 10만 개인 캐시라면 빈도 추적에 800킬로바이트를 쓴다. 값 자체를 저장하는 비용에 비하면 무시할 만한 수준이다.
 
-## 정책 시스템 (Policy System)
+### 4.3 4비트로 충분한가
 
-- TinyLFU Policy: 캐시 진입/방출 결정 정책
-- LRU Policy: 최근 사용 기반 방출 정책
-- CountMinSketch: 데이터 접근 빈도 추적기
-- Timer Wheel: 캐시 항목 만료 시간 관리자
+최대 15까지밖에 못 센다. 그래도 되는 이유가 둘이다.
 
-## 유지보수 시스템 (Maintenance System)
+**판정은 상대 비교다.** Candidate와 Victim 중 누가 더 큰지만 알면 되지 절대값이 필요 없다.
 
-- Entry Expiration (항목 만료): 만료된 캐시 항목 관리
-- Entry Eviction (항목 방출): 캐시 공간 확보를 위한 방출 처리
-- Cleanup Task (정리 작업): 주기적인 캐시 정리 작업 수행
+**주기적으로 절반으로 줄인다.** 전체 카운터 합이 일정 수를 넘으면 모든 값을 반으로 나눈다.
 
-## 데이터 흐름
+이 감쇠 동작이 3.2에서 말한 LFU의 두 번째 문제를 푼다. **예전에 많이 쓰였던 데이터의 빈도가 시간이 지나면 낮아진다.** 지금 자주 쓰이는 것이 이기게 된다.
 
-1. 새 데이터 → Window Cache 진입
-2. Window Cache에서 LRU로 오래된 항목 방출 → TinyLFU 정책 평가
-3. TinyLFU 승인 시 → Probation Cache 이동
-4. 자주 접근되는 데이터 → Protected Cache 승격
-5. Protected Cache 방출 데이터 → TinyLFU 재평가
+구현도 영리하다. 모든 카운터를 하나씩 도는 대신 비트 연산으로 처리한다.
 
-## TinyLFU 정책
+```java
+table[i] = (table[i] >>> 1) & RESET_MASK;
+```
 
-- 4-bit CountMinSketch 사용 (엔트리당 8바이트)
-- 빈도수가 5회 미만인 데이터는 캐시 오염 방지를 위해 거부
-- 동일 빈도수일 경우 기존 데이터 보호 (안정성)
-- 약 1%의 무작위 승인으로 HashDoS 공격 방지
-
-### Candidate (진입 후보)
-
-- **정의**
-  - Window Cache나 Protected Cache에서 LRU 정책으로 방출된 데이터
-- **목적지**
-  - Probation Cache로 진입을 시도하는 데이터
-- **상태**
-  - TinyLFU 정책의 평가를 기다리는 상태
-  - Probation Cache의 Victim과 접근 빈도를 비교하여 진입 여부가 결정됨
-- **처리 결과**
-  - 빈도수가 높으면: Probation Cache 진입
-  - 빈도수가 낮으면: 최종 방출 (캐시에서 제거)
-
-### Victim (제거 대상)
-
-- **정의**
-  - 새로운 Candidate를 위해 제거될 수 있는 Probation Cache 내의 데이터
-- **위치**
-  - Probation Cache 내에 존재
-  - LRU 정책에 따라 가장 오래된 데이터가 Victim으로 선정
-- **역할**
-  - Candidate와 접근 빈도를 비교하는 기준점 역할
-  - Cache 공간 확보를 위한 제거 대상
-- **처리 결과**
-  - 빈도수가 높으면: Probation Cache에 유지
-  - 빈도수가 낮으면: Candidate와 교체되어 방출
-
-### 판단 규칙
-
-- Candidate 접근 횟수 > Victim 접근 횟수
-  - Victim 제거, Candidate 진입
-
-- Candidate 접근 횟수 < Victim 접근 횟수
-  - Candidate 제거, Victim 유지
-
-- Candidate 접근 횟수 = Victim 접근 횟수
-  - Candidate 제거 (기존 데이터 보호)
-
-- Candidate 접근 횟수 < 5
-  - Candidate 제거 (캐시 오염 방지)
-
-- 적용 시점
-  - Window Cache 방출 데이터의 Probation 진입 시
-  - Protected Cache 방출 데이터의 Probation 진입 시
-
-### 왜 LRU와 LFU를 섞어서 쓰는건가?
-
-우선 Window 캐시에서 용량이 다 찼을 때 LRU를 하는데 이는 새로 들어온 데이터가 바로 내보내지지 않도록 하기 위함이다. 만약 LFU를 썼다면 새로운 캐시는 들어오자마자 방출후보이기 때문이다.
-
-그래서 Window Cache에서 가장 오래 살아남은 캐시를 Tiny LFU 알고리즘으로 기존 Probation 영역에 있는 데이터와 비교해서 대체되던지 제거되던지 결정한다.
-
-그리고 Protected Cache에서도 LRU를 활용하는데 가장 오래 참조되지 않은 보호영역에 있는 데이터를 Probation으로 강등시키거나 제거할 때 사용된다.
+`long` 하나에 들어 있는 카운터 16개가 **한 번의 시프트로 전부 절반이 된다.**
 
 ---
 
-## 실제 코드로 적용해보기
+## 5. 스프링에 붙이기
 
-### 사용 사례에 맞는 캐시 정책 적용
+### 5.1 용도별로 캐시를 나눈다
+
+캐시 하나에 모든 것을 넣으면 만료 정책을 데이터 성격에 맞출 수 없다. 용도별로 나눠서 만들었다.
 
 ```kotlin
 @Configuration
 @EnableCaching
 class CacheConfig {
-  @Bean
-  fun cacheManager(): CacheManager {
-    val cacheManager = SimpleCacheManager()
-    val caches: MutableList<CaffeineCache> = ArrayList()
 
-    // 각 용도별 캐시를 생성하고 리스트에 추가
-    caches.add(buildStaticDataCache())    // 정적 데이터용 (코드, 카테고리 등)
-    caches.add(buildFrequentDataCache())  // 자주 조회되는 데이터용 (상품, 게시글 등)
-    caches.add(buildRealtimeDataCache())  // 실시간성 데이터용 (재고, 좌석 등)
-    caches.add(buildLargeDataCache())     // 대용량 데이터용 (검색 결과 등)
-
-    cacheManager.setCaches(caches)
-    return cacheManager
-  }
-
-  /**
-   * 정적 데이터용 캐시 구성
-   */
-  private fun buildStaticDataCache(): CaffeineCache {
-    return CaffeineCache(
-      "staticDataCache",
-      Caffeine.newBuilder()
-        .initialCapacity(100)    // 캐시 초기 키-값 항목(엔트리)의 개수
-        .maximumSize(1000)       // 캐시 최대 키-값 항목(엔트리)의 개수
-        .expireAfterWrite(Duration.ofHours(24))  // 마지막 쓰기 후 24시간 뒤 만료
-        .recordStats()           // 캐시 사용 통계 수집 활성화
-        .build()
-    )
-  }
-
-  /**
-   * 자주 조회되는 데이터용 캐시 구성
-   */
-  private fun buildFrequentDataCache(): CaffeineCache {
-    return CaffeineCache(
-      "frequentDataCache",
-      Caffeine.newBuilder()
-        .initialCapacity(500)    // 캐시 초기 키-값 항목(엔트리)의 개수
-        .maximumSize(5000)       // 캐시 최대 키-값 항목(엔트리)의 개수
-        .expireAfterWrite(Duration.ofMinutes(30))    // 데이터 작성/수정 후 30분 뒤 만료
-        .expireAfterAccess(Duration.ofMinutes(15))   // 마지막 접근 후 15분 동안 미사용시 만료
-        .recordStats()
-        .build()
-    )
-  }
-
-  /**
-   * 실시간성 데이터용 캐시 구성
-   */
-  private fun buildRealtimeDataCache(): CaffeineCache {
-    return CaffeineCache(
-      "realtimeDataCache",
-      Caffeine.newBuilder()
-        .initialCapacity(100) // 캐시 초기 키-값 항목(엔트리)의 개수
-        .maximumSize(1000) // 캐시 최대 키-값 항목(엔트리)의 개수
-        .expireAfterWrite(Duration.ofSeconds(30))  // 30초 후 만료 (실시간성 보장)
-        .weakValues()    // 메모리 압박시 GC 대상이 되도록 약한 참조 사용
-        .recordStats()
-        .build()
-    )
-  }
-
-  /**
-   * 대용량 데이터용 캐시 구성
-   */
-  private fun buildLargeDataCache(): CaffeineCache {
-    return CaffeineCache(
-      "largeDataCache",
-      Caffeine.newBuilder()
-        .initialCapacity(200) // 캐시 초기 키-값 항목(엔트리)의 개수
-        .maximumSize(2000) // 캐시 최대 키-값 항목(엔트리)의 개수
-        .expireAfterWrite(Duration.ofMinutes(10))  // 10분 후 만료
-        .softValues()    // 메모리 부족 상황에서만 GC 대상이 되는 소프트 참조 사용
-        .recordStats()
-        .build()
-    )
-  }
-
-  /**
-   * 캐시 모니터링을 위한 메트릭 수집
-   */
-  @Component
-  class CacheMonitor(private val cacheManager: CacheManager) {
-    @Scheduled(fixedRate = 60000) // 1분마다 실행
-    fun monitorCache() {
-      val cacheNames = cacheManager.cacheNames
-
-      cacheNames.forEach(Consumer { cacheName: String? ->
-        val cache = cacheManager.getCache(cacheName!!)
-        if (cache is CaffeineCache) {
-          val nativeCache = cache.nativeCache
-
-          val stats = nativeCache.stats()
-
-          log.info(
-            """
-              Cache '{}' Statistics:
-              ================================
-              Hit Count: {}
-              Miss Count: {}
-              Hit Rate: {}%
-              Eviction Count: {}
-              ================================
-              
-              """.trimIndent(),
-            cacheName,
-            stats.hitCount(),
-            stats.missCount(),
-            String.format("%.2f", stats.hitRate() * 100),
-            stats.evictionCount()
-          )
-        }
-      })
+    @Bean
+    fun cacheManager(): CacheManager = SimpleCacheManager().apply {
+        setCaches(
+            listOf(
+                buildStaticDataCache(),     // 코드, 카테고리처럼 거의 안 바뀌는 것
+                buildFrequentDataCache(),   // 상품, 게시글처럼 자주 읽는 것
+                buildRealtimeDataCache(),   // 재고, 좌석처럼 최신성이 중요한 것
+                buildLargeDataCache(),      // 검색 결과처럼 덩치가 큰 것
+            )
+        )
     }
-  }
 
-  // 스케줄러 활성화를 위한 설정
-  @Configuration
-  @EnableScheduling
-  inner class SchedulingConfig
+    private fun buildStaticDataCache() = CaffeineCache(
+        "staticDataCache",
+        Caffeine.newBuilder()
+            .initialCapacity(100)
+            .maximumSize(1000)
+            .expireAfterWrite(Duration.ofHours(24))
+            .recordStats()
+            .build(),
+    )
 
-  private companion object {
-    private val log = LoggerFactory.getLogger(CacheConfig::class.java)
-  }
+    private fun buildFrequentDataCache() = CaffeineCache(
+        "frequentDataCache",
+        Caffeine.newBuilder()
+            .initialCapacity(500)
+            .maximumSize(5000)
+            .expireAfterWrite(Duration.ofMinutes(30))
+            .expireAfterAccess(Duration.ofMinutes(15))
+            .recordStats()
+            .build(),
+    )
+
+    private fun buildRealtimeDataCache() = CaffeineCache(
+        "realtimeDataCache",
+        Caffeine.newBuilder()
+            .initialCapacity(100)
+            .maximumSize(1000)
+            .expireAfterWrite(Duration.ofSeconds(30))
+            .recordStats()
+            .build(),
+    )
+
+    private fun buildLargeDataCache() = CaffeineCache(
+        "largeDataCache",
+        Caffeine.newBuilder()
+            .initialCapacity(200)
+            .maximumSize(2000)
+            .expireAfterWrite(Duration.ofMinutes(10))
+            .recordStats()
+            .build(),
+    )
 }
-
 ```
 
-### 사용사례에 맞는 캐시 사용
+### 5.2 설정값이 각각 무엇인가
+
+**`initialCapacity`** 는 항목 개수가 아니라 **내부 해시 테이블의 초기 크기**다. 이걸 미리 잡아두면 항목이 늘어날 때 테이블을 다시 만드는 일이 줄어든다.
+
+**`maximumSize`** 는 최대 항목 수다. 여기서 W-TinyLFU가 실제로 동작하기 시작한다.
+
+**`expireAfterWrite`** 와 **`expireAfterAccess`** 의 차이가 중요하다.
+
+| 설정 | 기준 | 언제 쓰는가 |
+|---|---|---|
+| `expireAfterWrite` | 쓴 시점부터 | 데이터가 얼마나 오래되면 못 믿을지 |
+| `expireAfterAccess` | 마지막으로 읽은 시점부터 | 안 쓰이는 것을 치우고 싶을 때 |
+
+**`expireAfterAccess`만 두면 위험하다.** 계속 읽히는 항목은 영원히 안 없어져서, 원본이 바뀌어도 낡은 값이 남는다. 최신성이 필요하면 `expireAfterWrite`를 반드시 함께 둔다.
+
+**`recordStats()`** 를 켜야 적중률을 볼 수 있다. 약간의 비용이 들지만, **이걸 안 켜면 캐시가 효과가 있는지 알 방법이 없다.**
+
+### 5.3 weakValues와 softValues는 쓰지 않았다
+
+처음에는 실시간 캐시에 `weakValues()`, 대용량 캐시에 `softValues()`를 넣었다가 뺐다.
+
+**`weakValues()`** 는 그 값을 가리키는 강한 참조가 없어지는 순간 GC 대상이 된다. 캐시에 넣은 값은 대개 아무도 따로 안 들고 있으므로 **다음 GC에서 바로 사라진다.** 캐시로서 동작하지 않는다.
+
+**`softValues()`** 는 메모리가 부족할 때만 회수되므로 그럴듯해 보인다. 하지만 GC가 이 참조를 판단하는 비용이 있고, 회수 시점이 예측되지 않아서 **응답 시간이 튀는 원인**이 된다. 메모리 압박이 걱정이면 `maximumSize`나 `maximumWeight`로 명시적으로 제한하는 편이 낫다.
+
+**둘 다 공통으로 걸리는 것이 하나 더 있다.** 이 설정을 켜면 값 비교가 `equals()`가 아니라 참조 비교로 바뀐다. `@CachePut`처럼 값 동등성을 기대하는 코드가 예상과 다르게 동작할 수 있다.
+
+### 5.4 사용하는 쪽
 
 ```kotlin
 @Service
-class ProductService {
+class ProductService(
+    private val categoryRepository: CategoryRepository,
+    private val productRepository: ProductRepository,
+    private val stockRepository: StockRepository,
+) {
 
-  /**
-   * 정적 데이터 캐시 사용 예시 (카테고리 정보)
-   */
-  @Cacheable(cacheNames = ["staticDataCache"], key = "'category:' + #categoryId")
-  fun getCategory(categoryId: Long): Category {
-    return categoryRepository.findById(categoryId)
-      .orElseThrow { CategoryNotFoundException(categoryId) }
-  }
+    @Cacheable(cacheNames = ["staticDataCache"], key = "'category:' + #categoryId")
+    fun getCategory(categoryId: Long): Category =
+        categoryRepository.findById(categoryId)
+            .orElseThrow { CategoryNotFoundException(categoryId) }
 
-  /**
-   * 자주 조회되는 데이터 캐시 사용 예시 (상품 기본 정보)
-   */
-  @Cacheable(
-    cacheNames = ["frequentDataCache"],
-  key = "'product:' + #productId",
-  unless = "#result == null"
-    )
-  fun getProduct(productId: Long): Product {
-    return productRepository.findById(productId)
-      .orElseThrow { ProductNotFoundException(productId) }
-  }
+    @Cacheable(cacheNames = ["frequentDataCache"], key = "'product:' + #productId")
+    fun getProduct(productId: Long): Product =
+        productRepository.findById(productId)
+            .orElseThrow { ProductNotFoundException(productId) }
 
-  /**
-   * 실시간성 데이터 캐시 사용 예시 (재고 정보)
-   */
-  @Cacheable(
-    cacheNames = ["realtimeDataCache"],
-  key = "'stock:' + #productId"
-    )
-  fun getProductStock(productId: Long): Int {
-    return stockRepository.getCurrentStock(productId)
-  }
+    @Cacheable(cacheNames = ["realtimeDataCache"], key = "'stock:' + #productId")
+    fun getProductStock(productId: Long): Int =
+        stockRepository.getCurrentStock(productId)
 
-  /**
-   * 대용량 데이터 캐시 사용 예시 (검색 결과)
-   */
-  @Cacheable(
-    cacheNames = ["largeDataCache"],
-  key = "'search:' + #keyword + ':page:' + #page"
-    )
-  fun searchProducts(keyword: String, page: Int): Page<Product> {
-    return productRepository.search(keyword, PageRequest.of(page, 20))
-  }
+    @CachePut(cacheNames = ["frequentDataCache"], key = "'product:' + #result.id")
+    fun updateProduct(product: Product): Product =
+        productRepository.save(product)
 
-  /**
-   * 캐시 업데이트 예시
-   */
-  @CachePut(
-    cacheNames = ["frequentDataCache"],
-  key = "'product:' + #result.id"
-    )
-  fun updateProduct(product: Product): Product {
-    return productRepository.save(product)
-  }
-
-  /**
-   * 캐시 삭제 예시
-   */
-  @CacheEvict(
-    cacheNames = ["frequentDataCache", "realtimeDataCache"],
-  key = "'product:' + #productId"
-    )
-  fun deleteProduct(productId: Long) {
-    productRepository.deleteById(productId)
-  }
-
-  /**
-   * 여러 캐시 동시 사용 예시
-   */
-  @Caching(
-    cacheable = [
-  Cacheable(cacheNames = ["frequentDataCache"], key = "'product:' + #productId"),
-  Cacheable(cacheNames = ["realtimeDataCache"], key = "'stock:' + #productId")
+    @Caching(
+        evict = [
+            CacheEvict(cacheNames = ["frequentDataCache"], key = "'product:' + #productId"),
+            CacheEvict(cacheNames = ["realtimeDataCache"], key = "'stock:' + #productId"),
         ]
-          )
-  fun getProductWithStock(productId: Long): ProductWithStock {
-    val product = productRepository.findById(productId)
-      .orElseThrow { ProductNotFoundException(productId) }
-    val stock = stockRepository.getCurrentStock(productId)
-    return ProductWithStock(product, stock)
-  }
-}
-```
-
----
-
-## Local Cache - Ehcache vs Caffeine 성능 비교
-
-[벤치마크 결과](https://github.com/ben-manes/caffeine/wiki/Benchmarks)
-
-캐시 성능 비교 (Server 환경, 초당 작업 수)
-
-### 1. Read Only (100% 읽기)
-
-8스레드 환경:
-
-- Caffeine: 181,703,298 ops/s
-- Ehcache2: 11,252,172 ops/s
-- Ehcache3: 11,415,248 ops/s
-
-16스레드 환경:
-
-- Caffeine: 382,355,194 ops/s
-- Ehcache2: 20,750,543 ops/s
-- Ehcache3: 17,611,169 ops/s
-
-### 2. Mixed (75% 읽기, 25% 쓰기)
-
-8스레드 환경:
-
-- Caffeine: 144,193,725 ops/s
-- Ehcache2: 9,472,810 ops/s
-- Ehcache3: 10,958,697 ops/s
-
-16스레드 환경:
-
-- Caffeine: 279,440,749 ops/s
-- Ehcache2: 8,471,016 ops/s
-- Ehcache3: 17,302,523 ops/s
-
-### 3. Write Only (100% 쓰기)
-
-8스레드 환경:
-
-- Caffeine: 55,281,751 ops/s
-- Ehcache2: 4,205,936 ops/s
-- Ehcache3: 10,051,020 ops/s
-
-16스레드 환경:
-
-- Caffeine: 48,295,360 ops/s
-- Ehcache2: 4,697,745 ops/s
-- Ehcache3: 13,939,317 ops/s
-
-위 벤치마크 결과를 본다면 압도적으로 카페인 캐시가 성능이 좋게 나온다.
-
-성능이 좋다고 무조건 쓰는게 좋은 것은 아니므로 기존 환경을 잘 고려하여 선택하면 될 것 같다.
-
----
-
-## 성능 개선 측정은 어떻게 했는지?
-
-포스트맨으로 측정했다. 최근에 JMeter, nGrinder등 성능 측정, 모니터링 툴을 알게되어 이러한 도구들을 쓸 수도 있을 것 같다.
-
----
-
-## 캐시가 효과가 있는지는 어떻게 아는지?
-
-```java
-@Component
-@RequiredArgsConstructor
-@Slf4j
-public class CacheStaticsLogger {
-
-    private final CacheManager cacheManager;
-
-    public void getCachesStats(String cacheKeys) {
-        CaffeineCache cache = (CaffeineCache) cacheManager.getCache(cacheKeys);
-        CacheStats stats = Objects.requireNonNull(cache).getNativeCache().stats();
-
-        log.info("Cache hit count: " + stats.hitCount());
-        log.info("Cache miss count: " + stats.missCount());
+    )
+    fun deleteProduct(productId: Long) {
+        productRepository.deleteById(productId)
     }
 }
 ```
 
-위와 같은 CacheStats 객체를 통해 캐시 히트와 캐시 미스의 대한 지표를 얻을 수 있다.
+### 5.5 여기서 밟았던 것들
 
-이 객체를 활용, 로그를 모니터링을 함으로써 캐시가 히트됐을 때의 응답속도를 측정하면 근거가 될 것으로 본다.
+**키 접두사를 붙이는 이유가 있다.** 한 캐시에 여러 종류를 넣으면 `1L`이라는 키가 상품 1인지 카테고리 1인지 구분이 안 된다. 접두사가 그 충돌을 막는다.
+
+**축출할 때 캐시마다 키가 다르다는 것을 놓치기 쉽다.** 처음에는 이렇게 썼다.
+
+```kotlin
+@CacheEvict(
+    cacheNames = ["frequentDataCache", "realtimeDataCache"],
+    key = "'product:' + #productId",
+)
+fun deleteProduct(productId: Long) { ... }
+```
+
+캐시 두 개에 **같은 키 표현식이 적용된다.** 그런데 재고는 `'stock:' + productId`로 저장했으므로 그 항목은 지워지지 않는다. 상품은 사라졌는데 재고는 캐시에 남아 있다.
+
+캐시마다 키가 다르면 `@Caching`으로 나눠서 지정해야 한다.
+
+**`@Caching(cacheable = [...])`으로 여러 캐시를 묶는 것도 처음에 잘못 썼다.**
+
+```kotlin
+@Caching(
+    cacheable = [
+        Cacheable(cacheNames = ["frequentDataCache"], key = "'product:' + #productId"),
+        Cacheable(cacheNames = ["realtimeDataCache"], key = "'stock:' + #productId"),
+    ]
+)
+fun getProductWithStock(productId: Long): ProductWithStock { ... }
+```
+
+동작을 보면 **두 캐시 모두에 `ProductWithStock` 객체가 저장된다.** `'stock:1'` 키에 재고(`Int`)가 아니라 `ProductWithStock`이 들어간다. 그러면 `getProductStock()`이 그 키를 조회했을 때 타입이 안 맞아서 터진다.
+
+**`@Caching`의 `cacheable`은 "같은 값을 여러 키로 찾을 수 있게" 할 때 쓰는 것**이지, 서로 다른 값을 각각 캐싱하는 용도가 아니다.
+
+**프록시를 안 거치면 캐시가 안 걸린다.** 같은 클래스 안에서 `getProduct()`를 직접 부르면 `@Cacheable`이 동작하지 않는다. 스프링 AOP가 프록시 기반이기 때문이다. [프록시에 관한 글](/posts/Reflection-DynamicProxy-CGLIB-AOP/)에 정리한 것과 같은 문제다.
+
+### 5.6 캐시 스탬피드
+
+캐시가 만료되는 순간 같은 키에 요청이 몰리면 **전부 DB로 간다.**
+
+```mermaid
+flowchart TB
+    E["인기 키 만료"] --> R1["요청 1: miss -> DB"]
+    E --> R2["요청 2: miss -> DB"]
+    E --> R3["요청 3: miss -> DB"]
+    E --> RN["요청 N: miss -> DB"]
+    R1 & R2 & R3 & RN --> D["DB에 동시 부하"]
+```
+
+캐시를 붙였는데 특정 순간에만 DB가 튀는 현상이 이것이다.
+
+**Caffeine의 `LoadingCache`가 이걸 막아준다.** 같은 키에 대해 한 스레드만 적재하고 나머지는 결과를 기다린다.
+
+```kotlin
+private val productCache: LoadingCache<Long, Product> = Caffeine.newBuilder()
+    .maximumSize(5000)
+    .expireAfterWrite(Duration.ofMinutes(30))
+    .recordStats()
+    .build { productId -> productRepository.findById(productId).orElseThrow() }
+```
+
+**`@Cacheable`만으로는 이 보장을 못 받는다.** 스프링의 `CaffeineCacheManager`에 `setCacheLoader()`로 로더를 등록하거나, `sync = true`를 주면 스프링이 락을 잡아준다.
+
+```kotlin
+@Cacheable(cacheNames = ["frequentDataCache"], key = "'product:' + #productId", sync = true)
+fun getProduct(productId: Long): Product = ...
+```
+
+**`refreshAfterWrite`를 함께 쓰는 방법도 있다.** 만료 대신 갱신을 예약해두면, 기한이 지난 뒤 첫 요청은 예전 값을 즉시 받고 갱신은 뒤에서 일어난다. 아무도 기다리지 않는다.
 
 ---
 
-## 캐시의 TTL은 어떻게 지정할까?
+## 6. 얼마나 빠른가
 
-캐시 히트율을 통계로 추출하여 캐시 TTL을 조정해가며 적절한 타협점을 찾는게 좋을 것 같다.
+공식 벤치마크의 초당 처리량이다. 8스레드와 16스레드 환경을 옮겨 적었다.
+
+**읽기 전용 (100% read)**
+
+| 라이브러리 | 8스레드 | 16스레드 |
+|---|---|---|
+| Caffeine | 181,703,298 | 382,355,194 |
+| Ehcache2 | 11,252,172 | 20,750,543 |
+| Ehcache3 | 11,415,248 | 17,611,169 |
+
+**혼합 (75% read, 25% write)**
+
+| 라이브러리 | 8스레드 | 16스레드 |
+|---|---|---|
+| Caffeine | 144,193,725 | 279,440,749 |
+| Ehcache2 | 9,472,810 | 8,471,016 |
+| Ehcache3 | 10,958,697 | 17,302,523 |
+
+**쓰기 전용 (100% write)**
+
+| 라이브러리 | 8스레드 | 16스레드 |
+|---|---|---|
+| Caffeine | 55,281,751 | 48,295,360 |
+| Ehcache2 | 4,205,936 | 4,697,745 |
+| Ehcache3 | 10,051,020 | 13,939,317 |
+
+**주목할 것은 절대값이 아니라 스레드를 늘렸을 때의 기울기다.**
+
+읽기 전용에서 Caffeine은 8스레드에서 16스레드로 갈 때 2배 넘게 늘어난다. Ehcache3은 오히려 줄었다. **락 경합이 있으면 스레드를 늘려도 처리량이 안 따라온다.**
+
+2절에서 본 버퍼 구조가 이 차이를 만든다.
+
+쓰기 전용에서는 Caffeine도 스레드를 늘릴 때 처리량이 줄었다. 쓰기는 결국 공유 자료구조를 고쳐야 하므로 경합을 완전히 없앨 수 없다는 뜻이다.
+
+**빠르다고 무조건 옳은 선택은 아니다.** 이건 로컬 캐시이므로 서버가 여러 대면 각자 다른 값을 갖는다. 서버 간에 값이 같아야 하면 Redis 같은 원격 캐시가 필요하고, 그때는 네트워크 왕복이 들어가므로 이 숫자는 의미가 없어진다.
 
 ---
 
-## 캐시 TTL을 짧게 가져갔을 때와 길게 가져갔을 때의 장/단점은 어떤게 있을까?
+## 7. 캐시가 효과가 있는지 판단하기
 
-- `TTL을 짧게 가져간다면`
-  - 캐싱된 데이터가 가장 최근에 업데이트된 데이터에 빠르게 반영될 수 있는 장점이 있다.
-  - 하지만 자주 변하지 않는 데이터라면 캐시를 교체하는 리소스가 빈번하게 발생할 수 있다는 단점이 있다.
+네 번째 질문이다.
 
-- `TTL을 길게 가져간다면`
-  - 캐시를 교체하는 주기가 길어지기 때문에 캐싱된 데이터를 변경없이 오랫동안 제공할 수 있는 장점이 있다.
-  - 하지만 캐시가 교체되어야할 시점에 적절하게 교체되지 못하여 변경 전의 데이터를 장기간 제공하는 상황이 발생할 수 있다는 단점이 있따.
+### 7.1 적중률 보기
 
----
+`recordStats()`를 켰으면 통계를 읽을 수 있다.
 
-## 해당 캐시가 가장 최신의 데이터임을 판별하는 방법은?
+```kotlin
+@Component
+class CacheMonitor(private val cacheManager: CacheManager) {
 
-캐시에 `메타데이터`를 넣으면 어떨까?
+    @Scheduled(fixedRate = 60_000)
+    fun monitorCache() {
+        cacheManager.cacheNames.forEach { name ->
+            val cache = cacheManager.getCache(name) as? CaffeineCache ?: return@forEach
+            val stats = cache.nativeCache.stats()
 
-- 캐시 데이터에 해당 캐시의 버전을 표기할 수 있는 메타데이터를 통해 클라이언트와 버전 싱크를 맞추면 해결할 수 있을 것으로 생각한다.
+            log.info(
+                "cache={} hit={} miss={} hitRate={} eviction={} avgLoadPenalty={}ms",
+                name,
+                stats.hitCount(),
+                stats.missCount(),
+                String.format("%.2f%%", stats.hitRate() * 100),
+                stats.evictionCount(),
+                String.format("%.2f", stats.averageLoadPenalty() / 1_000_000.0),
+            )
+        }
+    }
 
-- 클라이언트는 응답 받은 데이터의 캐시 정보에 대한 메타데이터를 확인하고 이전에 받은 데이터의 버전과 일치한다면 최신 버전으로 간주하고
-  - 만약 버전이 변경되었다면 새로운 캐시를 받아 반영하는 방식을 적용한다면 될 것 같다.
+    companion object {
+        private val log = LoggerFactory.getLogger(CacheMonitor::class.java)
+    }
+}
+```
 
-### 캐시 신선도를 활용하기 위한 eTag 활용하기
+각 값이 무엇을 말해주는지 짚어둔다.
 
-위에서 언급한 방법을 실제 코드로 적용한 바는 아래와 같다.
+| 지표 | 낮거나 높을 때의 해석 |
+|---|---|
+| `hitRate` | 낮으면 캐시가 일을 안 하고 있다. 키 설계나 TTL을 의심 |
+| `evictionCount` | 높으면 `maximumSize`가 작다 |
+| `missCount` 대비 `loadCount` | 적재 비용이 실제로 얼마나 발생하는지 |
+| `averageLoadPenalty` | 미스 한 번의 비용. 이게 작으면 캐시할 값어치가 없다 |
+
+**적중률과 축출 수를 함께 봐야 한다.** 적중률이 낮은데 축출도 적으면 크기 문제가 아니라 키가 잘못 설계된 것이다. 둘 다 높으면 크기를 늘리면 개선된다.
+
+**`averageLoadPenalty`가 판단의 출발점이다.** 원본 조회가 이미 1밀리초 안에 끝난다면 캐시를 붙여도 얻을 것이 별로 없다. 캐시는 공짜가 아니고 무효화라는 새 문제를 들여온다.
+
+### 7.2 부하 테스트
+
+당시에는 포스트맨으로 응답 시간을 재는 정도만 했다. **한 번씩 눌러보는 것으로는 캐시 효과를 제대로 못 잰다.**
+
+캐시는 부하가 있어야 의미가 드러난다. 동시 요청이 없으면 락 경합도, 적중률도 실제와 다르다. JMeter나 nGrinder로 부하를 주고 재는 것이 맞다.
+
+측정할 때 확인해야 할 것들이 있다. **워밍업 구간을 빼야 한다.** 캐시가 비어 있는 초기 구간은 전부 미스라서 평균을 끌어내린다.
+
+**평균 응답 시간보다 백분위를 봐야 한다.** 평균은 적중률이 높으면 좋아 보이지만, 미스가 난 소수 요청의 지연은 그대로 남는다. p99를 봐야 한다.
+
+### 7.3 TTL 정하기
+
+정답이 없다. 데이터 성격에 따라 갈린다.
+
+**짧게 잡으면** 최신 데이터가 빨리 반영된다. 대신 미스가 늘어나서 원본 부하가 커지고, 자주 안 바뀌는 데이터라면 헛수고다.
+
+**길게 잡으면** 적중률이 올라간다. 대신 원본이 바뀐 뒤에도 낡은 값을 오래 내보낸다.
+
+**출발점은 "이 데이터가 얼마나 낡아도 되는가"다.** 상품 카테고리는 하루쯤 낡아도 되지만 재고는 몇 초도 곤란하다.
+
+그다음에 적중률을 보면서 조정한다. **TTL을 늘렸는데 적중률이 안 오르면 접근 패턴 자체가 흩어져 있다는 뜻**이고, 그러면 캐시 자체를 다시 생각해야 한다.
+
+### 7.4 클라이언트 쪽 캐시 신선도
+
+서버 캐시와 별개로 **클라이언트가 받은 데이터가 최신인지** 확인하는 방법이 있다. ETag다.
+
+응답에 내용을 요약한 값을 `ETag` 헤더로 붙여 보낸다. 클라이언트는 다음 요청에 `If-None-Match`로 그 값을 실어 보내고, 서버는 내용이 안 바뀌었으면 본문 없이 `304 Not Modified`만 돌려준다.
+
+```mermaid
+sequenceDiagram
+    participant C as 클라이언트
+    participant S as 서버
+
+    C->>S: GET /lecture/all
+    S-->>C: 200 OK + ETag: "abc123" + 본문
+    Note over C: 본문과 ETag 저장
+    C->>S: GET /lecture/all<br/>If-None-Match: "abc123"
+    S->>S: 응답 생성 후 해시 비교
+    S-->>C: 304 Not Modified (본문 없음)
+    Note over C: 저장해둔 본문 사용
+```
+
+스프링에 붙이는 코드다.
 
 ```java
 @Configuration
 public class ETagConfig {
 
     @Bean
-    public ShallowEtagHeaderFilter shallowEtagHeaderFilter() {
-        FilterRegistrationBean<ShallowEtagHeaderFilter> filterFilterRegistrationBean = new FilterRegistrationBean<>(
-            new ShallowEtagHeaderFilter()
-        );
-
-        filterFilterRegistrationBean.addUrlPatterns("/lecture/all");
-        filterFilterRegistrationBean.setName("etagFilter");
-        return new ShallowEtagHeaderFilter();
+    public FilterRegistrationBean<ShallowEtagHeaderFilter> shallowEtagHeaderFilter() {
+        FilterRegistrationBean<ShallowEtagHeaderFilter> registration =
+            new FilterRegistrationBean<>(new ShallowEtagHeaderFilter());
+        registration.addUrlPatterns("/lecture/all");
+        registration.setName("etagFilter");
+        return registration;
     }
-
 }
 ```
 
-위와 같이 ETag를 추가하면, 응답에 `ETag`라는 헤더 네임을 가진 `MD5 Payload`가 생성된다.
+**처음 썼던 코드에 버그가 있었다.** `FilterRegistrationBean`을 만들어놓고 정작 반환은 `new ShallowEtagHeaderFilter()`를 하고 있었다.
 
-이 정보를 바탕으로 클라이언트가 `if-None-Match`라는 이전에 응답 받았던 요청 헤더에 `MD5 Payload`를 넣고 요청하게되면 캐시의 변동사항이 있는지 확인할 수 있게 된다.
+```java
+// 잘못된 코드
+FilterRegistrationBean<ShallowEtagHeaderFilter> registration = ...;
+registration.addUrlPatterns("/lecture/all");
+return new ShallowEtagHeaderFilter();   // 등록 정보가 버려진다
+```
 
-이전에 받은 캐시 내용을 그대로 사용해도 된다면 HTTP Status 304을 내리게 되는데 클라이언트는 이 상태 코드를 보고 데이터를 사용하면 된다.
+이러면 URL 패턴이 무시되고 **모든 요청에 필터가 걸린다.** 등록 정보를 담은 객체를 반환해야 한다.
+
+**이름에 붙은 shallow가 무엇을 뜻하는지도 중요하다.** 이 필터는 응답 본문을 다 만든 뒤에 해시를 계산해서 비교한다. **서버가 하는 일은 줄어들지 않는다.** DB도 조회하고 JSON 직렬화도 다 한다. 아끼는 것은 네트워크 전송량뿐이다.
+
+응답이 크고 자주 안 바뀌는 API에는 값어치가 있지만, 서버 부하를 줄이려는 목적이면 맞지 않는다. 그건 앞에서 본 서버 캐시가 할 일이다.
+
+---
+
+## 정리하며
+
+처음 던진 질문들에 대한 답이다.
+
+**읽기만 해도 순서를 갱신해야 하는데 어떻게 빠른가.** 읽을 때 자료구조를 바로 고치지 않고 버퍼에 기록만 남긴다. 읽기 버퍼는 스레드별로 쪼개져 있어서 경쟁이 적고, 가득 차면 기록을 버려서 읽기가 절대 막히지 않는다. 캐시는 조금 부정확해도 결과가 틀리지 않는다는 점을 이용한 맞바꿈이다.
+
+**LRU와 LFU를 왜 섞는가.** LRU는 한 번씩만 읽히는 데이터에 오염되고, LFU는 새 데이터에 기회를 안 준다. Window를 LRU로 두어 새 데이터가 일단 자리를 얻게 하고, Main으로 들어갈 때 빈도로 걸러서 오염을 막는다. 두 정책이 서로의 약점을 덮는다.
+
+**빈도 추적에 메모리를 얼마나 쓰는가.** 항목마다 카운터를 두지 않고 CountMinSketch로 4비트 카운터를 공유한다. 항목당 8바이트 정도이고, 주기적으로 전체를 절반으로 줄여서 오래된 빈도가 굳지 않게 한다.
+
+**캐시가 효과가 있는지 어떻게 아는가.** `recordStats()`를 켜고 적중률, 축출 수, 평균 적재 시간을 함께 본다. 적중률만 봐서는 크기 문제인지 키 설계 문제인지 구분이 안 된다. 그리고 평균 적재 시간이 애초에 작으면 캐시를 붙일 값어치가 없다.
+
+뜯어보고 나서 남은 감각은 **캐시가 정확할 필요가 없다는 전제가 얼마나 많은 것을 가능하게 하는가**였다. 읽기 기록을 버려도 되고, 빈도를 대충 세도 되고, 축출을 늦게 해도 된다. 이 여유가 없었으면 락을 잡아야 했을 자리마다 Caffeine은 다른 선택을 하고 있었다.

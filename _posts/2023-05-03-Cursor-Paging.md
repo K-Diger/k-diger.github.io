@@ -1,143 +1,347 @@
 ---
 
-title: 커서기반 페이징 및 MySQL 최적화 적용
+title: "오프셋 페이징이 뒤로 갈수록 느려지는 이유와 커서 기반으로 바꾼 과정"
 date: 2023-05-03
-categories: [MySQL, Cursor, Paging]
-tags: [MySQL, Cursor, Paging]
+categories: [Database, MySQL]
+tags: [MySQL, Paging, Cursor, Offset, QueryDSL, Performance]
 layout: post
 toc: true
 math: true
 mermaid: true
-published: false
 
 ---
 
-# 흔하디 흔한 오프셋 기반 페이징
+## 참고자료
 
-offset 쿼리를 사용해서 조회할 데이터를 분할해서 가져온다.
-
-## 문제점 1. 데이터 중복/유실
-
-페이징 중 데이터 추가/삭제 시 중복된 혹은 유실된 데이터 반환
-
-이 내용은 아직 시나리오가 정확히 이해가 가지 않아서 나중에 자세한 시나리오를 작성하기로한다.
-
-## 문제점 2. 성능
-
-일단 Limit, Offest 문법은 다음과 같이 동작한다.
-
-`SELECT * FROM employees LIMIT 0, 10;`
-
-테이블을 풀 스캔하여 10개의 레코드가 되는 순간 쿼리를 멈춘다.
-
-`SELECT * FROM employees GROUP BY first_name LIMIT 0, 10;`
-
-Group By가 처리된 후 Limit을 처리한다. 따라서 일단 싹 다 가져온 후 Limit을 거는거기 때문에 성능이점은 없다.
-
-`SELECT * FROM employees WHERE emp_no BETWEEN 10001 AND 10010 ORDER BY first_name LIMIT 0, 10`
-
-ORDER BY 가 처리된 후 Limit을 처리한다. 이것도 일단 싹 다 가져온 후 Limit을 거는거기 때문에 성능이점은 없다.
-
-> 참고할 점, Offset은 시작 위치를 말하는 것이다.
-
-그럼 Limit을 할 때 offset을 따로 지정하는 `Limit N, M` 과 그렇지 않은 `Limit N`의 차이점은 어떻게 될까?
-
-`SELECT * FROM employee WHERE id > 10000000 ORDER BY id LIMIT 10;`
-
-위 쿼리는 10개를 조회하는 순간 끝이 난다.
-
-`SELECT * FROM employee WHERE id > 10000000 ORDER BY id LIMIT 10000000, 10;`
-
-위 쿼리는 10000000번째의 레코드까지 찾아가서 10개를 조회한 후 끝이난다.
-
-따라서 성능차이는 레코드 수가 많고 offset을 사용하면 급격하게 낮아질 수 있다.
-
-오프셋 기반 페이징이 이래서 문제라는 것이다.
+- [MySQL 8.0 - LIMIT Query Optimization](https://dev.mysql.com/doc/refman/8.0/en/limit-optimization.html)
+- [MySQL 8.0 - INSERT ... ON DUPLICATE KEY UPDATE](https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html)
+- [MySQL 8.0 - AUTO_INCREMENT Handling in InnoDB](https://dev.mysql.com/doc/refman/8.0/en/innodb-auto-increment-handling.html)
+- [MySQL 8.0 - EXPLAIN Statement](https://dev.mysql.com/doc/refman/8.0/en/explain.html)
 
 ---
 
-# 커서 기반 페이징
+## 배경
 
-기본 개념은 클라이언트가 가져간 레코드를 기준으로 그 다음의 N개의 데이터를 꺼내 주는 것이다.
+목록 API를 `LIMIT offset, size`로 만들어 두었다. 페이지가 뒤로 갈수록 느려진다는 얘기를 듣고 확인해보니 실제로 그랬다.
 
-만약 id가 1000 ~ 0 까지 있는 레코드가 있다고 했을 때 첫 번째 페이지에서
+그런데 몇 가지가 정리가 안 됐다.
 
-클라이언트가 전달받은 마지막 id가 996이라고 한다면 아래와 같은 쿼리로 다음 페이지를 주면 된다.
+- 왜 뒤로 갈수록 느려지는가? `LIMIT 10`이면 10개만 읽는 것 아닌가?
+- 성능 말고 다른 문제도 있다고 하는데, 정확히 어떤 상황에서 데이터가 중복되거나 사라지는가?
+- 커서 기반은 무엇이 다른가? 정렬 기준이 유일하지 않으면 어떻게 되는가?
 
-```mysql
-SELECT id, title
-FROM products
-WHERE id < 996
-ORDER BY id DESC
-LIMIT 5
+하나씩 확인하면서 정리했다.
+
+---
+
+## 1. 오프셋 페이징이 뒤로 갈수록 느려지는 이유
+
+### 1.1 `LIMIT`이 실제로 하는 일
+
+첫 번째 질문이다. `LIMIT 10`이면 10개만 읽을 것 같은데 그렇지 않다.
+
+```sql
+SELECT * FROM employees ORDER BY id LIMIT 1000000, 10;
 ```
 
-이를 QueryDSL로 녹여내면 다음과 같다.
+이 쿼리는 **1,000,010건을 읽고 앞의 1,000,000건을 버린다.** 그리고 남은 10건을 돌려준다.
+
+건너뛰는 것도 읽어야 알 수 있기 때문이다. **오프셋은 "여기서부터 시작"이라고 위치를 지정하는 것이 아니라 "앞에서부터 이만큼 버려라"라는 지시다.**
+
+```mermaid
+flowchart LR
+    subgraph O["LIMIT 1000000, 10"]
+        A["1 ~ 1,000,000번째<br/>읽고 버림"] --> B["1,000,001 ~ 1,000,010<br/>반환"]
+    end
+```
+
+그래서 오프셋이 커질수록 버리는 양이 늘어나고 그만큼 느려진다. 페이지 크기는 그대로인데 시간만 늘어난다.
+
+### 1.2 정렬과 그룹화가 붙으면
+
+`ORDER BY`나 `GROUP BY`가 붙으면 상황이 더 나빠진다.
+
+```sql
+SELECT * FROM employees GROUP BY first_name LIMIT 0, 10;
+```
+
+**`LIMIT`은 마지막에 적용된다.** 그룹화를 다 끝낸 뒤에 앞의 10개를 자른다. 10개만 필요해도 전체를 그룹화해야 한다.
+
+```sql
+SELECT * FROM employees ORDER BY first_name LIMIT 0, 10;
+```
+
+정렬도 마찬가지다. 정렬을 끝내야 어느 것이 앞의 10개인지 알 수 있다.
+
+**다만 정렬 컬럼에 인덱스가 있으면 다르다.** 인덱스가 이미 정렬되어 있으므로 앞에서부터 10개만 읽고 멈출 수 있다. 그래서 정렬 기준 컬럼에 인덱스가 있는지가 큰 차이를 만든다.
+
+### 1.3 확인하는 법
+
+`EXPLAIN`으로 확인한다.
+
+```sql
+EXPLAIN SELECT * FROM posts ORDER BY id DESC LIMIT 1000000, 10;
+```
+
+`Extra` 컬럼에 `Using filesort`가 있으면 인덱스 정렬을 못 쓰고 별도로 정렬한 것이다. 오프셋이 큰 상황에서 이게 나오면 확실히 느리다.
+
+---
+
+## 2. 데이터가 중복되거나 사라지는 상황
+
+두 번째 질문이다. 처음 이 글을 쓸 때는 시나리오를 정확히 이해하지 못해서 넘겼는데, 정리하고 나니 명확했다.
+
+### 2.1 중복되는 경우
+
+최신순 목록에서 1페이지를 본 뒤, 2페이지를 요청하기 전에 **새 글이 하나 등록**되면 이렇게 된다.
+
+```mermaid
+flowchart TB
+    subgraph T1["1페이지 요청 시점"]
+        A1["1. 글 F"]
+        A2["2. 글 E"]
+        A3["3. 글 D"]
+        A4["4. 글 C"]
+        A5["5. 글 B"]
+    end
+```
+
+1페이지에서 `F, E, D`를 받았다고 하자. 여기서 새 글 `G`가 등록된다.
+
+```mermaid
+flowchart TB
+    subgraph T2["2페이지 요청 시점 (G가 추가됨)"]
+        B1["1. 글 G ← 새로 추가"]
+        B2["2. 글 F"]
+        B3["3. 글 E"]
+        B4["4. 글 D ← 여기부터 2페이지"]
+        B5["5. 글 C"]
+        B6["6. 글 B"]
+    end
+```
+
+2페이지는 `LIMIT 3, 3`이므로 4~6번째, 즉 `D, C, B`를 준다.
+
+**`D`가 1페이지에도 나왔고 2페이지에도 나온다.** 새 글이 앞에 끼면서 전체가 한 칸씩 밀렸기 때문이다.
+
+### 2.2 사라지는 경우
+
+반대로 **글이 삭제되면** 데이터가 건너뛰어진다.
+
+1페이지에서 `F, E, D`를 받은 뒤 `E`가 삭제되면 목록은 `F, D, C, B, A`가 된다. 2페이지는 4~6번째인 `B, A`를 준다.
+
+**`C`가 어느 페이지에도 안 나온다.** 앞의 글이 사라지면서 전체가 한 칸씩 당겨졌기 때문이다.
+
+### 2.3 왜 이런 일이 생기는가
+
+**오프셋이 "몇 번째"라는 상대적 위치를 가리키기 때문이다.** 그 위치가 무엇을 가리키는지는 그 시점의 전체 목록에 달려 있고, 목록이 바뀌면 같은 숫자가 다른 것을 가리킨다.
+
+무한 스크롤처럼 사용자가 계속 아래로 내려가는 화면에서 이 문제가 두드러진다. 같은 글이 두 번 보이거나 어떤 글이 아예 안 보인다.
+
+---
+
+## 3. 커서 기반 페이징
+
+### 3.1 기본 발상
+
+**"몇 번째"가 아니라 "무엇 다음"으로 요청한다.**
+
+클라이언트가 마지막으로 받은 항목의 식별자를 다음 요청에 실어 보내고, 서버는 그것보다 뒤에 있는 것을 준다.
+
+```sql
+-- 첫 페이지
+SELECT id, title FROM products ORDER BY id DESC LIMIT 5;
+-- 결과의 마지막 id가 996이었다고 하자
+
+-- 다음 페이지
+SELECT id, title FROM products WHERE id < 996 ORDER BY id DESC LIMIT 5;
+```
+
+두 번째 쿼리는 **인덱스에서 996을 찾아간 뒤 거기서부터 5개를 읽고 멈춘다.** 앞의 것들을 읽고 버리지 않는다.
+
+```mermaid
+flowchart LR
+    subgraph C["커서 기반"]
+        A["인덱스에서 996 위치를<br/>바로 찾음"] --> B["거기서부터 5개 읽고 멈춤"]
+    end
+```
+
+**오프셋이 아무리 뒤로 가도 읽는 양이 일정하다.** 이게 성능 차이의 이유다.
+
+그리고 2장의 문제도 사라진다. `id < 996`은 새 글이 추가되든 삭제되든 항상 같은 것을 가리킨다. **절대적인 기준이기 때문이다.**
+
+### 3.2 정렬 기준이 유일하지 않으면
+
+세 번째 질문이다. 여기가 커서 페이징의 진짜 어려운 부분이다.
+
+생성일시로 정렬한다고 하자.
+
+```sql
+SELECT * FROM posts WHERE created_at < '2023-05-03 10:00:00' ORDER BY created_at DESC LIMIT 5;
+```
+
+**같은 시각에 만들어진 글이 여러 개면 문제가 생긴다.** 경계에 걸친 글들이 누락되거나 중복된다.
+
+`created_at`이 같은 글이 3개인데 그중 1개까지만 페이지에 들어갔다면, 다음 요청에서 `created_at < 그 시각`으로 조회하므로 **나머지 2개가 건너뛰어진다.**
+
+해결은 **유일한 값을 보조 기준으로 함께 쓰는 것**이다.
+
+```sql
+SELECT * FROM posts
+WHERE (created_at < '2023-05-03 10:00:00')
+   OR (created_at = '2023-05-03 10:00:00' AND id < 1234)
+ORDER BY created_at DESC, id DESC
+LIMIT 5;
+```
+
+읽는 법은 이렇다. **시각이 더 이른 것은 전부 포함하고, 시각이 같으면 id가 작은 것만 포함한다.**
+
+MySQL은 튜플 비교를 지원하므로 더 짧게 쓸 수도 있다.
+
+```sql
+SELECT * FROM posts
+WHERE (created_at, id) < ('2023-05-03 10:00:00', 1234)
+ORDER BY created_at DESC, id DESC
+LIMIT 5;
+```
+
+**그리고 인덱스도 그 순서로 만들어야 한다.**
+
+```sql
+ALTER TABLE posts ADD INDEX idx_posts_created_id (created_at, id);
+```
+
+인덱스 순서가 정렬 순서와 맞지 않으면 별도 정렬이 발생해서 커서 페이징의 이점이 사라진다.
+
+### 3.3 QueryDSL로
 
 ```java
 @Override
-public Page<Post> findByCustom_cursorPaging(Pageable pageable, String sorting, Long cursorIdx) {
+public List<Post> findByCursor(Long cursorId, LocalDateTime cursorCreatedAt, int size) {
     QPost post = QPost.post;
 
-    List<Post> content = queryFactory
-        .select(post)
-        .from(post)
-        .join(post.user)
-        .fetchJoin()
-        .orderBy(PostSort(pageable))
-        .where(cursorId(sorting,cursorIdx))
-        .limit(pageable.getPageSize())
-        .fetch();
+    return queryFactory
+            .selectFrom(post)
+            .join(post.user).fetchJoin()
+            .where(cursorCondition(post, cursorId, cursorCreatedAt))
+            .orderBy(post.createdAt.desc(), post.id.desc())
+            .limit(size)
+            .fetch();
+}
 
-    return new PageImpl<>(content,pageable,total);
+private BooleanExpression cursorCondition(QPost post, Long cursorId, LocalDateTime cursorCreatedAt) {
+    if (cursorId == null || cursorCreatedAt == null) {
+        return null;   // 첫 페이지는 조건 없음
+    }
+    return post.createdAt.lt(cursorCreatedAt)
+            .or(post.createdAt.eq(cursorCreatedAt).and(post.id.lt(cursorId)));
 }
 ```
 
-커서가 거창한 건줄 알았는데 별거 없다. 그냥 정렬 조건을 커서라고 봐도 된다.
+**`null`을 반환하면 QueryDSL이 그 조건을 무시한다.** 첫 페이지를 별도 메서드로 만들지 않아도 되는 이유다.
+
+반환 타입도 짚어둔다. 커서 페이징에서는 `Page`를 쓰기 어렵다.
+
+`Page`는 전체 개수와 전체 페이지 수를 담는데, **전체 개수를 세려면 `COUNT` 쿼리가 따로 나가고 그 쿼리는 결국 전체를 훑는다.** 오프셋을 없앤 이득이 사라진다.
+
+그래서 커서 페이징은 보통 이런 응답을 쓴다.
+
+```java
+public record CursorPage<T>(
+        List<T> content,
+        Long nextCursorId,
+        LocalDateTime nextCursorCreatedAt,
+        boolean hasNext
+) { }
+```
+
+`hasNext`는 **요청한 크기보다 하나 더 조회해서** 판단한다.
+
+```java
+List<Post> rows = repository.findByCursor(cursorId, cursorCreatedAt, size + 1);
+boolean hasNext = rows.size() > size;
+List<Post> content = hasNext ? rows.subList(0, size) : rows;
+```
 
 ---
 
-# 참고하면 좋을 내용
+## 4. 무엇을 쓸 것인가
 
-[참고 블로그](https://blog.lael.be/post/370)
+둘 다 쓸 자리가 있다.
 
-## ON DUPLICATE KEY UPDATE
+| | 오프셋 기반 | 커서 기반 |
+|---|---|---|
+| 뒤 페이지 성능 | 나빠진다 | 일정하다 |
+| 중복과 누락 | 발생한다 | 발생하지 않는다 |
+| 특정 페이지로 점프 | 가능 | **불가** |
+| 전체 페이지 수 표시 | 가능 | 어렵다 |
+| 정렬 기준 변경 | 자유롭다 | 인덱스 설계가 따라와야 한다 |
+| 구현 난이도 | 낮다 | 중간 |
 
-[참고 블로그](https://bamdule.tistory.com/112)
+**커서 기반이 못 하는 것이 명확하다.** "5페이지로 이동"이 안 된다. 앞의 커서를 모르기 때문이다.
 
-데이터 삽입 시 중복키 제약 조건에 위배되면 ON DUPLICATE KEY UPDATE 구문에 지정한 내용이 실행된다. (즉, 중복된 키 값을 바탕으로 뭔가 삽입을 시도하면 삽입이 아닌 업데이트를 해주는 것)
+그래서 기준을 이렇게 잡았다.
 
-근데 사실 JPA를 사용할 땐 필요없다. 영속성 컨텍스트와 더티체킹이 있기 때문
+**무한 스크롤이나 더보기 버튼이면 커서 기반.** 사용자가 순차적으로만 내려가므로 페이지 점프가 필요 없고, 중복과 누락이 바로 눈에 띈다.
 
-## EXPLAIN SELECT
+**페이지 번호가 보이는 목록이면 오프셋 기반.** 관리자 화면처럼 특정 페이지로 바로 가는 요구가 있고, 데이터 양이 크지 않으면 오프셋의 단점이 문제 되지 않는다.
 
-[참고 블로그](http://chongmoa.com/sql/8840)
+**데이터가 많은데 페이지 번호도 필요하면** 뒤 페이지 접근을 제한하는 방법도 있다. 검색 결과를 100페이지까지만 보여주는 서비스들이 이 방식이다.
 
-EXPLAIN SELECT는 쿼리 실행 플랜 (query execution plan) 정보를 옵티마이저 (optimizer)에서 가져 와서 출력 한다.
+---
 
-즉, MySQL은 테이블들이 어떤 순서로 조인 (join) 하는지에 대한 정보를 포함해서, SELECT를 처리하는 방법에 대해서 알려 준다.
+## 5. 함께 정리한 것들
 
-## auto_increment
+이 문제를 보면서 함께 확인한 것들이다.
 
-```text
-MySQL에서 AUTO_INCREMENT는 테이블의 기본키(primary key) 필드에 대해 자동으로 고유한 값을 생성하는 기능입니다. 이 기능은 매우 일반적으로 사용되는 기능 중 하나이며, 많은 MySQL 데이터베이스 시스템에서 사용되고 있습니다.
+### 5.1 `ON DUPLICATE KEY UPDATE`
 
-AUTO_INCREMENT가 최적화가 잘되어 있는 이유는 다음과 같습니다.
+INSERT 하려는 값이 유니크 제약에 걸리면 대신 UPDATE를 수행한다.
 
-    내부적으로 인메모리에 캐시되어 속도가 빠르다
-    MySQL에서는 AUTO_INCREMENT 값을 생성할 때 내부적으로 인메모리 캐시를 사용하여 성능을 향상시킵니다. 이를 통해 매번 디스크에 접근하지 않고도 AUTO_INCREMENT 값을 생성할 수 있으므로, 속도가 빨라집니다.
-
-    Lock을 최소화하여 성능을 향상시킨다
-    AUTO_INCREMENT 값은 테이블에 레코드를 삽입할 때마다 새로 생성됩니다. 이때 INSERT 작업을 수행하는 트랜잭션이 AUTO_INCREMENT 값 생성에 대한 락을 획득하고, 새로운 값을 생성합니다. 이때 락을 최소화하여 성능을 향상시키기 위해, MySQL에서는 내부적으로 AUTO_INCREMENT 값을 생성하는 작업에 대해 최소한의 락만 사용합니다.
-
-    Master-Slave Replication 환경에서의 문제점을 최소화한다
-    MySQL에서는 Master-Slave Replication 환경에서 AUTO_INCREMENT 값의 충돌 문제가 발생할 수 있습니다. 이를 방지하기 위해, MySQL에서는 AUTO_INCREMENT 값의 생성 방식을 Replication 환경에 맞게 최적화하고 있습니다. 이를 통해 Replication 환경에서 AUTO_INCREMENT 값이 일관되게 생성되도록 보장합니다.
-
-따라서, MySQL에서 AUTO_INCREMENT는 내부적으로 캐시를 사용하고, 락을 최소화하여 성능을 향상시키며, Replication 환경에서의 문제를 최소화하는 등 최적화가 잘되어 있습니다.
+```sql
+INSERT INTO stats (post_id, view_count) VALUES (1, 1)
+ON DUPLICATE KEY UPDATE view_count = view_count + 1;
 ```
 
-`추가적으로` auto increment는 트랜잭션의 완료와 상관없이 DBMS 자체적으로 관리하는 내용이다.
+조회수처럼 "있으면 증가, 없으면 생성"인 경우에 쓴다. 조회 후 분기하는 것보다 한 번에 처리되고, **읽고 판단하고 쓰는 사이의 경쟁 상태도 없다.**
 
-MyISAM 저장 엔진에서는 AUTO_INCREMENT 값을 별도의 파일에서 관리하며, InnoDB 저장 엔진에서는 AUTO_INCREMENT 값을 해당 테이블의 데이터 파일 내에 저장한다.
+JPA에서는 영속성 컨텍스트와 변경 감지가 있어서 이 구문을 직접 쓸 일이 적다. 다만 **JPA도 조회를 먼저 하므로 동시 요청에서는 둘 다 "없다"고 판단할 수 있다.** 이런 경우에는 네이티브 쿼리로 이 구문을 쓰는 편이 안전하다.
 
-따라서 트랜잭션이 롤백되었다 하더라도 이미 생성된 id 값은 롤백되지 않는다.
+### 5.2 `AUTO_INCREMENT`
+
+정리하면서 헷갈렸던 것 하나를 확인했다. **롤백해도 값이 되돌아가지 않는다.**
+
+트랜잭션이 롤백돼도 이미 발급된 번호는 재사용되지 않는다. 그래서 ID에 구멍이 생긴다.
+
+이유는 **트랜잭션과 무관하게 관리되기 때문**이다. 되돌린다면 그 번호를 기다리는 다른 트랜잭션을 막아야 하고, 그러면 동시 삽입이 직렬화된다.
+
+저장 엔진마다 관리 방식이 다르다는 점도 확인했다. MyISAM은 별도 파일에, InnoDB는 테이블 메타데이터에 보관한다. MySQL 8.0부터 InnoDB의 다음 값이 재시작 후에도 유지되는데, 그 이전 버전에서는 재시작 시 현재 최댓값 + 1로 다시 계산됐다.
+
+**그래서 ID가 연속적일 것이라고 가정하면 안 된다.** 커서 페이징에서 `id BETWEEN`으로 범위를 잡으면 구멍만큼 적게 나온다. 커서는 항상 부등호 비교로 쓴다.
+
+### 5.3 `EXPLAIN`
+
+실행 계획을 보는 명령이다. 옵티마이저가 어떤 순서로 테이블에 접근하고 어떤 인덱스를 쓸지 알려준다.
+
+```sql
+EXPLAIN SELECT ... ;
+EXPLAIN ANALYZE SELECT ... ;   -- 실제로 실행해서 걸린 시간까지
+```
+
+읽는 법은 [인덱스 글](/posts/DB-Index/)에 정리해두었다.
+
+---
+
+## 정리하며
+
+처음 던진 질문들에 대한 답이다.
+
+**왜 뒤로 갈수록 느려지는가.** 오프셋은 "여기서 시작"이 아니라 "앞에서부터 이만큼 버려라"이기 때문이다. 버리는 것도 읽어야 하므로 오프셋만큼 읽는 양이 늘어난다.
+
+**어떤 상황에서 중복되거나 사라지는가.** 페이지를 넘기는 사이에 앞쪽 데이터가 추가되면 전체가 밀려서 같은 항목이 두 번 나오고, 삭제되면 당겨져서 어떤 항목이 건너뛰어진다. 오프셋이 상대적 위치이기 때문이다.
+
+**커서 기반은 무엇이 다른가.** "몇 번째"가 아니라 "무엇 다음"으로 요청한다. 절대적인 기준이라 목록이 바뀌어도 같은 것을 가리키고, 인덱스에서 시작점을 바로 찾으므로 읽는 양이 일정하다.
+
+**정렬 기준이 유일하지 않으면.** 유일한 값을 보조 기준으로 함께 써야 한다. 그러지 않으면 경계에 걸친 항목들이 누락된다. 그리고 인덱스도 그 정렬 순서와 맞춰야 이점이 유지된다.
+
+처음에 커서 페이징을 "거창한 것"으로 생각했는데 정리하고 나니 발상 자체는 단순했다. **어려운 부분은 커서 자체가 아니라 정렬 기준을 유일하게 만드는 것과 그에 맞는 인덱스를 설계하는 쪽**이었다.
