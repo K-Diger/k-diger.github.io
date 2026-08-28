@@ -16,6 +16,7 @@
   "MD034": false,
   "MD040": true,
   "MD041": false,
+  "MD060": false,
   "commands-show-output": false,
   "blanks-around-fences": false,
   "line-length": false

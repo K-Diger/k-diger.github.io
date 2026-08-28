@@ -222,6 +222,7 @@ kubectl delete app <name> -n argocd --cascade=orphan
 
 Helm `range` 말고 ArgoCD 자체 기능으로도 같은 일을 할 수 있다. `ApplicationSet`이 그것이다.
 
+{% raw %}
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -244,19 +245,20 @@ spec:
             namespace: reloader
   template:
     metadata:
-      name: '{{`{{name}}`}}-dev'
+      name: '{{name}}-dev'
     spec:
       project: cluster-addons
       source:
-        repoURL: '{{`{{repo}}`}}'
-        chart: '{{`{{chart}}`}}'
-        targetRevision: '{{`{{version}}`}}'
+        repoURL: '{{repo}}'
+        chart: '{{chart}}'
+        targetRevision: '{{version}}'
         helm:
           valueFiles:
-            - $values/infra/{{`{{name}}`}}/values-dev.yaml
+            - $values/infra/{{name}}/values-dev.yaml
       destination:
-        namespace: '{{`{{namespace}}`}}'
+        namespace: '{{namespace}}'
 ```
+{% endraw %}
 
 **Helm range와 ApplicationSet 중 무엇을 쓸 것인가.** 기준을 이렇게 잡았다.
 
@@ -422,12 +424,14 @@ spec:
 
 그리고 HPA를 쓰는 경우는 **차트가 애초에 `replicas` 필드를 렌더링하지 않도록** 만들면 된다.
 
+{% raw %}
 ```yaml
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
 ```
+{% endraw %}
 
 HPA를 켜면 `replicas` 필드 자체가 매니페스트에 없으므로 비교할 것이 없다. `ignoreDifferences`가 필요 없어진다.
 

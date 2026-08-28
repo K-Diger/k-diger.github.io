@@ -420,6 +420,7 @@ yq eval '.groups[].rules[] | select(.alert != null) |
 
 그래서 모든 알림에 **무슨 일이 벌어지는지와 무엇을 확인해야 하는지**를 함께 넣었다.
 
+{% raw %}
 ```yaml
 - alert: LogIngestionRateLimit
   expr: rate(discarded_samples_total{reason="rate_limited"}[5m]) > 0
@@ -432,6 +433,7 @@ yq eval '.groups[].rules[] | select(.alert != null) |
     description: "폐기율 초당 {{ $value | printf \"%.2f\" }}건. 발화 기준 0/s 초과, 5분 지속. 수집 한도 25MB/s."
     consequence: "로그가 폐기된다. 장애 분석 시 빈 구간이 생긴다. 한도 상향 또는 카디널리티 폭증 원인 차단이 필요하다."
 ```
+{% endraw %}
 
 `consequence`라는 필드를 따로 만든 것이 실제로 효과가 있었다. **"이걸 무시하면 무슨 일이 생기는가"** 를 적으면 우선순위 판단이 빨라진다. 그리고 이 필드를 적으려다가 답이 안 나오는 알림이 나온다. 그런 알림은 지워도 되는 알림이다.
 

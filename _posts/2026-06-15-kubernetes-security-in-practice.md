@@ -289,6 +289,7 @@ spec:
 
 그리고 만료된 예외를 자동으로 지우는 `ClusterCleanupPolicy`를 붙인다.
 
+{% raw %}
 ```yaml
 apiVersion: kyverno.io/v2
 kind: ClusterCleanupPolicy
@@ -306,6 +307,7 @@ spec:
         value: "{{ target.metadata.annotations.\"policies.kyverno.io/expires-at\" }}"
   schedule: "0 4 * * *"
 ```
+{% endraw %}
 
 이렇게 하면 예외가 쌓여서 정책이 사실상 무력해지는 일이 구조적으로 막힌다. 계속 필요한 예외라면 그것은 예외가 아니라 정책 범위를 다시 정할 문제라는 신호로 읽는다.
 
