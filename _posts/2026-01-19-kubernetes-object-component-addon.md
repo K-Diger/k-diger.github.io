@@ -105,7 +105,7 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    subgraph Pod["Pod (IP 하나, 네트워크 네임스페이스 하나)"]
+    subgraph Pod["Pod"]
         C1["컨테이너 A<br/>애플리케이션"]
         C2["컨테이너 B<br/>로그 수집 사이드카"]
         V["공유 볼륨"]
