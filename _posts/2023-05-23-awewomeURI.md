@@ -60,7 +60,7 @@ Roy Fielding이 자기 박사논문에서 웹이 어떤 제약을 지켜서 그�
 
 ---
 
-## 2. Uniform Interface, 여기가 문제다
+## 2. Uniform Interface란?
 
 이 제약조건 하나가 다시 네 개로 나뉜다.
 

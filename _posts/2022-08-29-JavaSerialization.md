@@ -40,7 +40,7 @@ mermaid: true
 
 ---
 
-## 1. static을 잘못 읽었다
+## 1. static이란?
 
 먼저 오해부터 푼다.
 
