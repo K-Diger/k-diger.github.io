@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>직선 하나의 한계</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#F3F4F8;
+    --surface:#FFFFFF;
+    --surface-2:#F8F9FC;
+    --ink:#14161F;
+    --ink-soft:#5A6072;
+    --ink-faint:#8B90A0;
+    --line:#DDE1EA;
+    --accent:#3860FF;
+    --accent-soft:rgba(56,96,255,0.12);
+    --target:#1FA971;
+    --target-soft:rgba(31,169,113,0.14);
+    --error:#E0512B;
+    --error-soft:rgba(224,81,43,0.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0C0E14; --surface:#161923; --surface-2:#1D2130;
+      --ink:#EEF0F6; --ink-soft:#9AA1B5; --ink-faint:#6A7086; --line:#262B3A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0C0E14; --surface:#161923; --surface-2:#1D2130;
+    --ink:#EEF0F6; --ink-soft:#9AA1B5; --ink-faint:#6A7086; --line:#262B3A;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans","Malgun Gothic",sans-serif; }
+  img{ max-width:100%; }
+  [hidden]{ display:none!important; }
+  .wrap{ max-width:960px; margin:0 auto; padding:36px 22px 60px; }
+
+  h1{ font-size:25px; font-weight:700; letter-spacing:-0.01em; margin:0 0 8px; text-wrap:balance; }
+  .lede{ font-size:14.5px; line-height:1.7; color:var(--ink-soft); max-width:68ch; margin:0 0 26px; }
+
+  .panel{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:22px 24px 24px; margin-bottom:20px; }
+  .panel-eyebrow{ font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--accent); text-transform:uppercase; margin-bottom:6px; }
+  .panel-title{ font-size:18px; font-weight:700; margin-bottom:10px; text-wrap:balance; }
+  .panel-note{ font-size:13.5px; line-height:1.7; color:var(--ink-soft); margin:0 0 16px; max-width:70ch; }
+  .panel-punch{ font-size:14.5px; font-weight:600; color:var(--ink); margin:14px 0 0; padding:12px 14px; background:var(--surface-2); border-left:3px solid var(--accent); border-radius:6px; line-height:1.6; }
+  .panel-punch.bad{ border-left-color:var(--error); }
+  .panel-punch.good{ border-left-color:var(--target); }
+
+  .btnrow{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  button{
+    font-family:"IBM Plex Sans",sans-serif; font-size:13px; font-weight:600;
+    border-radius:8px; padding:8px 13px; cursor:pointer;
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    transition:transform .08s ease, background .15s ease;
+  }
+  button:hover{ background:var(--accent-soft); border-color:var(--accent); }
+  button:active{ transform:scale(0.97); }
+  button.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.primary:hover{ opacity:.92; background:var(--accent); }
+  button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  canvas{ display:block; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); }
+
+  /* section A: two-up dot plots */
+  .duo{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:600px){ .duo{ grid-template-columns:1fr; } }
+  .duo-card{ text-align:center; }
+  .duo-card canvas{ width:100%; max-width:260px; height:auto; margin:0 auto; }
+  .duo-label{ font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-weight:600; margin-top:10px; }
+  .duo-label.good{ color:var(--target); }
+  .duo-label.bad{ color:var(--error); }
+  .duo-sub{ font-size:11.5px; color:var(--ink-faint); margin-top:3px; min-height:32px; }
+
+  /* gate lab (reused) */
+  .gate-body{ display:grid; grid-template-columns:220px 1fr; gap:22px; align-items:start; }
+  @media (max-width:640px){ .gate-body{ grid-template-columns:1fr; } }
+  .gate-plot-wrap canvas{ width:200px; height:200px; }
+  .gate-formula{ font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-soft); margin-top:10px; line-height:1.6; }
+  .toggle-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .toggle-label{ font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .toggle-btn{
+    font-family:"IBM Plex Mono",monospace; font-size:15px; font-weight:700;
+    width:40px; height:40px; border-radius:8px; padding:0;
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer;
+  }
+  .toggle-btn.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .gate-calc{ font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:2; color:var(--ink-soft); margin-bottom:10px; }
+  .gate-calc b{ color:var(--ink); font-weight:600; }
+  .gate-result{ display:inline-flex; align-items:center; gap:8px; font-size:14px; font-weight:700; padding:8px 14px; border-radius:9px; background:var(--surface-2); border:1px solid var(--line); }
+  .gate-result.on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+  .gate-result .match{ font-size:12px; font-weight:600; color:var(--target); font-family:"IBM Plex Mono",monospace; }
+
+  /* section C: intersection triptych */
+  .triptych{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+  .trip-card{ text-align:center; }
+  .trip-card canvas{ width:150px; height:150px; }
+  .trip-label{ font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; margin-top:8px; }
+  .trip-op{ font-size:22px; color:var(--ink-faint); font-family:"IBM Plex Mono",monospace; padding-top:60px; }
+
+  /* section D: activation terrain */
+  .fn-tabs{ display:flex; gap:8px; margin-bottom:14px; }
+  #fnCanvas{ width:100%; max-width:520px; height:auto; }
+  .fn-note{ font-size:13px; color:var(--ink-soft); line-height:1.65; margin-top:12px; max-width:64ch; }
+
+  .foot{ font-size:12px; color:var(--ink-faint); line-height:1.7; margin-top:6px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>직선 하나의 한계</h1>
+  <p class="lede">퍼셉트론이 왜 XOR을 못 풀고, 왜 층을 쌓으면 풀리고, 왜 계단 함수 대신 다른 활성화 함수를 쓰는지, 설명이 아니라 그림이 직접 보여주게 만들었다.</p>
+
+  <section class="panel">
+    <div class="panel-eyebrow">1</div>
+    <div class="panel-title">점을 색으로 나누는 문제</div>
+    <p class="panel-note">게이트 얘기를 잠깐 치우고, 검은 점과 흰 점을 자 하나로 갈라본다. 어떤 배치는 되고, 어떤 배치는 자를 아무리 돌려도 안 된다.</p>
+    <div class="duo">
+      <div class="duo-card">
+        <canvas id="easyCanvas" width="240" height="240"></canvas>
+        <div class="duo-label good">선 하나로 완벽히 갈린다</div>
+        <div class="duo-sub">검은 점이 한쪽, 흰 점이 반대쪽에 뭉쳐 있다.</div>
+      </div>
+      <div class="duo-card">
+        <canvas id="hardCanvas" width="240" height="240"></canvas>
+        <div class="duo-label bad" id="hardLabel">어떤 선을 그어도 안 된다</div>
+        <div class="duo-sub" id="hardSub">검은 점 둘이 대각선으로, 흰 점 둘이 반대 대각선으로 마주 본다.</div>
+      </div>
+    </div>
+    <p class="panel-punch bad">퍼셉트론이 가진 도구는 딱 하나, "직선 하나 긋기"뿐이다. 오른쪽 같은 배치는 그 도구 하나로는 원천적으로 못 푼다. 스팸 메일 거르기, 사진 속 물체 찾기 같은 진짜 문제들이 대개 오른쪽 같은 모양이라서 이게 문제가 된다.</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-eyebrow">2</div>
+    <div class="panel-title">퍼셉트론 = 저 직선의 각도와 위치를 정하는 것</div>
+    <p class="panel-note">가중치 w1, w2와 임계값 θ 세 숫자가 바로 저 직선의 각도와 위치다. 숫자만 바꿔서 AND/OR/NAND를 만들어보고, XOR을 고르면 왜 안 되는지 방금 본 오른쪽 배치와 똑같은 모양으로 확인한다.</p>
+
+    <div class="btnrow" id="gatePresetRow">
+      <button data-gate="AND" class="gate-btn primary">AND</button>
+      <button data-gate="OR" class="gate-btn">OR</button>
+      <button data-gate="NAND" class="gate-btn">NAND</button>
+      <button data-gate="XOR" class="gate-btn">XOR</button>
+    </div>
+
+    <div class="gate-body">
+      <div class="gate-plot-wrap">
+        <canvas id="gateCanvas" width="200" height="200"></canvas>
+        <div class="gate-formula" id="gateFormula"></div>
+      </div>
+      <div class="gate-inputs">
+        <div class="toggle-row">
+          <span class="toggle-label">x1</span>
+          <button class="toggle-btn" id="x1Btn">0</button>
+          <span class="toggle-label">x2</span>
+          <button class="toggle-btn" id="x2Btn">0</button>
+        </div>
+        <div class="gate-calc" id="gateCalc"></div>
+        <div class="gate-result" id="gateResult"></div>
+      </div>
+    </div>
+    <p class="panel-punch" id="gatePunch">AND는 (1,1) 구석만 잘라내는 직선 하나로 된다.</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-eyebrow">3</div>
+    <div class="panel-title">그래서 왜 층을 쌓으면 풀리는가</div>
+    <p class="panel-note">직선 하나로 안 되면, 직선 두 개를 따로 긋고 그 결과를 겹친다. NAND가 그은 영역과 OR가 그은 영역을 "둘 다 만족하는 곳"만 남기면(AND로 합치면), 그 결과가 정확히 XOR이 1이어야 하는 두 점만 남긴다.</p>
+    <div class="triptych">
+      <div class="trip-card">
+        <canvas id="nandMini" width="150" height="150"></canvas>
+        <div class="trip-label">NAND 영역</div>
+      </div>
+      <div class="trip-op">∩</div>
+      <div class="trip-card">
+        <canvas id="orMini" width="150" height="150"></canvas>
+        <div class="trip-label">OR 영역</div>
+      </div>
+      <div class="trip-op">=</div>
+      <div class="trip-card">
+        <canvas id="xorMini" width="150" height="150"></canvas>
+        <div class="trip-label" style="color:var(--target)">겹친 영역 = XOR</div>
+      </div>
+    </div>
+    <p class="panel-punch good">직선 하나로는 못 그리던 "대각선 두 점만 남기기"가, 두 직선의 겹친 부분으로는 그려진다. 뉴런을 층으로 쌓는다는 게 이 "직선 여러 개를 겹쳐서 복잡한 모양을 만드는 것"이다. 층이 많아질수록 겹칠 수 있는 직선이 많아지고, 그만큼 복잡한 모양을 표현할 수 있다.</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-eyebrow">4</div>
+    <div class="panel-title">활성화 함수, 언덕에서 기울기를 느낄 수 있어야 한다</div>
+    <p class="panel-note">학습은 "가중치를 살짝 바꾸면 결과가 나아지나"를 계속 확인하며 조금씩 고치는 과정이다. 그러려면 살짝 바꿨을 때 결과가 얼마나 바뀌는지 느껴져야 한다. 곡선 위 다섯 지점에서 그 자리의 기울기(느껴지는 신호)를 표시했다.</p>
+    <div class="fn-tabs">
+      <button data-fn="step" class="fn-btn primary">계단</button>
+      <button data-fn="sigmoid" class="fn-btn">시그모이드</button>
+      <button data-fn="relu" class="fn-btn">ReLU</button>
+    </div>
+    <canvas id="fnCanvas" width="520" height="200"></canvas>
+    <p class="fn-note" id="fnNote"></p>
+    <p class="panel-punch" id="fnPunch"></p>
+  </section>
+
+  <p class="foot">좌표와 점 위치는 이해를 돕기 위한 예시다. 전체 흐름은 "가중치에서 LLM까지, 신경망이 텍스트를 배우는 흐름" 글의 1~5절을 참고.</p>
+</div>
+
+<script>
+(function(){
+  function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  var COL = {
+    ink: cssVar('--ink') || '#14161F',
+    inkSoft: cssVar('--ink-soft') || '#5A6072',
+    inkFaint: cssVar('--ink-faint') || '#8B90A0',
+    line: cssVar('--line') || '#DDE1EA',
+    surface: cssVar('--surface') || '#FFFFFF',
+    accent: cssVar('--accent') || '#3860FF',
+    target: cssVar('--target') || '#1FA971',
+    error: cssVar('--error') || '#E0512B'
+  };
+  function hexToRgb(hex){
+    hex = hex.replace('#','');
+    if (hex.length === 3) hex = hex.split('').map(function(c){return c+c;}).join('');
+    var n = parseInt(hex, 16);
+    return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+  }
+  var accentRGB = hexToRgb(COL.accent), errorRGB = hexToRgb(COL.error), targetRGB = hexToRgb(COL.target);
+  function rgba(rgb, a){ return 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + a + ')'; }
+
+  /* ============ Section 1: easy vs hard dot separation ============ */
+  var easyPoints = [
+    {x:60,y:170,c:1},{x:80,y:190,c:1},{x:50,y:150,c:1},
+    {x:180,y:60,c:0},{x:160,y:80,c:0},{x:190,y:50,c:0}
+  ];
+  var hardPoints = [
+    {x:60,y:60,c:1},{x:78,y:75,c:1},{x:48,y:80,c:1},
+    {x:180,y:180,c:1},{x:162,y:165,c:1},{x:192,y:160,c:1},
+    {x:180,y:60,c:0},{x:162,y:78,c:0},{x:192,y:50,c:0},
+    {x:60,y:180,c:0},{x:78,y:165,c:0},{x:48,y:160,c:0}
+  ];
+
+  function drawDots(ctx, pts, extra){
+    pts.forEach(function(p){
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 7, 0, Math.PI*2);
+      ctx.fillStyle = p.c === 1 ? COL.ink : COL.surface;
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = p.c === 1 ? COL.ink : COL.inkFaint;
+      ctx.stroke();
+      if (extra) extra(p);
+    });
+  }
+
+  var easyCanvas = document.getElementById('easyCanvas');
+  var ectx = easyCanvas.getContext('2d');
+  ectx.clearRect(0,0,240,240);
+  ectx.strokeStyle = COL.target;
+  ectx.lineWidth = 2.5;
+  ectx.beginPath(); ectx.moveTo(15,225); ectx.lineTo(225,15); ectx.stroke();
+  drawDots(ectx, easyPoints);
+
+  var hardCanvas = document.getElementById('hardCanvas');
+  var hctx = hardCanvas.getContext('2d');
+  var candidateLines = [
+    { a:{x:20,y:120}, b:{x:220,y:120} },
+    { a:{x:120,y:20}, b:{x:120,y:220} },
+    { a:{x:20,y:20},  b:{x:220,y:220} },
+    { a:{x:20,y:220}, b:{x:220,y:20} }
+  ];
+  function side(line, p){
+    return (line.b.x-line.a.x)*(p.y-line.a.y) - (line.b.y-line.a.y)*(p.x-line.a.x);
+  }
+  function drawHard(lineIdx){
+    hctx.clearRect(0,0,240,240);
+    var wrong = [];
+    if (lineIdx != null){
+      var ln = candidateLines[lineIdx];
+      var c1side = hardPoints.filter(function(p){return p.c===1;}).map(function(p){return side(ln,p) >= 0;});
+      var votesPos = c1side.filter(Boolean).length;
+      var blackIsPos = votesPos >= c1side.length/2;
+      hardPoints.forEach(function(p){
+        var isPos = side(ln,p) >= 0;
+        var predictedBlack = isPos === blackIsPos;
+        var actualBlack = p.c === 1;
+        if (predictedBlack !== actualBlack) wrong.push(p);
+      });
+      hctx.strokeStyle = COL.error;
+      hctx.lineWidth = 2.5;
+      hctx.beginPath(); hctx.moveTo(ln.a.x, ln.a.y); hctx.lineTo(ln.b.x, ln.b.y); hctx.stroke();
+    }
+    drawDots(hctx, hardPoints, function(p){
+      if (wrong.indexOf(p) !== -1){
+        hctx.beginPath();
+        hctx.arc(p.x, p.y, 12, 0, Math.PI*2);
+        hctx.strokeStyle = COL.error;
+        hctx.lineWidth = 2;
+        hctx.stroke();
+      }
+    });
+    return wrong.length;
+  }
+  var hardIdx = 0;
+  drawHard(null);
+  setInterval(function(){
+    var wrongCount = drawHard(hardIdx);
+    var sub = document.getElementById('hardSub');
+    var names = ['가로선','세로선','↘ 대각선','↙ 대각선'];
+    sub.textContent = names[hardIdx] + ' 시도 → 틀린 점 ' + wrongCount + '개 (빨간 테두리)';
+    hardIdx = (hardIdx + 1) % candidateLines.length;
+  }, 1400);
+
+  /* ============ Section 2: gate lab ============ */
+  var GATES = {
+    AND:  { w1:0.5,  w2:0.5,  theta:0.7,  truth:{'0,0':0,'1,0':0,'0,1':0,'1,1':1},
+            punch:'AND는 (1,1) 구석만 잘라내는 직선 하나로 된다.' },
+    OR:   { w1:0.5,  w2:0.5,  theta:0.4,  truth:{'0,0':0,'1,0':1,'0,1':1,'1,1':1},
+            punch:'OR는 (0,0) 구석만 잘라내는 직선 하나로 된다.' },
+    NAND: { w1:-0.5, w2:-0.5, theta:-0.6, truth:{'0,0':1,'1,0':1,'0,1':1,'1,1':0},
+            punch:'NAND는 AND와 경계선이 같고, 어느 쪽을 1로 볼지만 반대다.' },
+    XOR:  { w1:null, w2:null, theta:null, truth:{'0,0':0,'1,0':1,'0,1':1,'1,1':0},
+            punch:'1인 점 둘이 대각선으로, 0인 점 둘이 반대 대각선으로 마주 본다. 1번 패널의 "안 되는 배치"와 완전히 같은 모양이다.' }
+  };
+  var curGate = 'AND', gx1 = 0, gx2 = 0;
+  var gateCanvas = document.getElementById('gateCanvas');
+  var gctx = gateCanvas.getContext('2d');
+
+  function cornerPx(x1, x2){ return { x: 40 + x1*120, y: 160 - x2*120 }; }
+
+  function drawRegionHeatmap(ctx, w1, w2, theta, size, off){
+    off = off || 0;
+    var cells = 20, cellSize = size / cells;
+    for (var gy=0; gy<cells; gy++){
+      for (var gx=0; gx<cells; gx++){
+        var nx = (gx+0.5)/cells, ny = 1-(gy+0.5)/cells;
+        if (w1*nx + w2*ny > theta){
+          ctx.fillStyle = rgba(accentRGB, 0.16);
+          ctx.fillRect(off + gx*cellSize, off + gy*cellSize, cellSize+0.5, cellSize+0.5);
+        }
+      }
+    }
+  }
+
+  function drawGatePlot(){
+    var g = GATES[curGate];
+    gctx.clearRect(0,0,200,200);
+    if (curGate !== 'XOR'){
+      drawRegionHeatmap(gctx, g.w1, g.w2, g.theta, 120, 40);
+    } else {
+      gctx.setLineDash([5,4]); gctx.lineWidth = 2;
+      gctx.strokeStyle = COL.accent;
+      gctx.beginPath();
+      var a1=cornerPx(0,1), a2=cornerPx(1,0);
+      gctx.moveTo(a1.x,a1.y); gctx.lineTo(a2.x,a2.y); gctx.stroke();
+      gctx.strokeStyle = COL.error;
+      gctx.beginPath();
+      var b1=cornerPx(0,0), b2=cornerPx(1,1);
+      gctx.moveTo(b1.x,b1.y); gctx.lineTo(b2.x,b2.y); gctx.stroke();
+      gctx.setLineDash([]);
+    }
+    gctx.strokeStyle = COL.line; gctx.lineWidth = 1.5; gctx.strokeRect(40,40,120,120);
+    gctx.fillStyle = COL.inkFaint; gctx.font = '500 10px "IBM Plex Mono", monospace'; gctx.textAlign='center';
+    gctx.fillText('x1',100,194); gctx.fillText('0',40,176); gctx.fillText('1',160,176);
+    gctx.save(); gctx.translate(14,100); gctx.rotate(-Math.PI/2); gctx.fillText('x2',0,0); gctx.restore();
+    gctx.textAlign='right'; gctx.fillText('0',30,163); gctx.fillText('1',30,43);
+
+    [[0,0],[1,0],[0,1],[1,1]].forEach(function(pair){
+      var x1=pair[0], x2=pair[1], p=cornerPx(x1,x2), val=g.truth[x1+','+x2], isCur=(x1===gx1&&x2===gx2);
+      gctx.beginPath(); gctx.arc(p.x,p.y,isCur?13:11,0,Math.PI*2);
+      gctx.fillStyle = val===1 ? COL.accent : COL.surface; gctx.fill();
+      gctx.lineWidth = isCur?2.5:1.5;
+      gctx.strokeStyle = isCur ? COL.ink : (val===1 ? COL.accent : COL.line);
+      gctx.stroke();
+      gctx.fillStyle = val===1 ? '#fff' : COL.inkSoft;
+      gctx.font = '600 11px "IBM Plex Mono", monospace'; gctx.textAlign='center'; gctx.textBaseline='middle';
+      gctx.fillText(String(val), p.x, p.y);
+    });
+    gctx.textBaseline='alphabetic';
+  }
+
+  function renderGate(){
+    var g = GATES[curGate];
+    document.querySelectorAll('.gate-btn').forEach(function(b){ b.classList.toggle('primary', b.dataset.gate===curGate); });
+    document.getElementById('x1Btn').textContent = gx1;
+    document.getElementById('x1Btn').classList.toggle('on', gx1===1);
+    document.getElementById('x2Btn').textContent = gx2;
+    document.getElementById('x2Btn').classList.toggle('on', gx2===1);
+    document.getElementById('gatePunch').textContent = g.punch;
+    document.getElementById('gatePunch').className = 'panel-punch' + (curGate==='XOR' ? ' bad' : '');
+
+    var formulaEl = document.getElementById('gateFormula'), calcEl = document.getElementById('gateCalc'), resultEl = document.getElementById('gateResult');
+    if (curGate !== 'XOR'){
+      formulaEl.textContent = 'y = 1 (a > θ) 아니면 0,  w1=' + g.w1 + ', w2=' + g.w2 + ', θ=' + g.theta;
+      var a = g.w1*gx1 + g.w2*gx2, y = a > g.theta ? 1 : 0;
+      calcEl.innerHTML = 'a = ' + g.w1 + '×' + gx1 + ' + ' + g.w2 + '×' + gx2 + ' = <b>' + a.toFixed(2) + '</b><br>' +
+                          a.toFixed(2) + ' &gt; ' + g.theta + ' ? → <b>' + (a > g.theta ? '예' : '아니오') + '</b>';
+      resultEl.className = 'gate-result' + (y===1 ? ' on' : '');
+      var expect = g.truth[gx1+','+gx2];
+      resultEl.innerHTML = 'y = ' + y + (y===1?' (켜짐)':' (꺼짐)') + '<span class="match">' + (y===expect?'진리표와 일치':'불일치') + '</span>';
+    } else {
+      formulaEl.textContent = '단일 퍼셉트론으로는 w1, w2, θ가 존재하지 않는다 (해가 없음)';
+      calcEl.textContent = '';
+      resultEl.className = 'gate-result';
+      resultEl.textContent = '이 배치는 직선 하나로 못 가른다 → 3번으로';
+    }
+    drawGatePlot();
+  }
+  document.querySelectorAll('.gate-btn').forEach(function(b){ b.addEventListener('click', function(){ curGate=b.dataset.gate; renderGate(); }); });
+  document.getElementById('x1Btn').addEventListener('click', function(){ gx1 = gx1?0:1; renderGate(); });
+  document.getElementById('x2Btn').addEventListener('click', function(){ gx2 = gx2?0:1; renderGate(); });
+  renderGate();
+
+  /* ============ Section 3: intersection triptych ============ */
+  function drawMiniRegion(canvasId, w1, w2, theta, highlightXor){
+    var c = document.getElementById(canvasId), ctx = c.getContext('2d');
+    ctx.clearRect(0,0,150,150);
+    var sq = 90, off = 24;
+    var cells = 16, cellSize = sq/cells;
+    for (var gy=0; gy<cells; gy++){
+      for (var gx=0; gx<cells; gx++){
+        var nx=(gx+0.5)/cells, ny=1-(gy+0.5)/cells;
+        if (w1*nx+w2*ny > theta){
+          ctx.fillStyle = rgba(accentRGB, 0.18);
+          ctx.fillRect(off+gx*cellSize, off+gy*cellSize, cellSize+0.4, cellSize+0.4);
+        }
+      }
+    }
+    ctx.strokeStyle = COL.line; ctx.lineWidth = 1.3; ctx.strokeRect(off,off,sq,sq);
+    var corners = [[0,0],[1,0],[0,1],[1,1]];
+    corners.forEach(function(pair){
+      var x1=pair[0], x2=pair[1];
+      var px = off + x1*sq, py = off + sq - x2*sq;
+      var isXorOne = (x1===0&&x2===1) || (x1===1&&x2===0);
+      ctx.beginPath(); ctx.arc(px,py, highlightXor && isXorOne ? 7 : 5, 0, Math.PI*2);
+      ctx.fillStyle = highlightXor && isXorOne ? COL.target : COL.surface;
+      ctx.fill();
+      ctx.lineWidth = 1.3;
+      ctx.strokeStyle = highlightXor && isXorOne ? COL.target : COL.inkFaint;
+      ctx.stroke();
+    });
+  }
+  function drawIntersection(){
+    var nand = GATES.NAND, or_ = GATES.OR;
+    var c = document.getElementById('xorMini'), ctx = c.getContext('2d');
+    ctx.clearRect(0,0,150,150);
+    var sq=90, off=24, cells=16, cellSize=sq/cells;
+    for (var gy=0; gy<cells; gy++){
+      for (var gx=0; gx<cells; gx++){
+        var nx=(gx+0.5)/cells, ny=1-(gy+0.5)/cells;
+        var inNand = nand.w1*nx+nand.w2*ny > nand.theta;
+        var inOr = or_.w1*nx+or_.w2*ny > or_.theta;
+        if (inNand && inOr){
+          ctx.fillStyle = rgba(targetRGB, 0.28);
+          ctx.fillRect(off+gx*cellSize, off+gy*cellSize, cellSize+0.4, cellSize+0.4);
+        }
+      }
+    }
+    ctx.strokeStyle = COL.line; ctx.lineWidth = 1.3; ctx.strokeRect(off,off,sq,sq);
+    [[0,0],[1,0],[0,1],[1,1]].forEach(function(pair){
+      var x1=pair[0], x2=pair[1];
+      var px = off + x1*sq, py = off + sq - x2*sq;
+      var isXorOne = (x1===0&&x2===1) || (x1===1&&x2===0);
+      ctx.beginPath(); ctx.arc(px,py, isXorOne?7:5, 0, Math.PI*2);
+      ctx.fillStyle = isXorOne ? COL.target : COL.surface;
+      ctx.fill();
+      ctx.lineWidth = 1.3;
+      ctx.strokeStyle = isXorOne ? COL.target : COL.inkFaint;
+      ctx.stroke();
+    });
+  }
+  drawMiniRegion('nandMini', GATES.NAND.w1, GATES.NAND.w2, GATES.NAND.theta, false);
+  drawMiniRegion('orMini', GATES.OR.w1, GATES.OR.w2, GATES.OR.theta, false);
+  drawIntersection();
+
+  /* ============ Section 4: activation terrain + gradient markers ============ */
+  var FN = {
+    step:    { f:function(a){ return a>0?1:0; }, domain:[-6,6], range:[-0.15,1.15],
+               note:'0 아니면 1만 나오고, 경계 딱 한 지점만 빼면 어디서든 살짝 움직여도 출력이 그대로다.',
+               punch:'다섯 지점 중 기울기가 느껴지는 곳이 사실상 없다. 어느 방향으로 가중치를 옮겨야 나아지는지 알 방법이 없다.' },
+    sigmoid: { f:function(a){ return 1/(1+Math.exp(-a)); }, domain:[-6,6], range:[-0.15,1.15],
+               note:'입력이 아무리 작거나 커도 0과 1 사이로 완만하게 눌러 담는다.',
+               punch:'다섯 지점 전부 기울기가 느껴진다. 그 방향으로 가중치를 조금씩 옮기면 오차가 줄어든다.' },
+    relu:    { f:function(a){ return Math.max(0,a); }, domain:[-6,6], range:[-0.6,6.4],
+               note:'0보다 작으면 0, 크면 입력을 그대로 내보낸다.',
+               punch:'입력이 양수인 지점은 기울기가 뚜렷하게 느껴진다. 계산이 단순해서 실제로 가장 많이 쓴다.' }
+  };
+  var curFn = 'step';
+  var fnCanvas = document.getElementById('fnCanvas'), fctx = fnCanvas.getContext('2d');
+
+  function drawFn(){
+    var spec = FN[curFn];
+    var W2=fnCanvas.width, H2=fnCanvas.height, pad=20;
+    fctx.clearRect(0,0,W2,H2);
+    fctx.strokeStyle = COL.line; fctx.lineWidth = 1;
+    var zeroY = pad + (H2-pad*2) * (1 - (0-spec.range[0])/(spec.range[1]-spec.range[0]));
+    fctx.beginPath(); fctx.moveTo(pad,zeroY); fctx.lineTo(W2-pad,zeroY); fctx.stroke();
+    var zeroX = pad + (W2-pad*2) * (0-spec.domain[0])/(spec.domain[1]-spec.domain[0]);
+    fctx.beginPath(); fctx.moveTo(zeroX,pad); fctx.lineTo(zeroX,H2-pad); fctx.stroke();
+
+    function toPx(xv){ return pad + (W2-pad*2) * (xv-spec.domain[0])/(spec.domain[1]-spec.domain[0]); }
+    function toPy(yv){ var py = pad + (H2-pad*2) * (1-(yv-spec.range[0])/(spec.range[1]-spec.range[0])); return Math.max(pad, Math.min(H2-pad, py)); }
+
+    fctx.strokeStyle = COL.accent; fctx.lineWidth = 2.5; fctx.beginPath();
+    var steps = 200;
+    for (var i=0;i<=steps;i++){
+      var xv = spec.domain[0] + (spec.domain[1]-spec.domain[0])*(i/steps);
+      var px = toPx(xv), py = toPy(spec.f(xv));
+      if (i===0) fctx.moveTo(px,py); else fctx.lineTo(px,py);
+    }
+    fctx.stroke();
+
+    var markers = [-4,-2,0,2,4];
+    var eps = 0.06;
+    markers.forEach(function(xv){
+      var slope = (spec.f(xv+eps) - spec.f(xv-eps)) / (2*eps);
+      var px = toPx(xv), py = toPy(spec.f(xv));
+      var felt = Math.abs(slope) > 0.02;
+      fctx.beginPath();
+      fctx.arc(px,py, felt?6:5, 0, Math.PI*2);
+      fctx.fillStyle = felt ? COL.target : COL.error;
+      fctx.fill();
+      fctx.lineWidth = 1.5;
+      fctx.strokeStyle = COL.surface;
+      fctx.stroke();
+      if (felt){
+        var len = Math.min(28, 8 + Math.abs(slope)*4);
+        var dx = len / Math.sqrt(1+slope*slope), dy = -slope*dx;
+        fctx.strokeStyle = COL.target; fctx.lineWidth = 2;
+        fctx.beginPath(); fctx.moveTo(px-dx,py-dy); fctx.lineTo(px+dx,py+dy); fctx.stroke();
+      } else {
+        fctx.fillStyle = COL.error; fctx.font = '600 10px "IBM Plex Mono", monospace'; fctx.textAlign='center';
+        fctx.fillText('기울기 없음', px, py - 12);
+      }
+    });
+
+    document.getElementById('fnNote').textContent = spec.note;
+    var punchEl = document.getElementById('fnPunch');
+    punchEl.textContent = spec.punch;
+    punchEl.className = 'panel-punch' + (curFn === 'step' ? ' bad' : ' good');
+  }
+  document.querySelectorAll('.fn-btn').forEach(function(b){
+    b.addEventListener('click', function(){
+      curFn = b.dataset.fn;
+      document.querySelectorAll('.fn-btn').forEach(function(x){ x.classList.toggle('primary', x===b); });
+      drawFn();
+    });
+  });
+  drawFn();
+
+  /* ============ notify parent frame of height changes (same-origin embed) ============ */
+  function reportHeight(){
+    if (window.parent && window.parent !== window){
+      window.parent.postMessage({ type:'line-limit-height', height: document.documentElement.scrollHeight }, '*');
+    }
+  }
+  window.addEventListener('load', function(){
+    reportHeight();
+    setTimeout(reportHeight, 300);
+    setTimeout(reportHeight, 1000);
+  });
+  if (window.ResizeObserver){
+    new ResizeObserver(reportHeight).observe(document.body);
+  }
+})();
+</script>
+</body>
+</html>

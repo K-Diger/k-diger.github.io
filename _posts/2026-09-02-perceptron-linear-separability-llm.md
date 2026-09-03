@@ -268,6 +268,23 @@ XOR 진리표와 정확히 일치한다.
 
 은닉층 하나(NAND, OR)를 거쳐 출력층(AND)에서 합치는 이 구조가 다층 퍼셉트론(MLP)이고, 4절에서 말한 "사람이 손으로 특징을 설계하는" 일을 층 하나를 늘리는 것으로 대신했다. 1969년 민스키와 페퍼트가 단일 퍼셉트론의 XOR 한계를 증명하면서 신경망 연구에 대한 기대와 투자가 크게 꺾인 1차 AI 겨울이 왔고, 1986년 오차 역전파(backpropagation)로 다층 구조의 학습이 가능해지면서 이 접근이 다시 주목받았다. 역전파가 정확히 뭘 하는지는 9절에서 본다.
 
+4~5절에서 글로 설명한 것(점을 두 편으로 가르는 문제, 직선 하나로 되는 배치와 안 되는 배치, NAND와 OR 영역의 겹침으로 XOR을 만드는 과정, 계단 함수가 기울기를 못 느끼는 이유)을 직접 눌러보면서 확인할 수 있게 만들었다.
+
+<iframe id="line-limit-frame" src="{{ '/assets/interactive/line-limit.html' | relative_url }}" style="width:100%;min-height:400px;border:1px solid #ddd;border-radius:12px;display:block;" loading="lazy" title="직선 하나의 한계 인터랙티브 데모"></iframe>
+<script>
+(function(){
+  var f = document.getElementById('line-limit-frame');
+  if (!f) return;
+  function setHeight(px){ if (px > 0) f.style.height = px + 'px'; }
+  window.addEventListener('message', function(e){
+    if (e.data && e.data.type === 'line-limit-height') setHeight(e.data.height);
+  });
+  f.addEventListener('load', function(){
+    try { setHeight(f.contentWindow.document.documentElement.scrollHeight); } catch(e){}
+  });
+})();
+</script>
+
 ---
 
 ## 6. LLM이란?
