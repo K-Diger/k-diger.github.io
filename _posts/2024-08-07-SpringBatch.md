@@ -2,8 +2,8 @@
 
 title: "스프링 배치의 구성 요소가 왜 이렇게 많은가"
 date: 2024-08-07
-categories: [Spring, Batch]
-tags: [SpringBatch, Job, Step, Chunk, ItemReader, ItemWriter]
+categories: [Backend, Spring]
+tags: [Spring, SpringBatch, Batch]
 layout: post
 toc: true
 math: true

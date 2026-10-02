@@ -2,8 +2,8 @@
 
 title: Interface 명세로 알아보는 Servlet
 date: 2022-08-15
-categories: [Java, Spring, Servlet]
-tags: [Java, Spring, Servlet]
+categories: [Backend, Spring]
+tags: [Java, Servlet, Spring]
 layout: post
 toc: true
 math: true

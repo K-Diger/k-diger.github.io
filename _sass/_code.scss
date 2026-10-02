@@ -1,0 +1,398 @@
+// 코드: 인라인 코드, 코드 블록(언어 이름 + 복사 머리줄), Rouge 토큰 색, Mermaid 다이어그램
+
+// 인라인 코드는 배경 상자 없이 고정폭 + 붉은 글자로만 구분한다(문장 흐름을 끊지 않게)
+.prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-size: 0.85em;
+  color: var(--code);
+  // 긴 식별자/경로는 어디서든 끊어 가로 넘침을 막는다
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.prose a > code {
+  color: inherit;
+}
+
+.prose table :not(pre) > code {
+  font-size: 0.9em;
+}
+
+// kramdown + rouge 출력: div.language-xxx.highlighter-rouge > div.highlight > pre.highlight > code
+.prose div.highlighter-rouge {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  overflow: hidden;
+}
+
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 0 6px 0 14px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--ink-2);
+  user-select: none;
+}
+
+.code-copy {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  transition: color 120ms, background-color 120ms;
+
+  &:hover {
+    color: var(--ink);
+    background: var(--bg-3);
+  }
+
+  &:disabled {
+    visibility: hidden;
+  }
+
+  &[data-state="done"] {
+    color: var(--c-string);
+  }
+}
+
+.prose pre {
+  margin: 0;
+  padding: 14px 16px 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-size: 0.8125rem; // 13px: 본문보다 작게 해 한 줄 72자 이상을 확보
+  line-height: 1.7;
+  tab-size: 2;
+  color: var(--ink);
+  word-break: normal;
+  overflow-wrap: normal;
+  white-space: pre;
+  font-synthesis: none; // 한글 주석이 가짜 이탤릭으로 기울지 않게(라틴 글자는 JetBrains Mono 의 진짜 이탤릭)
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-2) transparent;
+
+  code {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+}
+
+@media (min-width: 720px) {
+  .prose pre {
+    font-size: 0.84rem; // 13.4px
+  }
+}
+
+.prose .highlight {
+  margin: 0;
+  background: transparent;
+}
+
+// 긴 블록은 접어 둔다. JS 가 줄 수를 세서 .is-long 을 붙인다.
+.prose div.highlighter-rouge.is-long:not(.is-open) .highlight {
+  max-height: 51em; // 약 30줄
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 80%, transparent);
+}
+
+.code-expand {
+  display: block;
+  width: 100%;
+  padding: 9px;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+
+  &:hover {
+    color: var(--ink);
+    background: var(--bg-3);
+  }
+}
+
+// ----- Rouge 토큰 -----
+.highlight {
+  .c,
+  .ch,
+  .cm,
+  .c1,
+  .cs,
+  .cd {
+    color: var(--c-comment);
+    font-style: italic;
+  }
+
+  .cp,
+  .cpf {
+    color: var(--c-keyword);
+  }
+
+  .k,
+  .kc,
+  .kd,
+  .kn,
+  .kp,
+  .kr,
+  .ow,
+  .nd {
+    color: var(--c-keyword);
+  }
+
+  .kt,
+  .nc,
+  .nn,
+  .ne {
+    color: var(--c-type);
+  }
+
+  .s,
+  .s1,
+  .s2,
+  .sb,
+  .sc,
+  .sd,
+  .se,
+  .sh,
+  .si,
+  .sx,
+  .sr,
+  .ss,
+  .dl,
+  .sa {
+    color: var(--c-string);
+  }
+
+  .se,
+  .si {
+    font-weight: 600;
+  }
+
+  .m,
+  .mb,
+  .mf,
+  .mh,
+  .mi,
+  .il,
+  .mo,
+  .mx {
+    color: var(--c-number);
+  }
+
+  .nf,
+  .fm,
+  .nx {
+    color: var(--c-func);
+  }
+
+  .nb,
+  .bp {
+    color: var(--c-attr);
+  }
+
+  .na,
+  .py {
+    color: var(--c-attr);
+  }
+
+  .nt {
+    color: var(--c-tag);
+  }
+
+  .nv,
+  .vc,
+  .vg,
+  .vi,
+  .vm {
+    color: var(--c-var);
+  }
+
+  .no,
+  .ni,
+  .nl {
+    color: var(--c-number);
+  }
+
+  .o {
+    color: var(--ink-2);
+  }
+
+  .p {
+    color: var(--ink-2);
+  }
+
+  .gd {
+    color: var(--c-del);
+    background: color-mix(in srgb, var(--c-del) 10%, transparent);
+  }
+
+  .gi {
+    color: var(--c-ins);
+    background: color-mix(in srgb, var(--c-ins) 10%, transparent);
+  }
+
+  .gh,
+  .gu {
+    color: var(--c-func);
+    font-weight: 700;
+  }
+
+  .gp {
+    color: var(--ink-3);
+    user-select: none;
+  }
+
+  .ge {
+    font-style: italic;
+  }
+
+  .gs {
+    font-weight: 700;
+  }
+
+  .err {
+    color: inherit;
+    background: none;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mermaid 다이어그램
+// ---------------------------------------------------------------------------
+
+.prose .diagram {
+  position: relative;
+  margin-inline: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--bg);
+  overflow: hidden;
+
+  .code-head {
+    border-bottom-color: transparent;
+  }
+}
+
+.diagram__canvas {
+  display: flex;
+  justify-content: safe center; // 넘칠 때 왼쪽이 잘리지 않게
+  padding: 4px 16px 24px;
+  overflow-x: auto;
+  min-height: 80px;
+
+  // 렌더 전 원문(무JS 대비)
+  pre {
+    margin: 0;
+    padding: 0;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    background: none;
+  }
+
+  svg {
+    height: auto;
+    max-width: 100%;
+  }
+
+  &.is-wide svg {
+    max-width: none;
+  }
+}
+
+.diagram--error .diagram__canvas pre {
+  white-space: pre-wrap;
+}
+
+// 확대 보기(다이어그램, 이미지 공용)
+.zoom-dialog {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bg);
+  color: var(--ink);
+
+  &::backdrop {
+    background: var(--bg);
+  }
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+    animation: zoom-in 200ms var(--ease-out);
+  }
+
+  .zoom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: var(--header-h);
+    padding-inline: var(--gutter);
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+
+    button {
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      background: var(--bg);
+      font-family: var(--font-sans);
+      font-size: 0.8125rem;
+
+      &:hover {
+        background: var(--bg-2);
+      }
+    }
+  }
+
+  .zoom-body {
+    flex: 1;
+    overflow: auto;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+
+    svg,
+    img {
+      max-width: none;
+      height: auto;
+    }
+
+    img {
+      max-width: 100%;
+      background: #fff;
+    }
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}

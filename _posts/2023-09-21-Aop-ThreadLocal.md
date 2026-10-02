@@ -2,8 +2,8 @@
 
 title: "인증 정보를 어디에 둘 것인가, AOP와 ThreadLocal 내부 뜯어보기"
 date: 2023-09-21
-categories: [Spring, Java]
-tags: [AOP, ThreadLocal, Interceptor, Authentication, Kotlin]
+categories: [Backend, Spring]
+tags: [Spring, AOP, ThreadLocal, Auth]
 layout: post
 toc: true
 math: true

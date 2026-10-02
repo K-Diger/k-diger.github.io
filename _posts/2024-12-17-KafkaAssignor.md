@@ -2,8 +2,8 @@
 
 title: Kafka Partition 할당 내부 동작 파해치기
 date: 2024-12-17
-categories: [Kafka]
-tags: [Kafka]
+categories: [Middleware, Kafka]
+tags: [Kafka, Consumer, Rebalance]
 layout: post
 toc: true
 math: true

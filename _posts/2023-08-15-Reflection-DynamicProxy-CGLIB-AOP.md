@@ -2,8 +2,8 @@
 
 title: "스프링은 왜 프록시를 쓰는가 (리플렉션, JDK 동적 프록시, CGLIB, AOP)"
 date: 2023-08-15
-categories: [Java, Spring]
-tags: [Reflection, DynamicProxy, CGLIB, AOP, Proxy, Spring]
+categories: [Backend, Spring]
+tags: [Spring, AOP, Proxy, Reflection]
 layout: post
 toc: true
 math: true

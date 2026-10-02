@@ -2,8 +2,8 @@
 
 title: "인증 방식을 고르고 JWT 재발급을 구현하면서 겪은 것들"
 date: 2023-09-21
-categories: [Security, Spring]
-tags: [JWT, Session, RefreshToken, Authentication, Spring]
+categories: [Backend, Auth]
+tags: [Auth, JWT, Session, Spring]
 layout: post
 toc: true
 math: true

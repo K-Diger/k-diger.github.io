@@ -2,8 +2,8 @@
 
 title: "그런 REST API로 괜찮은가, 그리고 URI 설계"
 date: 2023-05-23
-categories: [Web, API]
-tags: [REST, HTTP, URI, APIDesign, HATEOAS]
+categories: [Backend, Web]
+tags: [REST, HTTP, APIDesign]
 layout: post
 toc: true
 math: true

@@ -1,8 +1,8 @@
 ---
 title: "Istio 사이드카 모드 공식문서 전수 정리"
 date: 2026-04-20
-categories: [Kubernetes, Istio]
-tags: [istio, service-mesh, envoy, sidecar, mtls, traffic-management, security, observability, xds, spiffe]
+categories: [Kubernetes, ServiceMesh]
+tags: [Kubernetes, Istio, ServiceMesh, Envoy, mTLS]
 layout: post
 toc: true
 mermaid: true

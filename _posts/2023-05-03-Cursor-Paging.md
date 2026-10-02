@@ -3,7 +3,7 @@
 title: "오프셋 페이징이 뒤로 갈수록 느려지는 이유와 커서 기반으로 바꾼 과정"
 date: 2023-05-03
 categories: [Database, MySQL]
-tags: [MySQL, Paging, Cursor, Offset, QueryDSL, Performance]
+tags: [MySQL, Paging, QueryDSL, Performance]
 layout: post
 toc: true
 math: true

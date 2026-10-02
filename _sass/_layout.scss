@@ -1,0 +1,318 @@
+// 페이지 틀: 상단 줄, 푸터, 검색 대화상자
+
+.wrap {
+  width: 100%;
+  max-width: calc(var(--frame, 39.3125rem) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+main {
+  flex: 1;
+}
+
+// ---------------------------------------------------------------------------
+// 상단 줄: 이름과 작은 회색 링크 몇 개. 고정하지 않는다(읽는 동안 화면을 차지하지 않게).
+// ---------------------------------------------------------------------------
+
+.site-header {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+
+  .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 28px 0;
+  }
+}
+
+.site-name {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+
+  &:hover {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentcolor 30%, transparent);
+    text-underline-offset: 0.2em;
+  }
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: -8px;
+
+  a,
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-2);
+    font-size: inherit;
+    text-decoration: none;
+    transition: color 120ms, background-color 120ms;
+
+    &:hover {
+      color: var(--ink);
+      background: var(--bg-2);
+    }
+
+    &[aria-current="page"] {
+      color: var(--ink);
+    }
+  }
+
+  kbd {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    padding: 0 4px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    color: var(--ink-3);
+    line-height: 1.5;
+  }
+}
+
+.theme-toggle svg {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 559px) {
+  .site-nav kbd {
+    display: none;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 검색 대화상자 (⌘K, /)
+// ---------------------------------------------------------------------------
+
+.search-dialog {
+  width: min(640px, calc(100vw - 24px));
+  max-height: min(70dvh, 640px);
+  margin: 12dvh auto auto;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 24px 64px -12px var(--shadow), 0 2px 8px var(--shadow);
+  font-family: var(--font-sans);
+  overflow: hidden;
+
+  &::backdrop {
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    backdrop-filter: blur(3px);
+  }
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+    animation: dialog-in 180ms var(--ease-out);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.99);
+  }
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--rule);
+
+  svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--ink-3);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    height: 52px;
+    border: 0;
+    background: transparent;
+    font-size: 1rem;
+    outline: none;
+
+    &::placeholder {
+      color: var(--ink-3);
+    }
+
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+
+  kbd {
+    font-size: 0.6875rem;
+    padding: 1px 5px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    color: var(--ink-3);
+  }
+}
+
+.search-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+}
+
+.search-status {
+  margin: 0;
+  padding: 10px 10px 6px;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+
+  &:empty {
+    display: none;
+  }
+}
+
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-hit {
+  a {
+    display: block;
+    padding: 10px 10px 12px;
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  &[aria-selected="true"] a {
+    background: var(--bg-2);
+  }
+
+  .hit-title {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
+  .hit-meta {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.75rem;
+    color: var(--ink-2);
+  }
+
+  .hit-snippet {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 4px;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+
+  mark {
+    background: var(--mark);
+    color: var(--mark-ink);
+    border-radius: 2px;
+  }
+}
+
+.search-foot {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+
+  kbd {
+    font-family: inherit;
+    padding: 0 4px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 푸터
+// ---------------------------------------------------------------------------
+
+.site-footer {
+  margin-top: 112px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    justify-content: space-between;
+    padding-block: 24px 48px;
+    border-top: 1px solid var(--rule);
+  }
+
+  a {
+    color: var(--ink-2);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--ink);
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 16px;
+  }
+}
+
+// 페이지 종류별 틀 폭
+[data-layout="home"] {
+  --frame: 1180px;
+}
+
+// 본문 폭 --measure(37em, 17px 기준)를 rem 으로 환산한 값. em 으로 두면 글자 크기가 다른
+// 헤더/푸터에서 폭이 달라져 왼쪽 시작선이 어긋난다.
+:root {
+  --frame-text: 39.3125rem;
+}
+
+:is([data-layout="post"], [data-layout="page"], [data-layout="archive"], [data-layout="default"]) {
+  --frame: var(--frame-text);
+}
+
+@media (min-width: 1200px) {
+  [data-layout="post"] {
+    // 본문 + 간격(4rem) + 오른쪽 목차 칸(15rem)
+    --frame: calc(var(--frame-text) + 19rem);
+  }
+}

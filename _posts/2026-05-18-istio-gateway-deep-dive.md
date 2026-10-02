@@ -1,8 +1,8 @@
 ---
 title: "클러스터 밖에서 들어오는 트래픽, Istio Gateway와 Gateway API"
 date: 2026-05-18
-categories: [Kubernetes, Istio]
-tags: [istio, gateway, ingress, egress, gateway-api, virtualservice, httproute, tls, north-south]
+categories: [Kubernetes, ServiceMesh]
+tags: [Kubernetes, Istio, GatewayAPI]
 layout: post
 toc: true
 mermaid: true

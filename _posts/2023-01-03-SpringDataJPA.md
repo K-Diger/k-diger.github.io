@@ -3,8 +3,8 @@
 title: "인터페이스만 만들었는데 쿼리가 나가는 이유, Spring Data JPA 구현체 따라가기"
 author: Diger
 date: 2023-01-03
-categories: [Java, Spring, JPA]
-tags: [SpringDataJPA, JPA, Repository, Proxy, SimpleJpaRepository]
+categories: [Database, JPA]
+tags: [Spring, JPA, Proxy]
 layout: post
 toc: true
 math: true

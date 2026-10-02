@@ -2,8 +2,8 @@
 
 title: "관찰 가능성이란 무엇이고 OpenTelemetry는 왜 나왔는가"
 date: 2025-01-19
-categories: [Observability, OpenTelemetry]
-tags: [OpenTelemetry, Observability, Trace, Metric, Log, ContextPropagation]
+categories: [Observability]
+tags: [Observability, OpenTelemetry]
 layout: post
 toc: true
 math: true

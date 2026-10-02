@@ -3,7 +3,7 @@
 title: "동시에 들어온 요청이 서로를 덮어썼다, 비관적 락으로 막은 과정"
 date: 2023-09-21
 categories: [Database, JPA]
-tags: [Lock, PessimisticLock, OptimisticLock, JPA, MySQL, Concurrency]
+tags: [JPA, Lock, Concurrency, MySQL]
 layout: post
 toc: true
 math: true

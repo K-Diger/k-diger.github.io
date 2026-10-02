@@ -2,8 +2,8 @@
 
 title: "QueryDSL 조회 결과를 DTO로 받는 네 가지 방법과 그 차이"
 date: 2022-10-16
-categories: [QueryDSL, JPA]
-tags: [QueryDSL, DTO, Projections, QueryProjection, JPA]
+categories: [Database, JPA]
+tags: [JPA, QueryDSL, DTO]
 layout: post
 toc: true
 math: true

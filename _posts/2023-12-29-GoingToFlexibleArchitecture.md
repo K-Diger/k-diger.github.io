@@ -3,7 +3,7 @@
 title: "유연한 시스템은 무엇을 유연하게 만드는가, 마이크로서비스와 CQRS 자문자답"
 date: 2023-12-29
 categories: [Architecture]
-tags: [MSA, CQRS, EventDriven, Monolith, Architecture, DDD]
+tags: [Architecture, MSA, CQRS, EventDriven]
 layout: post
 toc: true
 math: true

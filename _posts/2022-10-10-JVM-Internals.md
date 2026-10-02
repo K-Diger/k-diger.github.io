@@ -2,8 +2,8 @@
 
 title: "JVM이 클래스를 읽어 기계어로 만들기까지 (클래스 로더, 메모리 구조, JIT)"
 date: 2022-10-10
-categories: [Java, JVM]
-tags: [JVM, ClassLoader, Memory, Metaspace, JIT, HotSpot]
+categories: [Backend, JVM]
+tags: [Java, JVM, ClassLoader, JIT]
 layout: post
 toc: true
 math: true

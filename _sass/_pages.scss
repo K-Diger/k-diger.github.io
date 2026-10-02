@@ -1,0 +1,671 @@
+// 홈, 글 머리/목차/꼬리, 분류, 태그, 404
+
+// ---------------------------------------------------------------------------
+// 공통: 제목 + 날짜 한 줄 목록 (홈, 분류, 태그, 관련 글)
+// ---------------------------------------------------------------------------
+
+.post-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.post-row {
+  border-bottom: 1px solid var(--rule);
+
+  > a {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 13px 0 14px;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  > a:hover .post-row__title {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in srgb, currentcolor 35%, transparent);
+    text-underline-offset: 0.22em;
+  }
+}
+
+.post-row__title {
+  min-width: 0;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.post-row__date {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.post-row__sub {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  margin-right: 10px;
+}
+
+.section-title {
+  margin: 64px 0 18px;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+}
+
+// ---------------------------------------------------------------------------
+// 홈
+// ---------------------------------------------------------------------------
+
+.home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, var(--frame-text));
+  gap: 0 72px;
+  padding-top: 40px;
+}
+
+@media (min-width: 1100px) {
+  .home-grid {
+    grid-template-columns: minmax(0, var(--frame-text)) minmax(300px, 1fr);
+  }
+}
+
+.home-title {
+  margin: 0 0 32px;
+  font-size: clamp(2.125rem, 1.6rem + 2vw, 2.65rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+// 소개: 라디오 버튼 두 개와 :has() 로 짧게/길게를 바꾼다(스크립트 없음)
+.bio-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.bio-bar__label {
+  padding-bottom: 10px;
+}
+
+.bio-tabs {
+  display: flex;
+  gap: 16px;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  label {
+    padding-bottom: 10px;
+    margin-bottom: -1px;
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
+    transition: color 120ms, border-color 120ms;
+
+    &:hover {
+      color: var(--ink);
+    }
+  }
+
+  input:checked + label {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  input:focus-visible + label {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+.bio {
+  padding-top: 20px;
+
+  p {
+    margin: 0 0 1.1em;
+  }
+
+  a {
+    color: var(--ink-2);
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in srgb, currentcolor 30%, transparent);
+    text-underline-offset: 0.22em;
+
+    &:hover {
+      color: var(--ink);
+      text-decoration-color: currentcolor;
+    }
+  }
+}
+
+.bio__long {
+  display: none;
+}
+
+.bio-box:has(#bio-long:checked) {
+  .bio__short {
+    display: none;
+  }
+
+  .bio__long {
+    display: block;
+    animation: fade-in 220ms var(--ease-out);
+  }
+}
+
+.bio-box:has(#bio-short:checked) .bio__short {
+  animation: fade-in 220ms var(--ease-out);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+// 주제: 사각 불릿 2단
+.topic-list {
+  columns: 2;
+  column-gap: 32px;
+  margin: 0;
+  padding-left: 1.2em;
+
+  li {
+    list-style-type: square;
+    margin: 0 0 6px;
+    padding-left: 0.2em;
+    break-inside: avoid;
+  }
+
+  li::marker {
+    color: color-mix(in srgb, var(--ink-2) 70%, transparent);
+  }
+
+  a {
+    color: var(--ink-2);
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in srgb, currentcolor 30%, transparent);
+    text-underline-offset: 0.22em;
+
+    &:hover {
+      color: var(--ink);
+      text-decoration-color: currentcolor;
+    }
+  }
+
+  .count {
+    margin-left: 6px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--ink-3);
+  }
+}
+
+.more-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+
+  &:hover {
+    color: var(--ink);
+  }
+}
+
+// 오른쪽 그림: 배포가 DEV → STG → LIVE 로 퍼져 나가는 애니메이션
+.home-art {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .home-art {
+    display: block;
+    position: sticky;
+    top: 28px;
+    height: calc(100dvh - 56px);
+    min-height: 560px;
+    max-height: 1040px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--art-sky), var(--art-sky-2));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 글
+// ---------------------------------------------------------------------------
+
+.post-layout {
+  display: grid;
+  grid-template-columns: minmax(0, var(--measure));
+  justify-content: center;
+  padding-top: 56px;
+}
+
+@media (min-width: 1200px) {
+  .post-layout {
+    grid-template-columns: minmax(0, var(--measure)) 4rem 15rem;
+  }
+
+  .post-layout > * {
+    grid-column: 1;
+  }
+
+  .post-layout > .toc-rail {
+    grid-column: 3;
+    grid-row: 1 / span 4;
+  }
+}
+
+.post-head {
+  margin-bottom: 44px;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2rem);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+}
+
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 14px 0 0;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+
+  img {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    margin-right: -6px;
+  }
+
+  a {
+    color: var(--ink-2);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--ink);
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+  }
+}
+
+// ----- 목차 -----
+.toc-rail {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .toc-rail {
+    display: block;
+  }
+
+  .toc-inline {
+    display: none;
+  }
+}
+
+.toc-rail .toc {
+  position: sticky;
+  top: 32px;
+  max-height: calc(100dvh - 64px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+  padding: 4px 4px 4px 0;
+  // 위아래 끝을 흐리게 해 목록이 이어진다는 것을 보여 준다
+  mask-image: linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 24px), transparent);
+}
+
+.toc {
+  font-family: var(--font-sans);
+}
+
+.toc__title {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.toc li {
+  margin: 0;
+}
+
+.toc a {
+  position: relative;
+  display: block;
+  padding: 4px 0 4px 14px;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: color 160ms;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.85em;
+    width: 6px;
+    height: 1px;
+    background: currentcolor;
+    opacity: 0.5;
+    transition: width 160ms var(--ease-out), opacity 160ms;
+  }
+
+  &:hover {
+    color: var(--ink);
+  }
+
+  &.is-active {
+    color: var(--ink);
+
+    &::before {
+      width: 10px;
+      opacity: 1;
+    }
+  }
+
+  &.is-read:not(.is-active) {
+    color: var(--ink-2);
+  }
+}
+
+.toc ol ol a {
+  padding-left: 26px;
+  font-size: 0.78125rem;
+
+  &::before {
+    left: 12px;
+    width: 4px;
+  }
+
+  &.is-active::before {
+    width: 8px;
+  }
+}
+
+.toc-inline {
+  margin: 0 0 44px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+
+  > summary {
+    display: flex;
+    justify-content: space-between;
+    padding: 11px 14px;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: "+";
+      color: var(--ink-3);
+    }
+  }
+
+  &[open] > summary {
+    border-bottom: 1px solid var(--rule);
+
+    &::after {
+      content: "\2212";
+    }
+  }
+
+  .toc {
+    max-height: 60dvh;
+    overflow-y: auto;
+    padding: 8px 14px 12px;
+  }
+
+  .toc a {
+    color: var(--ink-2);
+  }
+}
+
+// ----- 글 꼬리 -----
+.post-foot {
+  margin-top: 72px;
+  max-width: var(--measure);
+}
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0 0 40px;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+
+  a {
+    color: var(--ink-2);
+    text-decoration: none;
+
+    &::before {
+      content: "#";
+      color: var(--ink-3);
+    }
+
+    &:hover {
+      color: var(--ink);
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+  }
+}
+
+.post-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+
+  a {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover .post-nav__title {
+      text-decoration: underline;
+      text-decoration-color: color-mix(in srgb, currentcolor 35%, transparent);
+      text-underline-offset: 0.22em;
+    }
+  }
+
+  .next {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .post-nav__label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--ink-2);
+  }
+
+  .post-nav__title {
+    display: block;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 559px) {
+  .post-nav {
+    grid-template-columns: 1fr;
+
+    .next {
+      grid-column: 1;
+      text-align: left;
+    }
+  }
+}
+
+.related .section-title {
+  margin-top: 56px;
+  font-size: 1.125rem;
+}
+
+// ---------------------------------------------------------------------------
+// 목록 페이지(분류, 태그, 아카이브)
+// ---------------------------------------------------------------------------
+
+.page-head {
+  padding-top: 56px;
+  margin-bottom: 36px;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2rem);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+
+  .lede {
+    margin: 10px 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+  }
+}
+
+.cat-block {
+  margin-top: 48px;
+
+  &:first-of-type {
+    margin-top: 0;
+  }
+
+  h2 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0 0 12px;
+    font-size: 1.25rem;
+    font-weight: 600;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+        text-decoration-color: color-mix(in srgb, currentcolor 35%, transparent);
+        text-underline-offset: 0.22em;
+      }
+    }
+
+    small {
+      font-family: var(--font-sans);
+      font-size: 0.8125rem;
+      font-weight: 400;
+      color: var(--ink-2);
+    }
+  }
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  a {
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in srgb, currentcolor 30%, transparent);
+    text-underline-offset: 0.22em;
+
+    &:hover {
+      color: var(--ink);
+      text-decoration-color: currentcolor;
+    }
+  }
+
+  small {
+    margin-left: 5px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--ink-3);
+  }
+}
+
+.not-found {
+  padding-top: 56px;
+
+  p {
+    color: var(--ink-2);
+  }
+
+  button {
+    padding: 8px 14px;
+    border: 1px solid var(--rule-2);
+    border-radius: 6px;
+    background: none;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+
+    &:hover {
+      background: var(--bg-2);
+    }
+  }
+}

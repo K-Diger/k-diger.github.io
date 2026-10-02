@@ -2,8 +2,8 @@
 
 title: "코드를 안 고치고 계측하기, 자동 계측은 어떻게 동작하는가"
 date: 2025-02-09
-categories: [Observability, OpenTelemetry]
-tags: [OpenTelemetry, AutoInstrumentation, JavaAgent, Bytecode, ByteBuddy, Observability]
+categories: [Observability]
+tags: [Observability, OpenTelemetry, JavaAgent, Bytecode]
 layout: post
 toc: true
 math: true

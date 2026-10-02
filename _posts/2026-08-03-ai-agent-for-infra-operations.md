@@ -2,8 +2,8 @@
 
 title: "인프라 운영에 AI 에이전트를 붙이면서 정한 것들"
 date: 2026-08-03
-categories: [AI, DevOps]
-tags: [AI, Agent, LLM, MCP, ToolUse, RAG, Workflow, ChatOps, AIOps, Claude]
+categories: [AI]
+tags: [AI, Agent, LLM, MCP, ChatOps]
 layout: post
 toc: true
 math: true

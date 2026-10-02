@@ -1,0 +1,39 @@
+---
+layout: page
+title: 태그
+permalink: /tags/
+---
+{%- comment -%}
+  글 수 많은 순. 대소문자만 다른 태그(Cilium/cilium)는 slug 기준으로 하나로 합친다.
+{%- endcomment -%}
+{%- assign slugs = '' -%}
+{%- for t in site.tags -%}
+  {%- assign ts = t[0] | slugify -%}
+  {%- assign slugs = slugs | append: ts | append: '|' -%}
+{%- endfor -%}
+{%- assign slugs = slugs | split: '|' | uniq -%}
+{%- assign keys = '' -%}
+{%- for s in slugs -%}
+  {%- assign seen = '' -%}
+  {%- assign name = '' -%}
+  {%- assign best = 0 -%}
+  {%- for t in site.tags -%}
+    {%- assign ts = t[0] | slugify -%}
+    {%- if ts != s -%}{%- continue -%}{%- endif -%}
+    {%- if t[1].size > best -%}{%- assign best = t[1].size -%}{%- assign name = t[0] -%}{%- endif -%}
+    {%- for p in t[1] -%}
+      {%- unless seen contains p.url -%}{%- assign seen = seen | append: p.url | append: ' ' -%}{%- endunless -%}
+    {%- endfor -%}
+  {%- endfor -%}
+  {%- assign count = seen | split: ' ' | size -%}
+  {%- assign padded = count | prepend: '000' | slice: -3, 3 -%}
+  {%- assign keys = keys | append: padded | append: '|' | append: name | append: '^^' -%}
+{%- endfor -%}
+{%- assign sorted = keys | split: '^^' | sort | reverse -%}
+
+<ul class="tag-cloud">
+  {%- for k in sorted -%}
+    {%- assign parts = k | split: '|' -%}
+  <li><a href="{{ parts[1] | slugify | prepend: '/tags/' | append: '/' | relative_url }}">{{ parts[1] }} <small>{{ parts[0] | plus: 0 }}</small></a></li>
+  {%- endfor %}
+</ul>

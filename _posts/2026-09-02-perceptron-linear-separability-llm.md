@@ -2,8 +2,8 @@
 
 title: "가중치에서 LLM까지, 신경망이 텍스트를 배우는 흐름"
 date: 2026-09-02
-categories: [AI, DeepLearning]
-tags: [Perceptron, NeuralNetwork, LLM, Transformer, Tokenizing, Embedding, RAG]
+categories: [AI]
+tags: [AI, DeepLearning, LLM, Transformer, RAG]
 layout: post
 toc: true
 math: true

@@ -2,8 +2,8 @@
 
 title: 엘라스틱서치 내부 동작과 궁금증 고찰
 date: 2025-07-23
-categories: [Elasticsearch]
-tags: [Elasticsearch, Architecture, Sharding, Replication]
+categories: [Middleware, Elasticsearch]
+tags: [Elasticsearch, Search, Sharding]
 layout: post
 toc: true
 math: true

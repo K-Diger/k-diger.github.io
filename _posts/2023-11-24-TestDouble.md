@@ -2,8 +2,8 @@
 
 title: "테스트 대역과 테스트 피라미드, 그리고 운영 중인 서비스에 테스트를 붙인 과정"
 date: 2023-11-24
-categories: [Test, Java]
-tags: [Test, TestDouble, TestPyramid, Mockito, JUnit, Spring]
+categories: [Backend, Test]
+tags: [Test, Spring, Mockito]
 layout: post
 toc: true
 math: true

@@ -2,8 +2,8 @@
 
 title: "애노테이션은 주석인데 어떻게 코드 동작을 바꾸는가"
 date: 2022-09-06
-categories: [Java, Spring]
-tags: [Java, Annotation, Reflection, Spring, MetaAnnotation]
+categories: [Backend, Java]
+tags: [Java, Annotation, Reflection, Spring]
 layout: post
 toc: true
 math: true

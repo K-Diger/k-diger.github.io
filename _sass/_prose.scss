@@ -1,0 +1,393 @@
+// 글 본문. 수치 근거:
+// - 행간 1.8: 세리프 한글(명조)은 획 대비가 커서 고딕보다 줄 사이를 더 둔다. WCAG 1.4.8 기준(1.5 이상)을 넘는다.
+// - 문단 간격 1.35em: 문단 사이 기준선 거리가 행간의 1.75배로 1.4.8 의 1.5배 기준을 넘는다.
+// - 제목 위 여백 > 아래 여백: 제목이 뒤따르는 내용에 붙어 보이게(근접성 원리).
+// - 표, 코드 머리, 목차 같은 보조 정보는 산세리프로 바꿔 본문과 층위를 나눈다.
+
+.prose {
+  max-width: var(--measure);
+  line-height: 1.8;
+  text-wrap: pretty;
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  p,
+  ul,
+  ol,
+  dl,
+  blockquote,
+  .table-wrap,
+  div.highlighter-rouge,
+  .diagram,
+  figure,
+  details,
+  iframe,
+  .footnotes {
+    margin-block: 0 1.35em;
+  }
+
+  // ----- 제목 -----
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    position: relative;
+    color: var(--ink);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-size: 1.375em;
+    margin: 2.6em 0 0.85em;
+  }
+
+  h3 {
+    font-size: 1.15em;
+    margin: 2.1em 0 0.7em;
+  }
+
+  h4 {
+    font-size: 1em;
+    font-weight: 700;
+    margin: 1.9em 0 0.5em;
+  }
+
+  h5,
+  h6 {
+    font-size: 0.9375em;
+    font-weight: 700;
+    margin: 1.7em 0 0.4em;
+    color: var(--ink-2);
+  }
+
+  hr + h2,
+  hr + h3 {
+    margin-top: 0;
+  }
+
+  // 넓은 화면에서 제목에 마우스를 올리면 왼쪽 여백에 # 링크가 나타난다
+  .hanchor {
+    position: absolute;
+    right: 100%;
+    top: 0;
+    padding-right: 0.5em;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    color: var(--ink-3);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 120ms;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--ink);
+      opacity: 1;
+    }
+  }
+
+  :is(h2, h3, h4, h5, h6):hover .hanchor {
+    opacity: 1;
+  }
+
+  @media (max-width: 1023px) {
+    .hanchor {
+      display: none;
+    }
+  }
+
+  :is(h2, h3, h4, h5, h6):target {
+    animation: target-flash 1.8s var(--ease-out);
+  }
+
+  // ----- 인라인 -----
+  a {
+    color: var(--ink-2);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    text-decoration-color: color-mix(in srgb, currentcolor 30%, transparent);
+    transition: color 120ms, text-decoration-color 120ms;
+
+    &:hover {
+      color: var(--ink);
+      text-decoration-color: currentcolor;
+    }
+  }
+
+  strong,
+  b {
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  em,
+  i {
+    // Noto Serif KR 에는 이탤릭이 없다. 브라우저가 만든 가짜 사선체는 한글 획을 뭉개므로 합성을 끈다.
+    font-synthesis-style: none;
+  }
+
+  mark {
+    background: var(--mark);
+    color: var(--mark-ink);
+    padding: 0 0.15em;
+    border-radius: 2px;
+  }
+
+  kbd {
+    font-family: var(--font-sans);
+    font-size: 0.8em;
+    padding: 0.1em 0.4em;
+    border: 1px solid var(--rule-2);
+    border-radius: 4px;
+  }
+
+  sup,
+  sub {
+    line-height: 0;
+  }
+
+  abbr[title] {
+    text-decoration: underline dotted;
+    cursor: help;
+  }
+
+  del {
+    color: var(--ink-2);
+  }
+
+  // ----- 목록 -----
+  ul,
+  ol {
+    padding-left: 1.4em;
+  }
+
+  ul > li {
+    list-style-type: square;
+  }
+
+  li {
+    margin-block: 0.25em;
+    padding-left: 0.2em;
+
+    > ul,
+    > ol {
+      margin-block: 0.25em 0.5em;
+    }
+
+    > p {
+      margin-block: 0.4em;
+    }
+  }
+
+  li::marker {
+    color: color-mix(in srgb, var(--ink-2) 70%, transparent);
+  }
+
+  ol > li::marker {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ul ul > li {
+    list-style-type: circle;
+  }
+
+  .task-list-item {
+    list-style: none;
+    margin-left: -1.3em;
+
+    input {
+      margin: 0 0.5em 0 0;
+      accent-color: var(--ink);
+    }
+  }
+
+  dt {
+    font-weight: 700;
+  }
+
+  dd {
+    margin: 0 0 0.6em 1.4em;
+  }
+
+  // ----- 인용 -----
+  blockquote {
+    margin-inline: 0;
+    padding: 0 0 0 1.1em;
+    border-left: 2px solid var(--rule-2);
+    color: var(--quote);
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // ----- 구분선 -----
+  hr {
+    height: 0;
+    margin: 3em 0;
+    border: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  // ----- 이미지 -----
+  img {
+    display: block;
+    margin: 0 auto;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: #fff; // 투명 PNG 다이어그램이 다크모드에서 사라지지 않도록
+    cursor: zoom-in;
+  }
+
+  // 글에 직접 박힌 인터랙티브 데모 iframe. 인라인 스타일의 테두리 색을 테마 기준으로 덮는다.
+  iframe {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--rule) !important;
+    border-radius: var(--radius) !important;
+    background: var(--bg);
+  }
+
+  // ----- 접기 -----
+  details {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 0 1em;
+
+    > summary {
+      cursor: pointer;
+      margin-inline: -1em;
+      padding: 0.6em 1em;
+      font-weight: 600;
+    }
+
+    &[open] > summary {
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 0.8em;
+    }
+  }
+
+  // ----- 각주 -----
+  .footnotes {
+    margin-top: 3em;
+    padding-top: 1em;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    color: var(--ink-2);
+
+    ol {
+      padding-left: 1.4em;
+    }
+  }
+
+  a.footnote,
+  .reversefootnote {
+    text-decoration: none;
+    font-family: var(--font-sans);
+  }
+
+  // ----- 수식 (MathJax) -----
+  mjx-container[display="true"] {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.25em;
+  }
+}
+
+@keyframes target-flash {
+  0%,
+  35% {
+    background: var(--mark);
+    box-shadow: 0 0 0 0.3em var(--mark);
+  }
+
+  100% {
+    background: transparent;
+    box-shadow: 0 0 0 0.3em transparent;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 표: 촘촘한 데이터는 산세리프와 고정폭 숫자가 읽기 쉽다
+// ---------------------------------------------------------------------------
+
+.table-wrap {
+  overflow-x: auto;
+  // 가로 스크롤이 남아 있으면 가장자리에 그림자가 생겨 "더 있다"는 것을 알려준다
+  background:
+    linear-gradient(to right, var(--bg) 30%, transparent) left / 40px 100% no-repeat local,
+    linear-gradient(to left, var(--bg) 30%, transparent) right / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--shadow), transparent) left / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--shadow), transparent) right / 12px 100% no-repeat scroll;
+
+  > table {
+    margin: 0;
+  }
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.65;
+  font-variant-numeric: tabular-nums;
+
+  th,
+  td {
+    min-width: 5em; // 짧은 칸이 세로로 한 글자씩 쪼개지는 것을 막는다
+    padding: 0.6em 0.9em;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  th {
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    border-bottom-color: var(--rule-2);
+  }
+
+  th:first-child,
+  td:first-child {
+    padding-left: 0;
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: 0;
+  }
+
+  code {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 719px) {
+  .prose {
+    // 모바일은 코드/다이어그램을 화면 끝까지 붙여 가로 공간을 최대한 쓴다
+    div.highlighter-rouge,
+    .diagram {
+      margin-inline: calc(var(--gutter) * -1);
+      border-radius: 0;
+      border-inline: 0;
+    }
+
+    h2 {
+      font-size: 1.3em;
+    }
+
+    h3 {
+      font-size: 1.125em;
+    }
+  }
+}

@@ -3,7 +3,7 @@
 title: "Kubernetes 보안을 계층으로 나눠 세우기 (PSA, Kyverno, kube-bench, Falco, Trivy)"
 date: 2026-06-15
 categories: [Kubernetes, Security]
-tags: [Kubernetes, Security, CKS, Kyverno, PodSecurity, kube-bench, CIS, Falco, Trivy, RBAC, NetworkPolicy]
+tags: [Kubernetes, Security, Kyverno, CKS]
 layout: post
 toc: true
 math: true

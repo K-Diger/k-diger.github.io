@@ -1,8 +1,8 @@
 ---
 title: "Istio Ambient 모드는 사이드카를 어떻게 대체하는가"
 date: 2026-05-04
-categories: [Kubernetes, Istio]
-tags: [istio, ambient-mesh, ztunnel, hbone, waypoint, service-mesh, sidecar-less, l4, l7]
+categories: [Kubernetes, ServiceMesh]
+tags: [Kubernetes, Istio, ServiceMesh]
 layout: post
 toc: true
 mermaid: true

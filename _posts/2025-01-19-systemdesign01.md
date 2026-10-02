@@ -2,8 +2,8 @@
 
 title: "사용자가 늘어날 때 시스템은 어디부터 무너지는가"
 date: 2025-01-19
-categories: [Architecture, SystemDesign]
-tags: [SystemDesign, ScaleOut, LoadBalancer, Cache, CDN, Stateless, Sharding]
+categories: [Architecture]
+tags: [SystemDesign, Architecture, Cache, Scalability]
 layout: post
 toc: true
 math: true

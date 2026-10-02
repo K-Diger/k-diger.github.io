@@ -2,8 +2,8 @@
 
 title: "Redis Cluster는 키를 어떻게 나누고 장애를 어떻게 감지하는가"
 date: 2025-09-25
-categories: [Redis]
-tags: [Redis]
+categories: [Middleware, Redis]
+tags: [Redis, Cache, Sharding]
 layout: post
 toc: true
 math: true

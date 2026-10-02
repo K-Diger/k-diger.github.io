@@ -1,8 +1,8 @@
 ---
 title: "AI 코딩 에이전트를 제대로 쓰기, 토큰 관리와 스펙 기반 개발"
 date: 2026-07-20
-categories: [AI, Development]
-tags: [Claude, ClaudeCode, AIAgent, SDD, TokenOptimization, MCP]
+categories: [AI]
+tags: [AI, ClaudeCode, MCP, Agent]
 layout: post
 toc: true
 math: true

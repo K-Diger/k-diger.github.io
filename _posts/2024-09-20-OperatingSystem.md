@@ -2,8 +2,8 @@
 
 title: "운영체제 자문자답, 프로세스부터 CPU 스케줄링까지"
 date: 2024-09-20
-categories: [OperatingSystem]
-tags: [OperatingSystem, Process, Thread, Scheduling, Blocking, CallByValue]
+categories: [CS]
+tags: [OS, Process, Thread]
 layout: post
 toc: true
 math: true

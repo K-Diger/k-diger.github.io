@@ -2,8 +2,8 @@
 
 title: "관측성을 직접 세우면서 알게 된 것들 (OpenTelemetry, LGTM, 알림 설계)"
 date: 2026-07-06
-categories: [Observability, DevOps]
-tags: [Observability, OpenTelemetry, OTel, LGTM, Loki, Mimir, Tempo, Grafana, Alerting, SLO]
+categories: [Observability]
+tags: [Observability, OpenTelemetry, LGTM, Alerting, SLO]
 layout: post
 toc: true
 math: true

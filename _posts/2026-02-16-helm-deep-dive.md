@@ -1,8 +1,9 @@
 ---
+render_with_liquid: false # Helm/Go 템플릿의 {{ }} 를 Liquid 가 지우지 않도록
 title: "Helm 공식문서 전수 정리, 차트 설계부터 서명 검증까지"
 date: 2026-02-16
-categories: [Kubernetes, DevOps]
-tags: [helm, chart, template, values, hooks, library-chart, oci-registry, provenance, kubernetes]
+categories: [Kubernetes, Helm]
+tags: [Kubernetes, Helm]
 layout: post
 toc: true
 mermaid: true

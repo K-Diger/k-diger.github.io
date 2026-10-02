@@ -2,8 +2,8 @@
 
 title: "형태소 분석기로 뉴스 키워드를 뽑기, Lucene과 Komoran 중 무엇을 고를까"
 date: 2023-11-21
-categories: [Java, Search]
-tags: [Lucene, Nori, Komoran, MorphemeAnalyzer, Kotlin, Jsoup]
+categories: [Backend, Java]
+tags: [Java, Lucene, Search, Kotlin]
 layout: post
 toc: true
 math: true

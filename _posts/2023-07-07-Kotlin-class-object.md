@@ -2,8 +2,8 @@
 
 title: "코틀린의 class와 object 키워드, 디컴파일해서 확인하기"
 date: 2023-07-07
-categories: [Kotlin, Java]
-tags: [Kotlin, Class, Object, Bytecode, Companion, ValueClass]
+categories: [Backend, Kotlin]
+tags: [Kotlin, Bytecode]
 layout: post
 toc: true
 math: true

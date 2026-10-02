@@ -1,0 +1,31 @@
+---
+layout: page
+title: 분류
+permalink: /categories/
+---
+{%- comment -%} 첫 번째 분류별로 묶고 글 수 많은 순으로 놓는다. 두 번째 분류는 글 제목 옆에 작게 단다. {%- endcomment -%}
+{%- assign firsts = '' -%}
+{%- for p in site.posts -%}{%- assign firsts = firsts | append: p.categories[0] | append: '|' -%}{%- endfor -%}
+{%- assign parents = firsts | split: '|' | uniq -%}
+{%- assign keys = '' -%}
+{%- for c in parents -%}
+  {%- assign n = 0 -%}
+  {%- for p in site.posts -%}{%- if p.categories[0] == c -%}{%- assign n = n | plus: 1 -%}{%- endif -%}{%- endfor -%}
+  {%- assign padded = n | prepend: '000' | slice: -3, 3 -%}
+  {%- assign keys = keys | append: padded | append: '|' | append: c | append: '^^' -%}
+{%- endfor -%}
+{%- assign sorted = keys | split: '^^' | sort | reverse -%}
+
+{%- for k in sorted %}
+  {%- assign parts = k | split: '|' -%}
+  {%- assign parent = parts[1] %}
+<section class="cat-block">
+  <h2><a href="{{ parent | slugify | prepend: '/categories/' | append: '/' | relative_url }}">{{ parent }}</a> <small>{{ parts[0] | plus: 0 }}편</small></h2>
+  <ul class="post-list">
+    {%- for p in site.posts -%}
+      {%- if p.categories[0] != parent -%}{%- continue -%}{%- endif %}
+    <li class="post-row"><a href="{{ p.url | relative_url }}"><span class="post-row__title">{{ p.title }}</span><span class="post-row__date">{% if p.categories[1] %}<span class="post-row__sub">{{ p.categories | shift | join: ' / ' }}</span>{% endif %}{{ p.date | date: '%Y년 %-m월' }}</span></a></li>
+    {%- endfor %}
+  </ul>
+</section>
+{%- endfor %}

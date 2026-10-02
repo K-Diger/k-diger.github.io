@@ -1,0 +1,33 @@
+{%- comment -%}
+  관련 글: 태그 1점, 분류 2점으로 점수를 매겨 상위 4편. 점수가 같으면 최신 글 우선.
+  Liquid 에는 정렬 키를 줄 방법이 마땅치 않아 "점수(2자리)|날짜|인덱스" 문자열로 만들어 정렬한다.
+{%- endcomment -%}
+{%- assign keys = '' -%}
+{%- for p in site.posts -%}
+  {%- if p.url == page.url -%}{%- continue -%}{%- endif -%}
+  {%- assign score = 0 -%}
+  {%- for t in page.tags -%}
+    {%- if p.tags contains t -%}{%- assign score = score | plus: 1 -%}{%- endif -%}
+  {%- endfor -%}
+  {%- for c in page.categories -%}
+    {%- if p.categories contains c -%}{%- assign score = score | plus: 2 -%}{%- endif -%}
+  {%- endfor -%}
+  {%- if score >= 2 -%}
+    {%- assign padded = score | prepend: '00' | slice: -2, 2 -%}
+    {%- capture key -%}{{ padded }}|{{ p.date | date: '%Y%m%d' }}|{{ forloop.index0 }}{%- endcapture -%}
+    {%- assign keys = keys | append: key | append: ',' -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- assign sorted = keys | split: ',' | sort | reverse -%}
+{%- if sorted.size > 0 %}
+<section class="related" aria-labelledby="related-title">
+  <h2 class="section-title" id="related-title">같은 주제의 글</h2>
+  <ul class="post-list">
+    {%- for k in sorted limit: 4 -%}
+      {%- assign idx = k | split: '|' | last | plus: 0 -%}
+      {%- assign p = site.posts[idx] %}
+    <li class="post-row"><a href="{{ p.url | relative_url }}"><span class="post-row__title">{{ p.title }}</span><time class="post-row__date" datetime="{{ p.date | date_to_xmlschema }}">{{ p.date | date: '%Y년 %-m월' }}</time></a></li>
+    {%- endfor %}
+  </ul>
+</section>
+{%- endif -%}

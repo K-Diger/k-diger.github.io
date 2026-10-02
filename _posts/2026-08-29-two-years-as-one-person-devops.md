@@ -2,8 +2,8 @@
 
 title: "1인 데브옵스 2년, 시간순으로 정리한다"
 date: 2026-08-29
-categories: [DevOps, 회고]
-tags: [Kafka, KafkaConnect, Redis, RedisCluster, KongGateway, Kubernetes, Observability, ChatOps, Timeline]
+categories: [DevOps]
+tags: [Retrospective, Kafka, Redis, Kubernetes, Observability]
 layout: post
 toc: true
 math: true

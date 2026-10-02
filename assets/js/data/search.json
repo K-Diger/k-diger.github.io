@@ -1,18 +1,17 @@
 ---
-layout: compress
-swcache: true
+layout: null
+sitemap: false
 ---
-
+{%- comment -%} 헤더 프롬프트 검색용 인덱스. 첫 검색 때 한 번만 받아온다. {%- endcomment -%}
 [
-  {% for post in site.posts %}
+{%- for post in site.posts %}
   {
-    "title": {{ post.title | jsonify }},
-    "url": {{ post.url | relative_url | jsonify }},
-    "categories": {{ post.categories | join: ', ' | jsonify }},
-    "tags": {{ post.tags | join: ', ' | jsonify }},
-    "date": {{ post.date | jsonify }},
-    {% capture content -%}{% include post-summary.html full_text=true %}{%- endcapture -%}
-    "content": {{ content | jsonify }}
+    "t": {{ post.title | jsonify }},
+    "u": {{ post.url | relative_url | jsonify }},
+    "d": {{ post.date | date: '%Y-%m-%d' | jsonify }},
+    "c": {{ post.categories | join: '/' | jsonify }},
+    "g": {{ post.tags | join: ' ' | jsonify }},
+    "x": {{ post.content | strip_html | normalize_whitespace | jsonify }}
   }{% unless forloop.last %},{% endunless %}
-  {% endfor %}
+{%- endfor %}
 ]

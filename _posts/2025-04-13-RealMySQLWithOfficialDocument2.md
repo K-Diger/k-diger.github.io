@@ -3,7 +3,7 @@
 title: "Real MySQL 5장을 공식문서로 다시 읽기, 잠금의 종류와 격리 수준"
 date: 2025-04-13
 categories: [Database, MySQL]
-tags: [MySQL, InnoDB, Lock, IsolationLevel, GapLock, NextKeyLock]
+tags: [MySQL, InnoDB, Lock, Transaction]
 layout: post
 toc: true
 math: true

@@ -2,8 +2,8 @@
 
 title: "JEP로 따라가는 Java LTS 버전별 변경점 (8, 11, 17, 21)"
 date: 2024-03-16
-categories: [Java]
-tags: [Java8, Java11, Java17, Java21, JEP, LTS]
+categories: [Backend, Java]
+tags: [Java, JEP]
 layout: post
 toc: true
 math: true

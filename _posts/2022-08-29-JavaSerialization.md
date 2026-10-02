@@ -2,8 +2,8 @@
 
 title: "자바 직렬화, 그리고 쓰지 말라는 말을 듣고 이유를 찾아본 기록"
 date: 2022-08-29
-categories: [Java, Serialization]
-tags: [Java, Serialization, Deserialization, Security]
+categories: [Backend, Java]
+tags: [Java, Serialization, Security]
 layout: post
 toc: true
 math: true

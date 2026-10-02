@@ -1,0 +1,34 @@
+---
+layout: default
+---
+{%- comment -%}
+  jekyll-archives 가 만드는 분류/태그별 글 목록.
+  "Cilium" 과 "cilium" 처럼 대소문자만 다른 이름은 같은 URL 로 겹치므로 page.posts 대신
+  slug 가 같은 글을 직접 모은다.
+{%- endcomment -%}
+{%- assign slug = page.title | slugify -%}
+{%- assign matched = '' | split: '' -%}
+{%- for post in site.posts -%}
+  {%- if page.type == 'tag' -%}{%- assign names = post.tags -%}{%- else -%}{%- assign names = post.categories -%}{%- endif -%}
+  {%- for n in names -%}
+    {%- assign ns = n | slugify -%}
+    {%- if ns == slug -%}{%- assign matched = matched | push: post -%}{%- break -%}{%- endif -%}
+  {%- endfor -%}
+{%- endfor -%}
+<div class="wrap">
+  <header class="page-head">
+    <h1>{% if page.type == 'tag' %}#{% endif %}{{ page.title }}</h1>
+    <p class="lede">{% if page.type == 'tag' %}태그{% else %}분류{% endif %}, 글 {{ matched.size }}편</p>
+  </header>
+
+  <ul class="post-list">
+    {%- for post in matched %}
+    <li class="post-row">
+      <a href="{{ post.url | relative_url }}">
+        <span class="post-row__title">{{ post.title }}</span>
+        <time class="post-row__date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y년 %-m월' }}</time>
+      </a>
+    </li>
+    {%- endfor %}
+  </ul>
+</div>

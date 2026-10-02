@@ -1,8 +1,8 @@
 ---
 title: "키, 인증서, SSH, TLS를 한 번에 정리하고 가로채기 시나리오까지 따라가기"
 date: 2026-01-05
-categories: [DevOps, Security]
-tags: [security, devsecops, ssh, tls, mtls, pki, mitm, pem, crt, key, authorized_keys, known_hosts, aes, rsa, ecdhe, ed25519]
+categories: [DevOps]
+tags: [Security, TLS, SSH, PKI, mTLS]
 layout: post
 toc: true
 mermaid: true

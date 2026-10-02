@@ -3,7 +3,7 @@
 title: "Real MySQL 4장을 공식문서로 다시 읽기, 아키텍처와 InnoDB"
 date: 2025-04-06
 categories: [Database, MySQL]
-tags: [MySQL, InnoDB, BufferPool, Architecture, Redo, MVCC]
+tags: [MySQL, InnoDB, BufferPool, MVCC]
 layout: post
 toc: true
 math: true

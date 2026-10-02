@@ -2,8 +2,8 @@
 
 title: "OpenTelemetry의 세 가지 시그널, 추적과 지표와 로그"
 date: 2025-01-26
-categories: [Observability, OpenTelemetry]
-tags: [OpenTelemetry, Trace, Span, Metric, Log, Observability]
+categories: [Observability]
+tags: [Observability, OpenTelemetry, Tracing]
 layout: post
 toc: true
 math: true

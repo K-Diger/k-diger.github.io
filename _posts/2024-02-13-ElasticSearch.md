@@ -2,8 +2,8 @@
 
 title: "ElasticSearch에 형태소 분석기 적용하기"
 date: 2024-02-13
-categories: [ElasticSearch]
-tags: [ElasticSearch]
+categories: [Middleware, Elasticsearch]
+tags: [Elasticsearch, Search, Lucene]
 layout: post
 toc: true
 math: true

@@ -2,7 +2,7 @@
 title: "정책을 코드로 강제하기, OPA Gatekeeper 공식문서 전수 정리"
 date: 2026-06-01
 categories: [Kubernetes, Security]
-tags: [opa, gatekeeper, rego, constraint-template, mutation, audit, policy-as-code, admission-controller, kubernetes]
+tags: [Kubernetes, Security, OPA, PolicyAsCode]
 layout: post
 toc: true
 mermaid: true

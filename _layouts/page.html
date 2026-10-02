@@ -1,20 +1,10 @@
 ---
 layout: default
 ---
-
-{% include lang.html %}
-
-<article class="px-1">
-  {% if page.layout == 'page' or page.collection == 'tabs' %}
-    {% assign tab_key = page.title | downcase %}
-    {% assign title = site.data.locales[lang].tabs[tab_key] | default: page.title %}
-    <h1 class="dynamic-title">
-      {{ title }}
-    </h1>
-    <div class="content">
-      {{ content }}
-    </div>
-  {% else %}
-    {{ content }}
-  {% endif %}
-</article>
+<div class="wrap">
+  <header class="page-head">
+    <h1>{{ page.title }}</h1>
+    {%- if page.url == '/tags/' %}<p class="lede">태그 {{ site.tags.size }}개, 글 많은 순</p>{% elsif page.url == '/categories/' %}<p class="lede">글 {{ site.posts.size }}편, 첫 번째 분류 기준</p>{% endif %}
+  </header>
+  {{ content }}
+</div>

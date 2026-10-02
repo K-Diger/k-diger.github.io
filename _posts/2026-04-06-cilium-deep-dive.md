@@ -2,7 +2,7 @@
 title: "Cilium 공식문서 전수 정리, eBPF 기반 네트워킹과 보안과 관측성"
 date: 2026-04-06
 categories: [Kubernetes, Networking]
-tags: [cilium, ebpf, hubble, cni, network-policy, kubernetes, observability, lb-ipam, service-mesh]
+tags: [Kubernetes, Cilium, eBPF, CNI, Network]
 layout: post
 toc: true
 mermaid: true

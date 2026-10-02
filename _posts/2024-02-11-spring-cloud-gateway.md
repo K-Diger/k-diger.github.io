@@ -2,8 +2,8 @@
 
 title: "Spring Cloud Gateway 공식문서 전수 정리"
 date: 2024-02-11
-categories: [Spring, Gateway]
-tags: [SpringCloudGateway, APIGateway, WebFlux, Filter, Routing]
+categories: [Backend, Spring]
+tags: [Spring, SpringCloudGateway, APIGateway, WebFlux]
 layout: post
 toc: true
 math: true

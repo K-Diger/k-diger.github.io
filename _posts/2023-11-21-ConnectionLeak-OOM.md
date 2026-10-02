@@ -2,8 +2,8 @@
 
 title: "크롤러가 커넥션을 말리고 힙을 터뜨렸던 이야기"
 date: 2023-11-21
-categories: [Java, Database]
-tags: [ConnectionLeak, OOM, HikariCP, JdbcTemplate, BulkInsert, G1GC]
+categories: [Backend, JVM]
+tags: [Java, JVM, HikariCP, OOM, Troubleshooting]
 layout: post
 toc: true
 math: true

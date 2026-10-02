@@ -2,8 +2,8 @@
 
 title: "Spring Security의 인증이 어디서 어떻게 일어나는가"
 date: 2022-08-27
-categories: [Spring, Security]
-tags: [SpringSecurity, Authentication, Authorization, FilterChain, SecurityContext]
+categories: [Backend, Auth]
+tags: [Spring, SpringSecurity, Auth, Filter]
 layout: post
 toc: true
 math: true

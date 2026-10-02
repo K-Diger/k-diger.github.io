@@ -3,7 +3,7 @@
 title: "쿠버네티스에서 오브젝트, 컴포넌트, 애드온은 각각 무엇인가"
 date: 2026-01-19
 categories: [Kubernetes]
-tags: [Kubernetes, Object, Component, Addon, ControlPlane, Controller, CRD, Operator]
+tags: [Kubernetes, Controller, CRD]
 layout: post
 toc: true
 math: true

@@ -2,8 +2,8 @@
 
 title: "MongoDB를 Spring Boot에 붙이면서 막혔던 두 가지"
 date: 2023-11-05
-categories: [Database, Spring]
-tags: [MongoDB, NoSQL, SpringData, Document, JPMS]
+categories: [Database, MongoDB]
+tags: [MongoDB, Spring, NoSQL]
 layout: post
 toc: true
 math: true

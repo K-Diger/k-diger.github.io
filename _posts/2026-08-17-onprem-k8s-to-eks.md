@@ -2,8 +2,8 @@
 
 title: "온프렘 쿠버네티스를 EKS로 옮기면 무엇이 달라지는가"
 date: 2026-08-17
-categories: [AWS, Kubernetes]
-tags: [AWS, EKS, IRSA, VPC, CNI, EKSCTL, Terraform]
+categories: [Kubernetes, Cloud]
+tags: [Kubernetes, AWS, EKS, Terraform]
 layout: post
 toc: true
 math: true

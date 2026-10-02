@@ -2,8 +2,8 @@
 
 title: "Caffeine Cache는 왜 빠른가, W-TinyLFU 내부 뜯어보기"
 date: 2023-09-21
-categories: [Java, Cache]
-tags: [CaffeineCache, LocalCache, TinyLFU, WindowTinyLFU, Eviction, Spring]
+categories: [Backend, Java]
+tags: [Java, Cache, Caffeine]
 layout: post
 toc: true
 math: true

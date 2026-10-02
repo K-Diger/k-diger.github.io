@@ -2,8 +2,8 @@
 
 title: Java 8 - Stream/Lambda
 date: 2022-08-09
-categories: [Java]
-tags: [Stream, Lambda, Java8]
+categories: [Backend, Java]
+tags: [Java, Stream, Lambda]
 layout: post
 toc: true
 math: true

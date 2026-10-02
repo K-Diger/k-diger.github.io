@@ -2,8 +2,8 @@
 
 title: "Gradle의 api와 implementation은 무엇이 다른가"
 date: 2023-12-30
-categories: [Gradle, Java]
-tags: [Gradle, Dependency, Build, Multimodule]
+categories: [Backend, Java]
+tags: [Gradle, Java, Build]
 layout: post
 toc: true
 math: true

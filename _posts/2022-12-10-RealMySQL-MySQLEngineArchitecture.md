@@ -3,7 +3,7 @@
 title: "MySQL 엔진 아키텍처, 읽으면서 남았던 질문들까지"
 date: 2022-12-10
 categories: [Database, MySQL]
-tags: [MySQL, InnoDB, StorageEngine, Architecture, Thread, BufferPool]
+tags: [MySQL, InnoDB, BufferPool]
 layout: post
 toc: true
 math: true

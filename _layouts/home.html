@@ -1,142 +1,70 @@
 ---
 layout: default
 ---
+{%- comment -%} 주제: 글의 첫 번째 분류별 글 수, 많은 순 상위 10개 {%- endcomment -%}
+{%- assign firsts = '' -%}
+{%- for p in site.posts -%}{%- assign firsts = firsts | append: p.categories[0] | append: '|' -%}{%- endfor -%}
+{%- assign parents = firsts | split: '|' | uniq -%}
+{%- assign keys = '' -%}
+{%- for c in parents -%}
+  {%- assign n = 0 -%}
+  {%- for p in site.posts -%}{%- if p.categories[0] == c -%}{%- assign n = n | plus: 1 -%}{%- endif -%}{%- endfor -%}
+  {%- assign padded = n | prepend: '000' | slice: -3, 3 -%}
+  {%- assign keys = keys | append: padded | append: '|' | append: c | append: '^^' -%}
+{%- endfor -%}
+{%- assign topics = keys | split: '^^' | sort | reverse -%}
 
-{% include lang.html %}
+<div class="wrap">
+  <div class="home-grid">
+    <div class="home-main">
+      <h1 class="home-title">{{ site.author.name }}</h1>
 
-{% assign all_pinned = site.posts | where: 'pin', 'true' %}
-{% assign all_normal = site.posts | where_exp: 'item', 'item.pin != true and item.hidden != true' %}
-
-{% assign posts = '' | split: '' %}
-
-<!-- Get pinned posts on current page -->
-
-{% assign visible_start = paginator.page | minus: 1 | times: paginator.per_page %}
-{% assign visible_end = visible_start | plus: paginator.per_page %}
-
-{% if all_pinned.size > visible_start %}
-{% if all_pinned.size > visible_end %}
-{% assign pinned_size = paginator.per_page %}
-{% else %}
-{% assign pinned_size = all_pinned.size | minus: visible_start %}
-{% endif %}
-
-{% for i in (visible_start..all_pinned.size) limit: pinned_size %}
-{% assign posts = posts | push: all_pinned[i] %}
-{% endfor %}
-{% else %}
-{% assign pinned_size = 0 %}
-{% endif %}
-
-<!-- Get normal posts on current page -->
-
-{% assign normal_size = paginator.posts | size | minus: pinned_size %}
-
-{% if normal_size > 0 %}
-{% if pinned_size > 0 %}
-{% assign normal_start = 0 %}
-{% else %}
-{% assign normal_start = visible_start | minus: all_pinned.size %}
-{% endif %}
-
-{% assign normal_end = normal_start | plus: normal_size | minus: 1 %}
-
-{% for i in (normal_start..normal_end) %}
-{% assign posts = posts | push: all_normal[i] %}
-{% endfor %}
-{% endif %}
-
-<div id="post-list" class="flex-grow-1 px-xl-1">
-  {% for post in posts %}
-  <article class="card-wrapper card">
-    <a href="{{ post.url | relative_url }}" class="post-preview row g-0 flex-md-row-reverse">
-      {% assign card_body_col = '12' %}
-
-      {% if post.image %}
-        {% assign src = post.image.path | default: post.image %}
-
-        {% if post.media_subpath %}
-          {% unless src contains '://' %}
-            {% assign src = post.media_subpath
-              | append: '/'
-              | append: src
-              | replace: '///', '/'
-              | replace: '//', '/'
-            %}
-          {% endunless %}
-        {% endif %}
-
-        {% assign alt = post.image.alt | xml_escape | default: 'Preview Image' %}
-
-        {% assign lqip_attr = '' %}
-
-        {% if post.image.lqip %}
-          {% assign lqip = post.image.lqip %}
-
-          {% if post.media_subpath %}
-            {% unless lqip contains 'data:' %}
-              {% assign lqip = post.media_subpath
-                | append: '/'
-                | append: lqip
-                | replace: '///', '/'
-                | replace: '//', '/'
-              %}
-            {% endunless %}
-          {% endif %}
-
-          {% assign lqip_attr = 'lqip="' | append: lqip | append: '"' %}
-        {% endif %}
-
-        <div class="col-md-5">
-          <img src="{{ src }}" alt="{{ alt }}" {{ lqip_attr }}>
-        </div>
-
-        {% assign card_body_col = '7' %}
-      {% endif %}
-
-      <div class="col-md-{{ card_body_col }}">
-        <div class="card-body d-flex flex-column">
-          <h1 class="card-title my-2 mt-md-0">{{ post.title }}</h1>
-
-          <div class="card-text content mt-0 mb-3">
-            <p>{% include post-summary.html %}</p>
+      <div class="bio-box">
+        <div class="bio-bar">
+          <span class="bio-bar__label">소개</span>
+          <div class="bio-tabs" role="radiogroup" aria-label="소개 길이">
+            <input type="radio" name="bio" id="bio-short" checked><label for="bio-short">짧게</label>
+            <input type="radio" name="bio" id="bio-long"><label for="bio-long">길게</label>
           </div>
-
-          <div class="post-meta flex-grow-1 d-flex align-items-end">
-            <div class="me-auto">
-              <!-- posted date -->
-              <i class="far fa-calendar fa-fw me-1"></i>
-              {% include datetime.html date=post.date lang=lang %}
-
-              <!-- categories -->
-              {% if post.categories.size > 0 %}
-              <i class="far fa-folder-open fa-fw me-1"></i>
-              <span class="categories">
-                    {% for category in post.categories %}
-                      {{ category }}
-                      {%- unless forloop.last -%},{%- endunless -%}
-                    {% endfor %}
-                  </span>
-              {% endif %}
-            </div>
-
-            {% if post.pin %}
-            <div class="pin ms-1">
-              <i class="fas fa-thumbtack fa-fw"></i>
-              <span>{{ site.data.locales[lang].post.pin_prompt }}</span>
-            </div>
-            {% endif %}
-          </div>
-          <!-- .post-meta -->
         </div>
-        <!-- .card-body -->
+        <div class="bio">
+          <div class="bio__short">
+            <p>게임 회사에서 임직원들이 쓰는 사내 업무 시스템의 인프라를 맡고 있다. 서버 80여 대를 혼자 운영하고, 요즘은 Docker Compose로 돌던 서비스를 Kubernetes로 옮기는 일을 주로 한다.</p>
+            <p>여기에는 일하다 막혔던 것과 공식 문서를 읽으며 정리한 것을 적는다.</p>
+          </div>
+          <div class="bio__long">
+            <p>2024년 4월 인턴으로 들어가 지금까지 사내 업무 시스템의 인프라를 맡고 있다. 처음 갔을 때는 게이트웨이도 캐시도 이미지 레지스트리도 없어서 Kong, Kafka, Redis, Harbor를 깔고 Jenkins 파이프라인을 만드는 것부터 했다. 출입 기록을 근태 시스템으로 바로 넘기는 CDC 파이프라인도 이때 Kafka Connect와 Debezium으로 만들었다.</p>
+            <p>2025년에는 서버 83대를 Ansible로 관리하도록 바꾸고, 배포가 실패하면 직전 버전으로 알아서 되돌아가는 파이프라인을 만들었다. 배치 몇 개를 K3s에 먼저 올려 보면서 Kubernetes를 들일지 판단했다.</p>
+            <p>올해는 폐쇄망에 Kubernetes 클러스터를 세우고 배포를 ArgoCD로 옮기고 있다. 게이트웨이는 Kong에서 Envoy Gateway로 바꿨고, 상용 APM을 걷어내려고 Grafana, Loki, Tempo, Mimir로 모니터링을 다시 만드는 중이다. 알림이 울리면 지표와 로그를 모아 슬랙 스레드에 올려 주는 도구도 만들어 쓴다.</p>
+            <p>그 전에는 Java와 Spring을 공부했고, 이 블로그도 그때 시작했다. <a href="https://github.com/kubernetes/kubernetes/pull/133964">Kubernetes</a>와 <a href="https://github.com/kafbat/kafka-ui/pull/720">Kafka UI</a>에 작은 수정을 보낸 적이 있다.</p>
+          </div>
+        </div>
       </div>
-    </a>
-  </article>
-  {% endfor %}
-</div>
-<!-- #post-list -->
 
-{% if paginator.total_pages > 1 %}
-{% include post-paginator.html %}
-{% endif %}
+      <h2 class="section-title">주제</h2>
+      <ul class="topic-list">
+        {%- for k in topics limit: 10 -%}
+          {%- assign parts = k | split: '|' %}
+        <li><a href="{{ parts[1] | slugify | prepend: '/categories/' | append: '/' | relative_url }}">{{ parts[1] }}</a><span class="count">{{ parts[0] | plus: 0 }}</span></li>
+        {%- endfor %}
+      </ul>
+      <a class="more-link" href="{{ '/categories/' | relative_url }}">분류 전체 보기</a>
+
+      <h2 class="section-title" id="posts">글</h2>
+      <ul class="post-list">
+        {%- for post in site.posts %}
+        <li class="post-row">
+          <a href="{{ post.url | relative_url }}">
+            <span class="post-row__title" style="view-transition-name: vt-{{ post.slug | slugify }}">{{ post.title }}</span>
+            <time class="post-row__date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y년 %-m월' }}</time>
+          </a>
+        </li>
+        {%- endfor %}
+      </ul>
+    </div>
+
+    <aside class="home-art" aria-hidden="true">
+      <canvas id="deploy-art"></canvas>
+    </aside>
+  </div>
+</div>

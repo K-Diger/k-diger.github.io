@@ -1,0 +1,143 @@
+// 리셋과 전역 타이포그래피
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 24px;
+  hanging-punctuation: first allow-end last;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.75;
+  font-optical-sizing: auto;
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizelegibility;
+
+  // 한국어는 어절 단위로 줄을 바꾸고, 긴 URL 같은 토큰만 강제로 끊는다.
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+}
+
+@media (min-width: 720px) {
+  body {
+    font-size: 1.0625rem; // 17px
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg,
+video,
+iframe {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--gutter);
+  top: -100px;
+  z-index: 100;
+  padding: 8px 12px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+
+  &:focus {
+    top: 8px;
+  }
+}
+
+.sans {
+  font-family: var(--font-sans);
+}
+
+// 크로스 문서 View Transitions: 목록의 제목이 글 제목 자리로 이어진다. 미지원 브라우저는 일반 이동.
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+}
+
+::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+
+  // SVG 내부는 제외한다. Mermaid 가 라벨 크기를 재는 동안 transition-duration 이 강제되면
+  // 그림 전체가 수천 px 로 부풀어 오른다(실측으로 확인).
+  :where(*:not(svg, svg *)),
+  :where(*:not(svg, svg *))::before,
+  :where(*:not(svg, svg *))::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

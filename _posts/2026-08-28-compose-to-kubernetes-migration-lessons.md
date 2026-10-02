@@ -2,8 +2,8 @@
 
 title: "Docker Compose를 걷어내며 뚫렸던 것들 (게이트웨이, 네트워크, 배포)"
 date: 2026-08-28
-categories: [Kubernetes, DevOps]
-tags: [Kubernetes, DockerCompose, GatewayAPI, Envoy, MetalLB, kube-proxy, Cilium, Ansible, ChatOps, GitOps, CI/CD]
+categories: [Kubernetes]
+tags: [Kubernetes, DockerCompose, Migration, GatewayAPI, Cilium, GitOps]
 layout: post
 toc: true
 math: true

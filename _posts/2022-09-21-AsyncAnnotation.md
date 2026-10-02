@@ -2,8 +2,8 @@
 
 title: "외부 서버 호출로 응답이 658ms가 됐고, @Async로 122ms로 줄인 과정"
 date: 2022-09-21
-categories: [Spring, Java]
-tags: [Spring, Async, ThreadPool, TaskExecutor, Concurrency]
+categories: [Backend, Spring]
+tags: [Spring, Async, ThreadPool, Performance]
 layout: post
 toc: true
 math: true

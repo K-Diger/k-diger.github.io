@@ -2,8 +2,8 @@
 
 title: "필터를 직접 만들어보면서 확인한 등록과 순서"
 date: 2022-08-12
-categories: [Spring, Java]
-tags: [Spring, Filter, ServletFilter, JWT, QueryDSL, FilterRegistrationBean]
+categories: [Backend, Spring]
+tags: [Spring, Filter, Servlet, JWT]
 layout: post
 toc: true
 math: true

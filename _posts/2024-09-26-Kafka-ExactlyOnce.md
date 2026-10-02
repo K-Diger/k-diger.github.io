@@ -2,8 +2,8 @@
 
 title: "Kafka에서 정확히 한 번은 정말 가능한가"
 date: 2024-09-26
-categories: [Kafka]
-tags: [Kafka, Producer, Idempotence, Transaction, ExactlyOnce, Consumer]
+categories: [Middleware, Kafka]
+tags: [Kafka, Transaction, Idempotence]
 layout: post
 toc: true
 math: true

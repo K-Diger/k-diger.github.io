@@ -3,7 +3,7 @@
 title: "트랜잭션과 락, 그리고 격리 수준이 실제로 무엇을 막아주는가"
 date: 2023-05-02
 categories: [Database, MySQL]
-tags: [MySQL, Transaction, Lock, IsolationLevel, InnoDB, MVCC]
+tags: [MySQL, Transaction, Lock, MVCC]
 layout: post
 toc: true
 math: true

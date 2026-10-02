@@ -2,8 +2,8 @@
 
 title: Server Side Session vs Token
 date: 2022-06-16
-categories: [Session, Token]
-tags: [Session, Token, JWT]
+categories: [Backend, Auth]
+tags: [Auth, Session, JWT]
 layout: post
 toc: true
 math: true

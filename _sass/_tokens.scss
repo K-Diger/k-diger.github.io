@@ -1,0 +1,111 @@
+// 디자인 토큰. leerob.com 의 디자인 언어(세리프 본문, 회색 보조 텍스트, 장식 없는 단일 칼럼)를 기준으로 삼았다.
+// 대비: 본문 --ink 는 배경 대비 14:1(라이트) / 13:1(다크), 보조 --ink-2 는 5.7:1 / 7.4:1 로 WCAG AA 이상.
+// 다크 배경은 순검정 대신 따뜻한 #1b1a19, 글자는 순백 대신 #e8e5df 를 써서 번짐(halation)을 줄인다.
+
+@mixin light-tokens {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-2: #f7f7f5;
+  --bg-3: #efeeeb;
+  --ink: #282828;
+  --ink-2: #676767;
+  --ink-3: #a5a5a3;
+  --quote: #504945;
+  --rule: #e9e8e5;
+  --rule-2: #cacaca;
+  --code: #ad2111;
+  --mark: #fff2b3;
+  --mark-ink: #282828;
+  --shadow: rgb(40 40 40 / 10%);
+
+  // 그림 액자(홈 일러스트)
+  --art-sky: #e9f1f8;
+  --art-sky-2: #f6efe3;
+  --art-node: #ffffff;
+  --art-line: #8aa3bd;
+  --art-ink: #2c3e50;
+  --art-packet: #2f6fdb;
+  --art-deploy: #e8a33d;
+  --art-ok: #3f9a5b;
+
+  // syntax (--bg-2 기준 4.5:1 이상)
+  --c-comment: #6f6f6c;
+  --c-keyword: #8b3fa8;
+  --c-string: #2e6b3a;
+  --c-number: #a04f0c;
+  --c-func: #2457a6;
+  --c-type: #8a5a00;
+  --c-tag: #ad2111;
+  --c-attr: #2457a6;
+  --c-var: #9a4a00;
+}
+
+@mixin dark-tokens {
+  color-scheme: dark;
+  --bg: #1b1a19;
+  --bg-2: #232220;
+  --bg-3: #2d2b29;
+  --ink: #e8e5df;
+  --ink-2: #aaa59e;
+  --ink-3: #6f6b66;
+  --quote: #c9c3ba;
+  --rule: #302e2c;
+  --rule-2: #4d4a47;
+  --code: #e06c5f;
+  --mark: #5a4a17;
+  --mark-ink: #fdf6dc;
+  --shadow: rgb(0 0 0 / 45%);
+
+  --art-sky: #212a33;
+  --art-sky-2: #2a2520;
+  --art-node: #2d2b29;
+  --art-line: #5b6f84;
+  --art-ink: #d9e2ea;
+  --art-packet: #7fb0ff;
+  --art-deploy: #f0b65c;
+  --art-ok: #6cc486;
+
+  --c-comment: #8f8a83;
+  --c-keyword: #d3a6f0;
+  --c-string: #a6d7a0;
+  --c-number: #f0b27a;
+  --c-func: #8fb6f2;
+  --c-type: #e3c27f;
+  --c-tag: #f0907f;
+  --c-attr: #8fb6f2;
+  --c-var: #f2b27c;
+}
+
+:root {
+  @include light-tokens;
+
+  // 라틴 글자는 Iowan Old Style(애플 기기 내장) → Source Serif 4, 한글은 Noto Serif KR 이 받는다.
+  --font-serif: "Iowan Old Style", "Source Serif 4", "Noto Serif KR", "Apple Myungjo",
+    "Batang", georgia, serif;
+  --font-sans: "Pretendard Variable", pretendard, ui-sans-serif, -apple-system, system-ui,
+    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas,
+    "Pretendard Variable", monospace;
+
+  // 본문 폭. 37em 은 17px 기준 한 줄 한글 약 38자로 WCAG 1.4.8 의 CJK 40자 상한 안에 든다.
+  --measure: 37em;
+  --gutter: 20px;
+  --radius: 8px;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @include dark-tokens;
+  }
+}
+
+:root[data-theme="dark"] {
+  @include dark-tokens;
+}
+
+@media (min-width: 720px) {
+  :root {
+    --gutter: 48px;
+  }
+}
