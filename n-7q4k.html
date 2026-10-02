@@ -1,0 +1,69 @@
+---
+layout: default
+title: 비공개 메모
+permalink: /n/7q4k/
+sitemap: false
+noindex: true
+---
+{%- comment -%}
+비밀번호로 잠긴 글. 본문은 assets/data/n-7q4k.json에 AES-256-GCM 암호문으로만 있고,
+비밀번호를 입력하면 브라우저에서 PBKDF2(SHA-256, 600,000회)로 키를 만들어 복호화한다.
+평문 원고와 비밀번호는 이 저장소에 없다. 원고 수정 후 재암호화는 원고 쪽 tools/build.sh로 한다.
+{%- endcomment -%}
+<div class="wrap">
+  <header class="page-head">
+    <h1>비공개 메모</h1>
+    <p class="lede">비밀번호를 입력하면 이 브라우저 안에서만 내용을 복호화한다.</p>
+  </header>
+  <form class="lock-form" id="lock-form" autocomplete="off">
+    <label for="lock-pw">비밀번호</label>
+    <div class="lock-row">
+      <input id="lock-pw" type="password" required autocomplete="current-password">
+      <button type="submit">열기</button>
+    </div>
+    <p class="lock-msg" id="lock-msg" role="status" aria-live="polite"></p>
+  </form>
+  <div class="prose" id="lock-body" hidden></div>
+</div>
+<style>
+  .lock-form { max-width: 26rem; margin: 8px 0 48px; font-family: var(--font-sans); }
+  .lock-form label { display: block; margin-bottom: 8px; font-size: 0.875rem; color: var(--ink-2); }
+  .lock-row { display: flex; gap: 8px; }
+  .lock-row input { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid var(--rule-2); border-radius: 6px;
+    background: var(--bg); color: var(--ink); font: inherit; }
+  .lock-row button { padding: 9px 16px; border: 1px solid var(--rule-2); border-radius: 6px; background: var(--bg-2);
+    color: var(--ink); font: inherit; cursor: pointer; }
+  .lock-msg { min-height: 1.5em; margin: 10px 0 0; font-size: 0.8125rem; color: var(--ink-2); }
+  #lock-body table { display: block; overflow-x: auto; }
+</style>
+<script type="module">
+  const form = document.getElementById('lock-form');
+  const msg = document.getElementById('lock-msg');
+  const body = document.getElementById('lock-body');
+  const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  let data = null;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '복호화 중...';
+    try {
+      if (!data) {
+        const res = await fetch('{{ "/assets/data/n-7q4k.json" | relative_url }}', { cache: 'no-store' });
+        if (!res.ok) throw new Error('데이터를 불러오지 못했다 (HTTP ' + res.status + ')');
+        data = await res.json();
+      }
+      const pw = new TextEncoder().encode(document.getElementById('lock-pw').value);
+      const base = await crypto.subtle.importKey('raw', pw, 'PBKDF2', false, ['deriveKey']);
+      const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(data.salt), iterations: data.iter, hash: 'SHA-256' },
+        base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(data.iv) }, key, b64(data.ct));
+      body.innerHTML = new TextDecoder().decode(plain);
+      body.querySelectorAll('a[href^="http"]').forEach((a) => { a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+      body.hidden = false;
+      form.hidden = true;
+      document.querySelector('.page-head .lede').textContent = '이 브라우저 안에서 복호화한 내용이다. 창을 닫으면 다시 잠긴다.';
+    } catch (err) {
+      // AES-GCM은 비밀번호가 틀리면 인증 태그 검증에서 실패한다
+      msg.textContent = (err && err.name === 'OperationError') ? '비밀번호가 맞지 않는다.' : String(err.message || err);
+    }
+  });
+</script>
