@@ -1,7 +1,7 @@
 ---
 render_with_liquid: false # Helm/Go 템플릿의 {{ }} 를 Liquid 가 지우지 않도록
 
-title: "ArgoCD로 GitOps를 세울 때 고른 패턴과 그 이유"
+title: "ArgoCD GitOps 구성 패턴과 선택 기준"
 date: 2026-03-16
 categories: [Kubernetes, GitOps]
 tags: [Kubernetes, ArgoCD, GitOps]

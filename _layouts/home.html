@@ -19,26 +19,10 @@ layout: default
     <div class="home-main">
       <h1 class="home-title">{{ site.author.name }}</h1>
 
-      <div class="bio-box">
-        <div class="bio-bar">
-          <span class="bio-bar__label">소개</span>
-          <div class="bio-tabs" role="radiogroup" aria-label="소개 길이">
-            <input type="radio" name="bio" id="bio-short" checked><label for="bio-short">짧게</label>
-            <input type="radio" name="bio" id="bio-long"><label for="bio-long">길게</label>
-          </div>
-        </div>
-        <div class="bio">
-          <div class="bio__short">
-            <p>게임 회사에서 임직원들이 쓰는 사내 업무 시스템의 인프라를 맡고 있다. 서버 80여 대를 혼자 운영하고, 요즘은 Docker Compose로 돌던 서비스를 Kubernetes로 옮기는 일을 주로 한다.</p>
-            <p>여기에는 일하다 막혔던 것과 공식 문서를 읽으며 정리한 것을 적는다.</p>
-          </div>
-          <div class="bio__long">
-            <p>2024년 4월 인턴으로 들어가 지금까지 사내 업무 시스템의 인프라를 맡고 있다. 처음 갔을 때는 게이트웨이도 캐시도 이미지 레지스트리도 없어서 Kong, Kafka, Redis, Harbor를 깔고 Jenkins 파이프라인을 만드는 것부터 했다. 출입 기록을 근태 시스템으로 바로 넘기는 CDC 파이프라인도 이때 Kafka Connect와 Debezium으로 만들었다.</p>
-            <p>2025년에는 서버 83대를 Ansible로 관리하도록 바꾸고, 배포가 실패하면 직전 버전으로 알아서 되돌아가는 파이프라인을 만들었다. 배치 몇 개를 K3s에 먼저 올려 보면서 Kubernetes를 들일지 판단했다.</p>
-            <p>올해는 폐쇄망에 Kubernetes 클러스터를 세우고 배포를 ArgoCD로 옮기고 있다. 게이트웨이는 Kong에서 Envoy Gateway로 바꿨고, 상용 APM을 걷어내려고 Grafana, Loki, Tempo, Mimir로 모니터링을 다시 만드는 중이다. 알림이 울리면 지표와 로그를 모아 슬랙 스레드에 올려 주는 도구도 만들어 쓴다.</p>
-            <p>그 전에는 Java와 Spring을 공부했고, 이 블로그도 그때 시작했다. <a href="https://github.com/kubernetes/kubernetes/pull/133964">Kubernetes</a>와 <a href="https://github.com/kafbat/kafka-ui/pull/720">Kafka UI</a>에 작은 수정을 보낸 적이 있다.</p>
-          </div>
-        </div>
+      <div class="bio">
+        <p>게임 회사에서 임직원이 사용하는 사내 업무 시스템의 인프라를 담당하고 있다. 2024년 4월 인턴으로 입사해 Kong, Kafka, Redis, Harbor와 Jenkins 배포 파이프라인을 구축했고, 2025년에는 서버 83대를 Ansible로 관리하도록 전환하고 배포 실패 시 이전 버전으로 자동 롤백하는 파이프라인을 만들었다.</p>
+        <p>2026년에는 폐쇄망 환경에 Kubernetes 클러스터를 구축하고 배포를 ArgoCD로 전환하고 있다. API 게이트웨이를 Kong에서 Envoy Gateway로 이관했고, 상용 APM을 대체하기 위해 Grafana, Loki, Tempo, Mimir로 모니터링 시스템을 구축하고 있다. <a href="https://github.com/kubernetes/kubernetes/pull/133964">Kubernetes</a>와 <a href="https://github.com/kafbat/kafka-ui/pull/720">Kafka UI</a>에 코드를 기여했다.</p>
+        <p>이 블로그에는 업무 중 겪은 문제와 공식 문서를 읽으며 정리한 내용을 기록한다.</p>
       </div>
 
       <h2 class="section-title">주제</h2>
@@ -63,8 +47,5 @@ layout: default
       </ul>
     </div>
 
-    <aside class="home-art" aria-hidden="true">
-      <canvas id="deploy-art"></canvas>
-    </aside>
   </div>
 </div>

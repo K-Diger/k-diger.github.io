@@ -1,5 +1,5 @@
 ---
-title: "Istio Ambient 모드는 사이드카를 어떻게 대체하는가"
+title: "Istio Ambient 모드 구조 (ztunnel, waypoint)와 사이드카 모드 비교"
 date: 2026-05-04
 categories: [Kubernetes, ServiceMesh]
 tags: [Kubernetes, Istio, ServiceMesh]
@@ -57,7 +57,7 @@ Ambient 모드가 그 문제를 다르게 푼다고 해서 공식문서를 읽�
 
 Ambient 모드에서 Istio는 노드당 L4 프록시와, 선택적으로 네임스페이스당 L7 프록시를 사용하여 기능을 구현한다.
 
-Istio의 Sidecar 모드는 강력하지만, Pod마다 Envoy 프록시를 주입하는 구조는 리소스 오버헤드, 수명주기 관리 부담, 업그레이드 시 Pod 재시작 문제를 안고 있다. Ambient Mesh는 이 문제를 근본적으로 해결하기 위해 등장한 Sidecar-less 데이터 플레인 모드다. 이 글에서는 Istio 공식문서를 기반으로 Ambient Mesh의 아키텍처, ztunnel, HBONE, Waypoint Proxy의 동작 원리를 심화 정리한다.
+Istio의 Sidecar 모드는 강력하지만, Pod마다 Envoy 프록시를 주입하는 구조는 리소스 오버헤드, 수명주기 관리 부담, 업그레이드 시 Pod 재시작 문제를 안고 있다. Ambient Mesh는 이 문제를 해결하기 위해 등장한 Sidecar-less 데이터 플레인 모드다. 이 글에서는 Istio 공식문서를 기반으로 Ambient Mesh의 아키텍처, ztunnel, HBONE, Waypoint Proxy의 동작 원리를 심화 정리한다.
 
 ---
 
@@ -198,10 +198,10 @@ sequenceDiagram
 
 HBONE이 기존 TCP 직접 통신 대신 HTTP/2 CONNECT를 사용하는 이유가 있다.
 
-1. **mTLS 자동 적용**: 터널 자체가 TLS로 암호화되므로, 애플리케이션이 TLS를 구현하지 않아도 전송 구간이 보호된다
-2. **메타데이터 전달**: HTTP/2 헤더를 통해 소스 ID, 대상 서비스 정보 등의 메타데이터를 터널 레벨에서 전달할 수 있다
-3. **멀티플렉싱**: HTTP/2의 스트림 멀티플렉싱으로 하나의 TCP 연결에서 여러 논리적 연결을 처리한다
-4. **표준 프로토콜**: HTTP/2 CONNECT는 RFC 7540에 정의된 표준이므로, 로드밸런서나 방화벽과의 호환성이 높다
+1. mTLS 자동 적용: 터널 자체가 TLS로 암호화되므로, 애플리케이션이 TLS를 구현하지 않아도 전송 구간이 보호된다
+2. 메타데이터 전달: HTTP/2 헤더를 통해 소스 ID, 대상 서비스 정보 등의 메타데이터를 터널 레벨에서 전달할 수 있다
+3. 멀티플렉싱: HTTP/2의 스트림 멀티플렉싱으로 하나의 TCP 연결에서 여러 논리적 연결을 처리한다
+4. 표준 프로토콜: HTTP/2 CONNECT는 RFC 7540에 정의된 표준이므로, 로드밸런서나 방화벽과의 호환성이 높다
 
 HBONE 터널의 기본 포트는 **15008**이다. 이 포트가 노드 간 방화벽에서 허용되어야 Ambient 메시가 정상 동작한다.
 
@@ -766,13 +766,13 @@ Ambient 메시 참여와 해제가 Pod 재시작 없이 이루어진다. 라벨 
 
 Ambient 대신 전통적인 Sidecar 모드만 운영하는 경우의 부담을 정리한다.
 
-1. **앱별 프록시 수명주기 관리**: 서비스 수백 개 규모에서 각 Pod의 Envoy 사이드카 버전을 일관성 있게 유지하는 것은 상당한 운영 부담이다. Revision-based 카나리 업그레이드를 사용하더라도, 최종적으로 모든 Pod의 Rolling Restart가 필요하다.
+1. 앱별 프록시 수명주기 관리: 서비스 수백 개 규모에서 각 Pod의 Envoy 사이드카 버전을 일관성 있게 유지하는 것은 상당한 운영 부담이다. Revision-based 카나리 업그레이드를 사용하더라도, 최종적으로 모든 Pod의 Rolling Restart가 필요하다.
 
-2. **리소스 낭비**: 단순 mTLS/L4 보안만 필요한 워크로드(예: 내부 배치 작업, 단순 TCP 프록시)에도 전체 Envoy 사이드카가 주입되어 메모리와 CPU를 소비한다.
+2. 리소스 낭비: 단순 mTLS/L4 보안만 필요한 워크로드(예: 내부 배치 작업, 단순 TCP 프록시)에도 전체 Envoy 사이드카가 주입되어 메모리와 CPU를 소비한다.
 
-3. **사이드카 시작 순서 문제**: `holdApplicationUntilProxyStarts`를 설정해도, 종료 시에는 `EXIT_ON_ZERO_ACTIVE_CONNECTIONS` 같은 추가 설정이 필요하다. 사이드카의 수명주기가 애플리케이션과 결합되어 있기 때문이다.
+3. 사이드카 시작 순서 문제: `holdApplicationUntilProxyStarts`를 설정해도, 종료 시에는 `EXIT_ON_ZERO_ACTIVE_CONNECTIONS` 같은 추가 설정이 필요하다. 사이드카의 수명주기가 애플리케이션과 결합되어 있기 때문이다.
 
-4. **보안 권한 확대**: Sidecar 주입을 위한 init container가 `NET_ADMIN` capability를 요구하며, 이는 PodSecurityPolicy/PodSecurityStandard에서 제한 대상이 될 수 있다.
+4. 보안 권한 확대: Sidecar 주입을 위한 init container가 `NET_ADMIN` capability를 요구하며, 이는 PodSecurityPolicy/PodSecurityStandard에서 제한 대상이 될 수 있다.
 
 ---
 
@@ -1033,4 +1033,4 @@ Waypoint를 `use-waypoint` 라벨로 연결한 서비스의 L7 트래픽이 전�
 
 **사이드카와 섞어 쓸 수 있는가.** 같은 메시 안에서 공존한다. ztunnel은 이미 사이드카가 주입된 파드의 트래픽은 건드리지 않는다. **네임스페이스 단위로 하나씩 옮기면서 문제가 생기면 라벨만 떼면 되므로**, 점진적 전환이 가능하다는 것이 실무에서 가장 큰 값어치였다.
 
-정리하고 나서 남은 감각은 **비용 구조를 바꾸는 설계**라는 것이었다. 사이드카는 파드 수에 비례하고 Ambient는 노드 수에 비례한다. 파드 밀도가 높은 클러스터일수록 이 차이가 커지고, 반대로 파드가 몇 개 안 되면 굳이 옮길 이유가 없다.
+사이드카 모드의 리소스 비용은 파드 수에, Ambient 모드는 노드 수에 비례한다. 파드 밀도가 높은 클러스터일수록 차이가 커지고, 파드 수가 적으면 전환할 이유가 적다.

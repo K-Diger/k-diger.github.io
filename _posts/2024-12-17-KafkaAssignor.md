@@ -1,6 +1,6 @@
 ---
 
-title: Kafka Partition 할당 내부 동작 파해치기
+title: "Kafka 컨슈머 파티션 할당 전략과 Sticky Assignor 동작"
 date: 2024-12-17
 categories: [Middleware, Kafka]
 tags: [Kafka, Consumer, Rebalance]

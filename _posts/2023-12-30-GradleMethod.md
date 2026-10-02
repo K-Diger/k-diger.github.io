@@ -1,6 +1,6 @@
 ---
 
-title: "Gradle의 api와 implementation은 무엇이 다른가"
+title: "Gradle api와 implementation 의존성 설정 차이"
 date: 2023-12-30
 categories: [Backend, Java]
 tags: [Gradle, Java, Build]
@@ -148,7 +148,7 @@ flowchart TB
 
 ---
 
-## 4. 그럼 언제 api를 쓰는가
+## 4. api를 쓰는 경우
 
 세 번째 질문이다. 안 쓰는 것이 아니라, 쓸 자리가 정해져 있다.
 

@@ -1,5 +1,5 @@
 ---
-title: "정책을 코드로 강제하기, OPA Gatekeeper 공식문서 전수 정리"
+title: "OPA Gatekeeper 공식 문서 정리 (ConstraintTemplate, Mutation, Audit)"
 date: 2026-06-01
 categories: [Kubernetes, Security]
 tags: [Kubernetes, Security, OPA, PolicyAsCode]
@@ -36,7 +36,7 @@ mermaid: true
 
 클러스터에 규칙을 강제해야 했다. 리소스 제한이 없는 파드를 막고, 태그 없는 이미지를 막고, 특정 네임스페이스에는 특권 파드를 못 띄우게 하는 것들이다.
 
-문서로 적어두고 리뷰에서 잡는 방식으로는 계속 새어 나갔다. **사람이 확인하는 규칙은 결국 지켜지지 않는다.**
+문서로 적어두고 리뷰에서 잡는 방식으로는 계속 새어 나갔다. **사람이 확인하는 규칙은 누락이 생긴다.**
 
 정책 엔진을 붙이기로 하고 OPA Gatekeeper 공식문서를 읽었다. Rego라는 낯선 언어가 나와서 그것부터 이해해야 했다.
 
@@ -79,7 +79,7 @@ flowchart LR
 
 참고: 아래 내용은 공식문서의 개념을 기반으로 정리한 것이다.
 
-핵심 포인트는 OPA의 출력이 단순 allow/deny가 아니라 **임의의 구조화된 데이터**라는 것이다. 예를 들어 "이 사용자가 접근할 수 있는 리소스 목록", "적용해야 할 네트워크 규칙 집합" 등 복잡한 결과를 반환할 수 있다.
+중요한 점은 OPA의 출력이 단순 allow/deny가 아니라 **임의의 구조화된 데이터**라는 것이다. 예를 들어 "이 사용자가 접근할 수 있는 리소스 목록", "적용해야 할 네트워크 규칙 집합" 등 복잡한 결과를 반환할 수 있다.
 
 ### 1.3 OPA CLI 도구
 
@@ -453,11 +453,11 @@ spec:
 
 이 ConstraintTemplate이 하는 일을 분해하면 다음과 같다.
 
-1. **`spec.crd`**: `K8sRequiredLabels`라는 새 CRD를 정의한다. `labels`라는 string 배열 파라미터를 갖는다.
-2. **`spec.targets[].rego`**: 실제 평가 로직이다. `violation` 규칙이 하나라도 결과를 생성하면 요청이 거부된다.
-3. **`provided`**: 대상 리소스에 실제로 있는 레이블 집합을 Set으로 추출한다.
-4. **`required`**: Constraint 파라미터에서 필수 레이블 집합을 Set으로 추출한다.
-5. **`missing`**: 차집합 연산(`-`)으로 빠진 레이블을 찾는다.
+1. `spec.crd`: `K8sRequiredLabels`라는 새 CRD를 정의한다. `labels`라는 string 배열 파라미터를 갖는다.
+2. `spec.targets[].rego`: 실제 평가 로직이다. `violation` 규칙이 하나라도 결과를 생성하면 요청이 거부된다.
+3. `provided`: 대상 리소스에 실제로 있는 레이블 집합을 Set으로 추출한다.
+4. `required`: Constraint 파라미터에서 필수 레이블 집합을 Set으로 추출한다.
+5. `missing`: 차집합 연산(`-`)으로 빠진 레이블을 찾는다.
 
 ### 4.2 Constraint 작성
 
@@ -1493,10 +1493,10 @@ OPA는 정책 평가를 위해 목적 설계되었으며, 선언형 언어 Rego�
 
 Rego는 Datalog 기반의 선언형 언어이므로 명령형 프로그래밍에 익숙한 엔지니어에게는 진입 장벽이 있다. 특히 다음 개념이 혼동을 일으킨다.
 
-- **변수 통합(Unification)**: `=`가 할당이자 비교인 점
-- **Partial evaluation**: 규칙 본문의 모든 표현식이 AND로 결합되는 점
-- **Undefined vs false**: 규칙이 실패하면 false가 아니라 undefined인 점
-- **Set semantics**: 같은 이름의 규칙이 OR로 합쳐지는 점
+- 변수 통합(Unification): `=`가 할당이자 비교인 점
+- Partial evaluation: 규칙 본문의 모든 표현식이 AND로 결합되는 점
+- Undefined vs false: 규칙이 실패하면 false가 아니라 undefined인 점
+- Set semantics: 같은 이름의 규칙이 OR로 합쳐지는 점
 
 OPA Playground(https://play.openpolicyagent.org/)에서 실습하는 것을 권장한다.
 
@@ -1680,8 +1680,8 @@ violation[{"msg": msg}] {
 
 Gatekeeper는 OPA Constraint Framework 위에 구축되어 있다. Constraint Framework의 핵심 개념은 **Template-Constraint 분리 패턴**이다.
 
-- **Template**: "어떤 검증 로직을 수행할 것인가" (Rego)
-- **Constraint**: "어떤 리소스에, 어떤 파라미터로 적용할 것인가" (YAML)
+- Template: "어떤 검증 로직을 수행할 것인가" (Rego)
+- Constraint: "어떤 리소스에, 어떤 파라미터로 적용할 것인가" (YAML)
 
 이 분리 덕분에 플랫폼 팀이 Template을 작성하고, 개별 팀이 자신의 네임스페이스에 맞는 Constraint를 생성하는 **셀프 서비스 모델**이 가능하다.
 
@@ -1755,4 +1755,4 @@ Gatekeeper는 OPA Constraint Framework 위에 구축되어 있다. Constraint Fr
 
 **이미 돌고 있는 리소스.** Audit이 주기적으로 전체를 훑어서 위반을 `Constraint`의 상태에 기록한다. 이걸 지표로 뽑아 대시보드에 올리면 **"정책을 켰을 때 몇 건이 걸리는지"를 미리 볼 수 있다.** 새 정책은 `dryrun`으로 시작해서 위반 건수를 확인하고, 정리가 끝난 뒤에 강제로 바꾸는 순서가 안전했다.
 
-정리하고 나서 남은 감각은 **정책 엔진이 규칙을 강제하는 도구이면서 동시에 새로운 단일 장애점**이라는 것이었다. 모든 리소스 생성이 이 웹훅을 지나가므로, 여기가 느려지면 클러스터 전체가 느려진다. 정책을 늘리기 전에 응답 시간과 실패 정책부터 정해야 했다.
+정책 엔진은 규칙을 강제하는 도구이면서 단일 장애점이 된다. 모든 리소스 생성 요청이 웹훅을 거치므로 응답이 느려지면 클러스터 전체가 느려진다. 정책을 추가하기 전에 응답 시간 목표와 실패 정책(failurePolicy)을 먼저 정한다.

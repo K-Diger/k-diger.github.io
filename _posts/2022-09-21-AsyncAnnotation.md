@@ -1,6 +1,6 @@
 ---
 
-title: "외부 서버 호출로 응답이 658ms가 됐고, @Async로 122ms로 줄인 과정"
+title: "@Async로 외부 API 호출 응답 시간 단축 (658ms에서 122ms)"
 date: 2022-09-21
 categories: [Backend, Spring]
 tags: [Spring, Async, ThreadPool, Performance]
@@ -315,7 +315,7 @@ public void recover(RestClientException e, Long userId, String message) {
 
 **지수 백오프를 쓰는 이유**가 있다. 외부 서버가 과부하라서 실패한 것이라면 즉시 재시도가 부하를 더한다. 간격을 늘려가면서 회복할 시간을 준다.
 
-**`@Recover`가 중요하다.** 재시도를 다 쓰고도 실패했을 때 무엇을 할지를 정한다. 여기서 아무것도 안 하면 결국 조용히 사라진다.
+**`@Recover`가 중요하다.** 재시도를 다 쓰고도 실패했을 때 무엇을 할지를 정한다. 여기서 아무것도 안 하면 작업이 로그 없이 사라진다.
 
 ### 5.3 그래도 남는 한계
 
@@ -441,7 +441,7 @@ SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHRE
 
 외부 서버 호출 시간이 응답 경로에서 빠졌기 때문이다.
 
-**주의할 것은 이게 "빨라진" 것이 아니라는 점이다.** 알림 전송에 걸리는 시간은 그대로다. 다만 클라이언트가 그것을 기다리지 않게 됐을 뿐이다.
+**처리 시간이 줄어든 것은 아니다.** 알림 전송에 걸리는 시간은 그대로다. 다만 클라이언트가 그것을 기다리지 않게 됐을 뿐이다.
 
 그래서 이 최적화가 통하는 조건이 정해져 있다. **결과를 응답에 포함할 필요가 없고, 실패해도 본 작업이 성공한 것으로 볼 수 있는 작업**이어야 한다.
 

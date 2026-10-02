@@ -1,6 +1,6 @@
 ---
 
-title: "코드를 안 고치고 계측하기, 자동 계측은 어떻게 동작하는가"
+title: "OpenTelemetry Java 자동 계측 동작 원리 (Java Agent, ByteBuddy)"
 date: 2025-02-09
 categories: [Observability]
 tags: [Observability, OpenTelemetry, JavaAgent, Bytecode]
@@ -227,7 +227,7 @@ static class BrokenTelephoneImpl extends BrokenTelephonGrpc.BrokenTelephoneImplB
 
 **의미 있는 속성을 못 붙인다.** 주문 금액이나 사용자 등급 같은 것은 도메인 지식이라 에이전트가 알 수 없다.
 
-그래서 **자동 계측으로 뼈대를 잡고, 필요한 곳에만 수동으로 살을 붙이는 방식**이 된다.
+그래서 **자동 계측으로 기본 계측을 적용하고, 필요한 곳에만 수동 계측을 추가하는 방식**을 쓴다.
 
 **조심할 것.** 세 가지가 있었다.
 
@@ -237,4 +237,4 @@ static class BrokenTelephoneImpl extends BrokenTelephonGrpc.BrokenTelephoneImplB
 
 **버전 호환에 걸린다.** 에이전트가 특정 라이브러리 버전을 가정하고 바이트코드를 고치는데, 그 라이브러리를 올리면 계측이 조용히 빠질 수 있다. **에러가 나는 것이 아니라 데이터가 안 나오므로** 알아채기 어렵다.
 
-알아보고 나서 남은 감각은 **자동 계측이 마법이 아니라 미리 준비된 목록**이라는 것이었다. 알려진 라이브러리의 알려진 메서드에 미리 만들어둔 코드를 끼워 넣는 것이고, 그 목록 밖은 여전히 직접 해야 한다.
+자동 계측은 알려진 라이브러리의 메서드에 미리 작성된 계측 코드를 삽입하는 방식이다. 지원 목록에 없는 코드는 수동으로 계측해야 한다.

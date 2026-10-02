@@ -1,6 +1,6 @@
 ---
 
-title: "코틀린의 class와 object 키워드, 디컴파일해서 확인하기"
+title: "Kotlin class와 object 키워드 디컴파일 분석"
 date: 2023-07-07
 categories: [Backend, Kotlin]
 tags: [Kotlin, Bytecode]
@@ -232,7 +232,7 @@ fun handleResult(result: Result) {
 }
 ```
 
-**여기서 진짜 값어치가 드러난다.** 나중에 `Result`에 `Loading`이라는 하위 타입을 추가한다고 하자.
+**하위 타입을 추가할 때 차이가 드러난다.** 나중에 `Result`에 `Loading`이라는 하위 타입을 추가한다고 하자.
 
 sealed면 **`when`을 쓴 모든 곳에서 컴파일 에러가 난다.** 처리를 빠뜨린 자리를 컴파일러가 전부 찾아준다.
 
@@ -443,7 +443,7 @@ value class UserEmail(val value: String) {
 
 **애노테이션이 `@JvmInline` 하나뿐이다.** JPA를 전혀 모른다.
 
-### 5.4 정말 사라지는가
+### 5.4 디컴파일 결과 확인
 
 네 번째 질문이다. 디컴파일해보면 이렇다.
 
@@ -819,7 +819,7 @@ public final class ClassForTest {
 
 ### 8.3 static이 아니라는 점
 
-컴파일 결과에서 알 수 있는 사실이 하나 더 있다. **`companion object`의 멤버는 진짜 static 멤버가 아니다.** `Companion`이라는 객체의 인스턴스 메서드다.
+컴파일 결과에서 알 수 있는 사실이 하나 더 있다. **`companion object`의 멤버는 실제 static 멤버가 아니다.** `Companion`이라는 객체의 인스턴스 메서드다.
 
 코틀린에서는 `ClassForTest.printSomeValue()`로 쓸 수 있지만, **자바에서 부르려면 `Companion`을 거쳐야 한다.**
 
@@ -842,7 +842,7 @@ class ClassForTest {
 ClassForTest.printSomeValue();   // 이제 가능
 ```
 
-**진짜 static이 아니라는 점이 장점이 되기도 한다.** `companion object`는 인터페이스를 구현할 수 있고 확장 함수를 붙일 수도 있다. 자바의 static 멤버로는 못 하는 일이다.
+**실제 static이 아니라는 점이 장점이 되기도 한다.** `companion object`는 인터페이스를 구현할 수 있고 확장 함수를 붙일 수도 있다. 자바의 static 멤버로는 못 하는 일이다.
 
 ```kotlin
 interface Factory<T> {
@@ -882,4 +882,4 @@ makeAll(User)     // companion object를 값으로 넘길 수 있다
 
 **`value class`가 정말 사라지는가.** 함수 파라미터나 지역 변수로 쓰면 사라지고 감싼 값 자체가 된다. 다만 제네릭 타입 인자, nullable, 인터페이스 타입으로 다룰 때는 박싱된다. 이름 뒤섞기 때문에 자바에서 부르기 불편해지는 대가도 있다.
 
-디컴파일해보고 나서 남은 감각은 **코틀린의 문법 대부분이 자바로 옮겨지는 규칙**이라는 것이었다. 새로운 개념이 아니라 자바에서 손으로 쓰던 패턴을 언어가 흡수한 것이라 보면 대부분 설명이 됐다.
+디컴파일 결과를 보면 코틀린 문법 대부분은 자바 코드로 변환되는 규칙이다. 자바에서 직접 작성하던 패턴을 언어 문법으로 제공하는 것으로 이해하면 대부분 설명된다.

@@ -1,5 +1,5 @@
 ---
-title: "Cilium 공식문서 전수 정리, eBPF 기반 네트워킹과 보안과 관측성"
+title: "Cilium 공식 문서 정리 (eBPF 네트워킹, 네트워크 정책, Hubble)"
 date: 2026-04-06
 categories: [Kubernetes, Networking]
 tags: [Kubernetes, Cilium, eBPF, CNI, Network]
@@ -156,11 +156,11 @@ Cilium Operator는 클러스터 전체에서 논리적으로 한 번만 처리�
 Cilium Operator는 클러스터 범위의 작업을 담당하는 컴포넌트다. 모든 노드에서 동일한 작업을 중복 수행하는 것을 방지하기 위해 존재한다.
 
 **주요 역할:**
-- **IPAM 관리**: 클러스터 전체의 IP 주소 풀을 관리하고, 노드별 CIDR을 할당한다
-- **Identity Garbage Collection**: 더 이상 사용되지 않는 Identity를 주기적으로 정리한다
-- **CRD 관리**: CiliumNetworkPolicy, CiliumEndpoint 등의 CRD 상태를 관리한다
-- **노드 검색(Node Discovery)**: 새로운 노드 합류 시 초기 설정을 수행한다
-- **Heartbeat**: 클러스터 상태를 주기적으로 확인한다
+- IPAM 관리: 클러스터 전체의 IP 주소 풀을 관리하고, 노드별 CIDR을 할당한다
+- Identity Garbage Collection: 더 이상 사용되지 않는 Identity를 주기적으로 정리한다
+- CRD 관리: CiliumNetworkPolicy, CiliumEndpoint 등의 CRD 상태를 관리한다
+- 노드 검색(Node Discovery): 새로운 노드 합류 시 초기 설정을 수행한다
+- Heartbeat: 클러스터 상태를 주기적으로 확인한다
 
 Operator는 Deployment로 배포되며, 고가용성을 위해 Leader Election을 통한 Active/Standby 구성이 가능하다.
 
@@ -201,8 +201,8 @@ eBPF는 원래 네트워크 패킷 필터링을 위해 도입된 Linux 커널 �
 
 Cilium은 상태 저장을 위해 두 가지 백엔드를 지원한다.
 
-- **Kubernetes CRD (기본)**: CiliumIdentity, CiliumEndpoint, CiliumNode 등의 CRD를 통해 상태를 Kubernetes API Server(etcd)에 저장한다. 별도의 etcd 클러스터 운영이 필요 없으므로 운영 복잡도가 낮다.
-- **외부 etcd**: 대규모 클러스터(1000+ 노드)에서 Kubernetes API Server의 부하를 줄이기 위해 Cilium 전용 etcd 클러스터를 운영할 수 있다. Kubernetes API Server와의 의존성을 분리하므로 Cilium의 가용성이 향상된다.
+- Kubernetes CRD (기본): CiliumIdentity, CiliumEndpoint, CiliumNode 등의 CRD를 통해 상태를 Kubernetes API Server(etcd)에 저장한다. 별도의 etcd 클러스터 운영이 필요 없으므로 운영 복잡도가 낮다.
+- 외부 etcd: 대규모 클러스터(1000+ 노드)에서 Kubernetes API Server의 부하를 줄이기 위해 Cilium 전용 etcd 클러스터를 운영할 수 있다. Kubernetes API Server와의 의존성을 분리하므로 Cilium의 가용성이 향상된다.
 
 대부분의 운영 환경에서는 Kubernetes CRD 백엔드가 권장된다. 외부 etcd는 수천 노드 규모에서만 고려하면 된다.
 
@@ -239,11 +239,11 @@ Map은 커널 공간에 상주하는 효율적인 키/값 저장소다. 단일 B
 **Maps:**
 - eBPF 프로그램과 유저스페이스 간에 데이터를 공유하는 핵심 자료구조다
 - 주요 Map 타입:
-  - **Hash Map**: O(1) 키-값 조회. 정책 룩업, Identity 매핑에 사용
-  - **Array Map**: 인덱스 기반 조회. 설정값, 통계 카운터에 사용
-  - **LRU Hash Map**: 크기 제한이 있으며 LRU 정책으로 자동 eviction
-  - **Per-CPU Hash/Array**: CPU별 독립 인스턴스로 락 경합 없음
-  - **Map-in-Map**: Map의 값으로 다른 Map의 fd를 저장. 런타임 Map 교체에 사용
+  - Hash Map: O(1) 키-값 조회. 정책 룩업, Identity 매핑에 사용
+  - Array Map: 인덱스 기반 조회. 설정값, 통계 카운터에 사용
+  - LRU Hash Map: 크기 제한이 있으며 LRU 정책으로 자동 eviction
+  - Per-CPU Hash/Array: CPU별 독립 인스턴스로 락 경합 없음
+  - Map-in-Map: Map의 값으로 다른 Map의 fd를 저장. 런타임 Map 교체에 사용
 
 Tail call은 하나의 BPF 프로그램이 이전 프로그램으로 돌아가지 않고 다른 BPF 프로그램을 호출할 수 있게 하는 메커니즘으로 볼 수 있다. 이러한 호출은 함수 호출과 달리 동일한 스택 프레임을 재사용하는 long jump로 구현되므로 최소한의 오버헤드를 가진다.
 
@@ -1307,9 +1307,9 @@ East-west 로드 밸런싱은 소켓 레벨(`connect()`)에서 서비스 연결�
 
 Cilium의 `kubeProxyReplacement=true` 설정으로 kube-proxy를 완전히 대체할 수 있다.
 
-- **Socket-level LB**: `connect()` 시스템 콜에서 직접 Service IP를 Pod IP로 변환하므로 netfilter/iptables를 완전히 우회한다
-- **Maglev 해싱**: 일관성 해싱을 통해 Backend Pod 변경 시에도 기존 연결의 대부분이 동일한 Backend로 라우팅된다
-- **DSR (Direct Server Return)**: 응답 패킷이 Source 노드를 경유하지 않고 직접 클라이언트로 전달되어 hop을 줄인다
+- Socket-level LB: `connect()` 시스템 콜에서 직접 Service IP를 Pod IP로 변환하므로 netfilter/iptables를 완전히 우회한다
+- Maglev 해싱: 일관성 해싱을 통해 Backend Pod 변경 시에도 기존 연결의 대부분이 동일한 Backend로 라우팅된다
+- DSR (Direct Server Return): 응답 패킷이 Source 노드를 경유하지 않고 직접 클라이언트로 전달되어 hop을 줄인다
 
 ### 8.4 네트워킹 + 보안 + 관측성 통합 운영 모델
 

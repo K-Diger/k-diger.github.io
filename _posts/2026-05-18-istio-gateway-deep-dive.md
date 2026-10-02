@@ -1,5 +1,5 @@
 ---
-title: "클러스터 밖에서 들어오는 트래픽, Istio Gateway와 Gateway API"
+title: "Istio Gateway와 Kubernetes Gateway API 비교"
 date: 2026-05-18
 categories: [Kubernetes, ServiceMesh]
 tags: [Kubernetes, Istio, GatewayAPI]
@@ -66,7 +66,7 @@ North-South 트래픽을 제어하지 않으면, 서비스별 개별 LoadBalance
 
 Gateway는 Ingress보다 더 광범위한 커스터마이징과 유연성을 제공하며, 모니터링 및 라우팅 규칙 같은 Istio 기능을 클러스터에 진입하는 트래픽에 적용할 수 있게 한다.
 
-핵심은 **경계에서 동작하는 전용 Envoy 프록시**라는 점이다. 일반적인 Kubernetes Ingress Controller(NGINX Ingress 등)와 달리, Istio Gateway는 메시 내부의 mTLS, 트래픽 관리, Observability를 그대로 활용할 수 있다.
+중요한 점은 **경계에서 동작하는 전용 Envoy 프록시**라는 점이다. 일반적인 Kubernetes Ingress Controller(NGINX Ingress 등)와 달리, Istio Gateway는 메시 내부의 mTLS, 트래픽 관리, Observability를 그대로 활용할 수 있다.
 
 Gateway는 L4-L6 로드밸런싱 속성을 구성하며, 애플리케이션 계층 라우팅을 위해 VirtualService와 쌍으로 사용된다.
 
@@ -107,11 +107,11 @@ Gateway는 메시의 경계에서 동작하며 수신되는 HTTP/TCP 연결을 �
 
 Gateway Pod는 전용 Envoy 프록시로 다음을 수행한다:
 
-- **TLS termination**: 외부 HTTPS 요청의 TLS를 종료하고 평문으로 내부 전달 (또는 mTLS로 재암호화)
-- **Host-based routing**: 호스트 헤더 기반으로 트래픽을 분배
-- **Path-based routing**: URI 경로 기반 라우팅
-- **Header manipulation**: 요청/응답 헤더 추가, 제거, 수정
-- **Rate limiting**: 요청 속도 제한 적용
+- TLS termination: 외부 HTTPS 요청의 TLS를 종료하고 평문으로 내부 전달 (또는 mTLS로 재암호화)
+- Host-based routing: 호스트 헤더 기반으로 트래픽을 분배
+- Path-based routing: URI 경로 기반 라우팅
+- Header manipulation: 요청/응답 헤더 추가, 제거, 수정
+- Rate limiting: 요청 속도 제한 적용
 
 ---
 
@@ -712,7 +712,7 @@ spec:
 
 Istio VirtualService에서는 모든 프로토콜이 단일 리소스 내에서 구성된다.
 
-이 차이가 두 API의 근본적인 설계 차이를 보여준다. VirtualService는 HTTP, TCP, TLS를 하나의 리소스에 모두 담지만, Gateway API는 프로토콜별로 리소스를 분리한다.
+이 차이가 두 API의 기본 설계 차이를 보여준다. VirtualService는 HTTP, TCP, TLS를 하나의 리소스에 모두 담지만, Gateway API는 프로토콜별로 리소스를 분리한다.
 
 | VirtualService 기능 | HTTPRoute 대응 |
 |---|---|
@@ -1084,7 +1084,7 @@ sequenceDiagram
     Sidecar-->>App: HTTP 응답
 ```
 
-핵심은 VirtualService에서 `gateways` 필드를 두 번 사용하는 것이다:
+중요한 점은 VirtualService에서 `gateways` 필드를 두 번 사용하는 것이다:
 - `mesh` 게이트웨이: 사이드카 -> Egress Gateway로 라우팅
 - `egress-gateway` 게이트웨이: Egress Gateway -> 외부 서비스로 라우팅
 
@@ -1248,11 +1248,11 @@ Istio Gateway 외에도 North-South 트래픽을 처리할 수 있는 기술은 
 
 **선택 가이드:**
 
-- **이미 Istio 메시를 운영 중**: Istio Gateway (또는 Istio + Gateway API)
-- **메시 없이 간단한 Ingress만 필요**: NGINX Ingress
+- 이미 Istio 메시를 운영 중: Istio Gateway (또는 Istio + Gateway API)
+- 메시 없이 간단한 Ingress만 필요: NGINX Ingress
 - **API Gateway 기능(인증, Rate Limiting, 플러그인)이 핵심**: Kong
-- **Envoy 기반으로 가볍게 시작**: Envoy Gateway
-- **벤더 중립, 미래 표준 지향**: Kubernetes Gateway API
+- Envoy 기반으로 가볍게 시작: Envoy Gateway
+- 벤더 중립, 미래 표준 지향: Kubernetes Gateway API
 
 ---
 
@@ -1544,4 +1544,4 @@ Istio의 Gateway는 Gateway API가 나오기 전에 같은 문제를 Istio 방�
 
 **TLS 종료 위치.** 게이트웨이에서 끊으면 그 뒤로는 평문이거나 메시의 mTLS로 다시 감싸진다. 인증서를 한 곳에서만 관리하면 되므로 운영이 단순하다. **끝단까지 그대로 통과시키는 방식(passthrough)은 백엔드가 직접 인증서를 들고 있어야 하지만**, 게이트웨이가 내용을 못 보므로 경로 기반 라우팅도 못 한다. 규제 때문에 중간에서 복호화하면 안 되는 경우가 아니면 게이트웨이에서 끊는 편이 낫다.
 
-정리하고 나서 남은 감각은 **입구가 정책이 모이는 자리**라는 것이었다. 인증, TLS, 속도 제한, 라우팅 규칙이 전부 여기에 걸린다. 그래서 여기를 무엇으로 표현하느냐가 나중에 팀이 늘었을 때 협업 비용을 정하게 된다.
+인증, TLS, 속도 제한, 라우팅 규칙은 모두 게이트웨이에 설정된다. 게이트웨이 설정을 어떤 API로 표현할지에 따라 팀 규모가 커졌을 때의 협업 방식이 달라진다.

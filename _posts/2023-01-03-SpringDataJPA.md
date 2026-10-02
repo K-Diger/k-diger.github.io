@@ -1,6 +1,6 @@
 ---
 
-title: "인터페이스만 만들었는데 쿼리가 나가는 이유, Spring Data JPA 구현체 따라가기"
+title: "Spring Data JPA Repository 구현체 동작 원리 (SimpleJpaRepository, 프록시)"
 author: Diger
 date: 2023-01-03
 categories: [Database, JPA]
@@ -192,7 +192,7 @@ public class SimpleJpaRepository<T, ID> implements JpaRepositoryImplementation<T
 }
 ```
 
-**결국 `EntityManager`를 부르는 것이 전부다.** Spring Data JPA는 JPA를 대체하는 것이 아니라 JPA 위에 얇게 덮은 층이다.
+**내부적으로는 `EntityManager`를 호출한다.** Spring Data JPA는 JPA를 대체하는 것이 아니라 JPA 위에 얇게 덮은 층이다.
 
 클래스에 붙은 두 애노테이션이 중요하다.
 
@@ -387,7 +387,7 @@ public class Item implements Persistable<String> {
 }
 ```
 
-**왜 이게 되는지가 핵심이다.** `@CreatedDate`는 `persist` 직전에 `AuditingEntityListener`가 채운다. 그러니까 아직 저장된 적 없는 객체는 `createdDate`가 `null`이고, DB에서 읽어온 객체는 값이 들어 있다.
+**동작 원리는 다음과 같다.** `@CreatedDate`는 `persist` 직전에 `AuditingEntityListener`가 채운다. 그러니까 아직 저장된 적 없는 객체는 `createdDate`가 `null`이고, DB에서 읽어온 객체는 값이 들어 있다.
 
 `@EnableJpaAuditing`을 설정 클래스에 붙여야 리스너가 동작한다. 이걸 빠뜨리면 `createdDate`가 영원히 `null`이라 항상 새 엔티티로 판단되고, 수정할 때 INSERT가 나가면서 키 중복으로 터진다.
 
@@ -461,4 +461,4 @@ void findAfterSave() {
 
 **ID를 직접 지정하면 왜 이상해지는가.** 기본 `isNew()`가 식별자만 보기 때문이다. UUID처럼 애플리케이션이 값을 미리 넣으면 새 엔티티도 기존 엔티티로 판단된다. `Persistable<ID>`를 구현해서 `@CreatedDate`가 `null`인지로 판단하게 하면 해결된다.
 
-따라가고 나서 남은 감각은 **Spring Data JPA가 마법이 아니라는 것**이었다. 프록시가 인터페이스를 구현해주고, 그 안은 `EntityManager` 호출이다. 이상한 쿼리가 나가면 `SimpleJpaRepository`부터 열어보면 대개 답이 나온다.
+Spring Data JPA의 Repository는 프록시가 인터페이스를 구현하고 내부에서 `EntityManager`를 호출하는 구조다. 예상과 다른 쿼리가 실행되면 `SimpleJpaRepository` 코드부터 확인하면 대부분 원인을 찾을 수 있다.

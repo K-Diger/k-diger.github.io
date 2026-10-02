@@ -1,6 +1,6 @@
 ---
 
-title: Filter Interceptor 그 사이의, Dispatcher-Servlet
+title: "Servlet Filter, DispatcherServlet, Interceptor의 실행 순서와 역할"
 date: 2022-08-01
 categories: [Backend, Spring]
 tags: [Spring, Servlet, Filter, Interceptor]
@@ -273,7 +273,7 @@ public boolean preHandle(HttpServletRequest request, HttpServletResponse respons
 
 ---
 
-## 4. 그래서 어디에 무엇을 넣는가
+## 4. 처리 위치 선택 기준
 
 두 지점의 차이를 한 번에 놓고 보면 이렇다.
 

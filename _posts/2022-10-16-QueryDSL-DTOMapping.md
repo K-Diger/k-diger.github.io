@@ -1,6 +1,6 @@
 ---
 
-title: "QueryDSL 조회 결과를 DTO로 받는 네 가지 방법과 그 차이"
+title: "QueryDSL 조회 결과 DTO 매핑 방법 4가지 비교"
 date: 2022-10-16
 categories: [Database, JPA]
 tags: [JPA, QueryDSL, DTO]
@@ -113,7 +113,7 @@ return queryFactory
 
 **필요한 것.** 기본 생성자만 있으면 된다. `private` 필드여도 접근 제어를 우회해서 넣는다.
 
-**세터가 필요 없다는 것이 장점**처럼 보이지만, 여전히 기본 생성자로 만든 뒤에 값을 채우는 구조라서 진짜 불변은 아니다. 객체 생성 시점과 값이 채워지는 시점이 분리되어 있다.
+**세터가 필요 없다는 것이 장점**처럼 보이지만, 여전히 기본 생성자로 만든 뒤에 값을 채우는 구조라서 완전한 불변은 아니다. 객체 생성 시점과 값이 채워지는 시점이 분리되어 있다.
 
 ### 1.3 Projections.constructor, 생성자로 만들기
 
@@ -132,7 +132,7 @@ return queryFactory
 
 **필요한 것.** 조회 컬럼과 타입, 순서가 맞는 생성자.
 
-**진짜 불변 객체를 만들 수 있다.** 필드를 `final`로 두고 생성자에서만 채울 수 있다.
+**완전한 불변 객체를 만들 수 있다.** 필드를 `final`로 두고 생성자에서만 채울 수 있다.
 
 ```java
 public class SearchResultResponse {
@@ -213,7 +213,7 @@ return queryFactory
 
 ### 2.1 언제 오류를 발견하는가
 
-네 방법의 결정적인 차이가 이것이다.
+네 방법의 가장 큰 차이가 이것이다.
 
 | 방법 | 오류 발견 시점 |
 |---|---|
@@ -259,7 +259,7 @@ Projections.fields(SearchResultResponse.class,
 
 ---
 
-## 3. 그래서 무엇을 쓸 것인가
+## 3. 선택 기준
 
 ### 3.1 `@QueryProjection`의 대가
 

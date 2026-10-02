@@ -1,6 +1,6 @@
 ---
 
-title: "MongoDB를 Spring Boot에 붙이면서 막혔던 두 가지"
+title: "Spring Boot MongoDB 연동 문제 2가지와 해결 방법"
 date: 2023-11-05
 categories: [Database, MongoDB]
 tags: [MongoDB, Spring, NoSQL]
@@ -147,7 +147,7 @@ public class MongoTransactionConfig {
 
 ## 3. 응답이 빈 객체로 나갔던 일
 
-응답 껍데기를 이렇게 만들었는데 **본문이 `{}`로만 나갔다.**
+응답 래퍼 객체를 이렇게 만들었는데 **본문이 `{}`로만 나갔다.**
 
 ```java
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -336,7 +336,7 @@ public class Comment extends BaseDocument {
 
 ### 5.2 스택 트레이스를 아래에서 읽기
 
-**진짜 원인은 맨 아래에 있다.**
+**실제 원인은 맨 아래에 있다.**
 
 ```text
 InaccessibleObjectException:
@@ -395,9 +395,9 @@ java --add-opens java.base/java.io=ALL-UNNAMED -jar app.jar
 
 **그런데 이건 하면 안 되는 해법이다.** 증상을 덮을 뿐 문제를 그대로 둔다.
 
-문제의 본질은 **`MultipartFile`을 저장하려 한 것 자체**다.
+문제의 원인은 **`MultipartFile`을 저장하려 한 것 자체**다.
 
-`MultipartFile`은 데이터가 아니라 **업로드 요청을 다루기 위한 임시 껍데기**다. 요청이 끝나면 임시 파일이 지워지고 내용도 사라진다. 이걸 DB에 넣는다는 것은 성립하지 않는 요구다.
+`MultipartFile`은 데이터가 아니라 **업로드 요청을 처리하기 위한 임시 객체**다. 요청이 끝나면 임시 파일이 지워지고 내용도 사라진다. 이걸 DB에 넣는다는 것은 성립하지 않는 요구다.
 
 `String fileLink`로 바꿔서 해결됐던 것은 우연이 아니다. **저장해야 할 것은 파일이 아니라 파일이 있는 곳**이다.
 
@@ -442,4 +442,4 @@ public class CommentCreator {
 
 **`MultipartFile`을 필드에 두면 왜 안 뜨는가.** Spring Data가 시작할 때 도큐먼트 클래스 구조를 훑다가 `MultipartFile` 안의 `java.io.File`까지 들어가고, 거기서 리플렉션 접근이 모듈 시스템에 막힌다. `java.base`는 `java.io`를 `exports`하지만 `opens`하지 않고, 자바 16부터 이 규칙이 강제된다. 근본 원인은 요청용 임시 껍데기를 저장하려 한 것이므로, 파일은 따로 저장하고 위치만 남기는 것이 맞다.
 
-돌아보고 나서 남은 것은 **스택 트레이스를 아래에서부터 읽어야 한다는 것**이었다. 맨 위의 "빈 주입 실패"로 몇 시간을 검색했는데, 맨 아래 한 줄에 답이 그대로 적혀 있었다. `Caused by`가 겹겹이 쌓여 있으면 가장 안쪽이 실제로 일어난 일이다.
+스택 트레이스는 아래에서부터 읽어야 한다. 맨 위의 빈 주입 실패 메시지로 몇 시간을 검색했는데, 원인은 맨 아래 `Caused by`에 있었다. `Caused by`가 여러 개면 가장 안쪽이 실제 원인이다.

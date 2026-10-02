@@ -1,6 +1,6 @@
 ---
 
-title: "동시에 들어온 요청이 서로를 덮어썼다, 비관적 락으로 막은 과정"
+title: "동시 요청 갱신 손실 문제와 JPA 비관적 락 적용"
 date: 2023-09-21
 categories: [Database, JPA]
 tags: [JPA, Lock, Concurrency, MySQL]
@@ -103,7 +103,7 @@ UPDATE lecture SET rating = 4.5, version = 6
 WHERE id = 1 AND version = 5;
 ```
 
-**`version = 5` 조건이 핵심이다.** 그 사이에 다른 트랜잭션이 커밋했으면 버전이 6이 되어 있으므로 이 UPDATE가 0건을 갱신한다. JPA는 이걸 감지해서 `OptimisticLockException`을 던진다.
+**`version = 5` 조건이 중요하다.** 그 사이에 다른 트랜잭션이 커밋했으면 버전이 6이 되어 있으므로 이 UPDATE가 0건을 갱신한다. JPA는 이걸 감지해서 `OptimisticLockException`을 던진다.
 
 | | 내용 |
 |---|---|
@@ -293,7 +293,7 @@ UPDATE lecture SET rating = rating + 0.5 WHERE id = 1;
 
 ### 6.2 요청을 줄 세우기
 
-같은 대상에 대한 요청을 큐에 넣고 순서대로 처리하는 방법도 생각했다. 결국 안 썼는데, 검토하면서 정리된 것을 남긴다.
+같은 대상에 대한 요청을 큐에 넣고 순서대로 처리하는 방법도 생각했다. 안 썼는데, 검토하면서 정리된 것을 남긴다.
 
 **장점.** DB 락 경합이 사라진다. 처리 순서가 명확해진다.
 

@@ -1,6 +1,6 @@
 ---
 
-title: "ElasticSearch에 형태소 분석기 적용하기"
+title: "Elasticsearch 형태소 분석기 적용과 대량 색인 방법"
 date: 2024-02-13
 categories: [Middleware, Elasticsearch]
 tags: [Elasticsearch, Search, Lucene]

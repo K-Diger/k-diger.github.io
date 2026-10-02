@@ -1,6 +1,6 @@
 ---
 
-title: "Real MySQL 4장을 공식문서로 다시 읽기, 아키텍처와 InnoDB"
+title: "Real MySQL 4장 공식 문서 대조 정리 (아키텍처, InnoDB)"
 date: 2025-04-06
 categories: [Database, MySQL]
 tags: [MySQL, InnoDB, BufferPool, MVCC]
@@ -127,23 +127,23 @@ MySQL은 멀티스레드 아키텍처를 사용하여 클라이언트 요청과 
 
 포어그라운드 스레드가 하는 일을 줄여주는 것이 이들의 존재 이유다. **디스크에 쓰는 작업을 사용자 요청 경로에서 떼어내서** 응답을 빠르게 만든다.
 
-- **마스터 스레드(Master Thread)**:
+- 마스터 스레드(Master Thread):
     - InnoDB의 메인 백그라운드 스레드
     - 로그 버퍼를 로그 파일로 플러시
     - 변경된 버퍼 페이지(더티 페이지)를 디스크에 주기적으로 쓰기
     - 불필요한 데이터 삭제(purge operation)
     - [적응형 해시 인덱스(adaptive hash index)](https://dev.mysql.com/doc/refman/8.0/en/innodb-adaptive-hash.html) 관리
     - [버퍼 풀의 LRU 리스트](https://dev.mysql.com/doc/refman/8.0/en/innodb-buffer-pool.html#innodb-buffer-pool-lru) 관리
-  - **I/O 스레드**:
+  - I/O 스레드:
     - [innodb_read_io_threads](https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_read_io_threads)와 [innodb_write_io_threads](https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_write_io_threads) 설정으로 개수 조정 가능
     - 읽기 I/O 스레드: 데이터 파일에서 페이지 읽기 작업 담당
     - 쓰기 I/O 스레드: 변경된 페이지를 데이터 파일에 쓰기 작업 담당
     - AIO(비동기 I/O) 요청 처리로 I/O 병렬성 향상
-  - **정리 스레드(Purge Thread)**:
+  - 정리 스레드(Purge Thread):
     - [MVCC(다중 버전 동시성 제어)](https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html)를 위한 언두 로그에서 더 이상 필요 없는 레코드 제거
     - 삭제 마크된 레코드의 실제 물리적 삭제 수행
     - [innodb_purge_threads](https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_purge_threads) 설정으로 개수 조정 가능
-  - **페이지 클리너 스레드(Page Cleaner Thread)**:
+  - 페이지 클리너 스레드(Page Cleaner Thread):
     - [버퍼 풀](https://dev.mysql.com/doc/refman/8.0/en/innodb-buffer-pool.html)의 더티 페이지를 디스크로 플러시하는 작업 전담
     - MySQL 5.7부터 도입되어 이전에 마스터 스레드가 수행하던 플러시 작업 분담
     - 사용자 쿼리 처리 스레드의 응답 시간 개선에 기여
@@ -156,7 +156,7 @@ MySQL은 멀티스레드 아키텍처를 사용하여 클라이언트 요청과 
     - 바이너리 로그 덤프 스레드: 소스 서버에서 레플리카로 바이너리 로그 이벤트 전송
     - 레플리케이션 I/O 스레드: 소스로부터 바이너리 로그 이벤트 수신 및 릴레이 로그에 기록
     - 레플리케이션 SQL 스레드: 릴레이 로그의 이벤트를 읽어 실행
-- **모니터링 특성**:
+- 모니터링 특성:
   - [Performance Schema](https://dev.mysql.com/doc/refman/8.0/en/performance-schema-threads-table.html)에서 TYPE 컬럼 값이 'BACKGROUND'로 식별됨
   - PROCESSLIST_ID, PROCESSLIST_USER, PROCESSLIST_HOST 값은 모두 NULL
   - NAME 컬럼에 스레드의 구체적인 역할이 표시됨 (예: thread/innodb/io_ibuf_thread)
@@ -188,8 +188,8 @@ MySQL의 메모리 사용은 두 가지 영역으로 나뉜다.
 
 ![](/images/realmysql/chapter4/memory.png)
 
-- **전역 메모리 영역(Global Memory)**: 모든 클라이언트 스레드가 공유하는 메모리 영역
-- **스레드별 메모리 영역(Per-Thread Memory)**: 각 클라이언트 연결마다 할당되는 독립적인 메모리 영역
+- 전역 메모리 영역(Global Memory): 모든 클라이언트 스레드가 공유하는 메모리 영역
+- 스레드별 메모리 영역(Per-Thread Memory): 각 클라이언트 연결마다 할당되는 독립적인 메모리 영역
 
 ### 4.1.3.1 전역 메모리 영역
 
@@ -323,8 +323,8 @@ flowchart TB
 
 ### 4.1.6.2. 쿼리 파싱 단계
 
-- **어휘 분석(Lexical Analysis)**: SQL 문장을 토큰(키워드, 식별자, 연산자 등)으로 분리
-- **구문 분석(Syntax Analysis)**: 토큰을 파싱하여 문법적 오류가 있는지 확인하고 구문 트리(Parse Tree)를 생성
+- 어휘 분석(Lexical Analysis): SQL 문장을 토큰(키워드, 식별자, 연산자 등)으로 분리
+- 구문 분석(Syntax Analysis): 토큰을 파싱하여 문법적 오류가 있는지 확인하고 구문 트리(Parse Tree)를 생성
 - 이 단계에서 SQL 문법에 오류가 있으면 클라이언트에 오류 메시지를 반환
 
 ### 4.1.6.3. 전처리 단계
@@ -337,8 +337,8 @@ flowchart TB
 
 ### 4.1.6.4. 옵티마이저 단계
 
-- **쿼리 변환**: WHERE 조건 재배치, 서브쿼리 평탄화, 불필요한 조건 제거 등을 수행
-- **실행 계획 생성**: 아래 사항들을 결정한다.
+- 쿼리 변환: WHERE 조건 재배치, 서브쿼리 평탄화, 불필요한 조건 제거 등을 수행
+- 실행 계획 생성: 아래 사항들을 결정한다.
   - [테이블 접근 순서 (조인 순서)](https://dev.mysql.com/doc/refman/8.0/en/nested-join-optimization.html)
   - [사용할 인덱스](https://dev.mysql.com/doc/refman/8.0/en/optimization-indexes.html)
   - 임시 테이블 필요 여부
@@ -369,7 +369,7 @@ flowchart TB
 
 ### 주요 성능 최적화 지점
 
-- **파싱 및 옵티마이저 캐시**: MySQL 8.0에서는 쿼리 캐시가 제거되었지만, 파싱된 구문 객체는 세션 내에서 재사용될 수 있다.
+- 파싱 및 옵티마이저 캐시: MySQL 8.0에서는 쿼리 캐시가 제거되었지만, 파싱된 구문 객체는 세션 내에서 재사용될 수 있다.
 - **[실행 계획 캐싱](https://dev.mysql.com/doc/refman/8.0/en/statement-preparation.html)**: Prepared Statement를 사용하면 쿼리 파싱과 최적화 비용을 줄일 수 있다.
 - **[버퍼 풀과 캐시](https://dev.mysql.com/doc/refman/8.0/en/innodb-buffer-pool.html)**: InnoDB 버퍼 풀, 로그 버퍼 등을 적절히 설정하여 I/O 비용을 줄일 수 있다.
 - **[인덱스 설계](https://dev.mysql.com/doc/refman/8.0/en/optimization-indexes.html)**: 쿼리 패턴에 맞는 인덱스를 설계하는 것이 성능에 도움이된다.
@@ -393,9 +393,9 @@ flowchart TB
 
 ### 클러스터링 인덱스 선택 기준
 
-- **PRIMARY KEY 정의 시**: 해당 키가 클러스터링 인덱스로 사용됨
-- **PRIMARY KEY 없는 경우**: 모든 컬럼이 NOT NULL인 첫 번째 UNIQUE 인덱스가 선택됨
-- **적절한 인덱스 없는 경우**: 시스템이 자동으로 생성한 6바이트 크기의 행 ID 기반 숨겨진 인덱스(GEN_CLUST_INDEX) 사용
+- PRIMARY KEY 정의 시: 해당 키가 클러스터링 인덱스로 사용됨
+- PRIMARY KEY 없는 경우: 모든 컬럼이 NOT NULL인 첫 번째 UNIQUE 인덱스가 선택됨
+- 적절한 인덱스 없는 경우: 시스템이 자동으로 생성한 6바이트 크기의 행 ID 기반 숨겨진 인덱스(GEN_CLUST_INDEX) 사용
 
 ### 클러스터링 인덱스의 성능 이점
 
@@ -588,12 +588,12 @@ flowchart LR
 
 ### Buffer Pool 구성 옵션
 
-- **Buffer Pool 크기**: 이상적으로는 서버의 다른 프로세스가 과도한 페이징 없이 실행할 수 있도록 충분한 메모리를 남겨두면서 가능한 한 큰 값으로 설정한다. (`innodb_buffer_pool_size`)
-- **다중 Buffer Pool 인스턴스**: 충분한 메모리가 있는 64비트 시스템에서는 Buffer Pool을 여러 부분으로 나누어 동시 작업 간의 메모리 구조에 대한 경합을 최소화할 수 있다. (`innodb_buffer_pool_instances`)
-- **스캔 저항성**: 자주 액세스되는 데이터를 갑작스러운 활동 급증에도 불구하고 메모리에 유지할 수 있다. (`innodb_old_blocks_pct`, `innodb_old_blocks_time`)
-- **프리페칭(Read-Ahead)**: 필요할 것으로 예상되는 페이지를 Buffer Pool로 비동기적으로 프리페치하는 방법과 시기를 제어할 수 있다. (`innodb_read_ahead_threshold`)
-- **플러싱 구성**: 백그라운드 플러싱이 발생하는 시기와 워크로드에 따라 플러싱 속도가 동적으로 조정되는지 여부를 제어할 수 있다. (`innodb_adaptive_flushing`)
-- **Buffer Pool 상태 저장 및 복원**: 서버 재시작 후 길어질 수 있는 워밍업 기간을 피하기 위해 현재 Buffer Pool 상태를 유지하도록 InnoDB를 구성할 수 있다. (`innodb_buffer_pool_dump_at_shutdown`, `innodb_buffer_pool_load_at_startup`)
+- Buffer Pool 크기: 이상적으로는 서버의 다른 프로세스가 과도한 페이징 없이 실행할 수 있도록 충분한 메모리를 남겨두면서 가능한 한 큰 값으로 설정한다. (`innodb_buffer_pool_size`)
+- 다중 Buffer Pool 인스턴스: 충분한 메모리가 있는 64비트 시스템에서는 Buffer Pool을 여러 부분으로 나누어 동시 작업 간의 메모리 구조에 대한 경합을 최소화할 수 있다. (`innodb_buffer_pool_instances`)
+- 스캔 저항성: 자주 액세스되는 데이터를 갑작스러운 활동 급증에도 불구하고 메모리에 유지할 수 있다. (`innodb_old_blocks_pct`, `innodb_old_blocks_time`)
+- 프리페칭(Read-Ahead): 필요할 것으로 예상되는 페이지를 Buffer Pool로 비동기적으로 프리페치하는 방법과 시기를 제어할 수 있다. (`innodb_read_ahead_threshold`)
+- 플러싱 구성: 백그라운드 플러싱이 발생하는 시기와 워크로드에 따라 플러싱 속도가 동적으로 조정되는지 여부를 제어할 수 있다. (`innodb_adaptive_flushing`)
+- Buffer Pool 상태 저장 및 복원: 서버 재시작 후 길어질 수 있는 워밍업 기간을 피하기 위해 현재 Buffer Pool 상태를 유지하도록 InnoDB를 구성할 수 있다. (`innodb_buffer_pool_dump_at_shutdown`, `innodb_buffer_pool_load_at_startup`)
 
 ### Buffer Pool 모니터링
 
@@ -639,9 +639,9 @@ I/O sum[0]:cur[0], unzip sum[0]:cur[0]
 
 두 구성요소의 결합으로 얻을 수 있는 아래와 같다.
 
-- **버퍼링 역할**: 버퍼 풀은 디스크의 데이터 파일이나 인덱스 정보를 메모리에 캐시해 두는 공간이다. 또한 쓰기 작업을 지연시켜 일괄 작업으로 처리할 수 있게 해주는 버퍼 역할도 한다.
-- **데이터 보호**: InnoDB는 변경된 데이터를 버퍼 풀에만 기록하고 디스크에는 기록하지 않은 상태에서 MySQL 서버가 비정상적으로 종료되면 데이터가 유실될 수 있다. 이런 문제를 막기 위해 리두 로그를 사용한다.
-- **변경 기록 과정**: 데이터 변경 시 리두 로그에는 변경 내용을 바로 기록하고, 버퍼 풀의 데이터는 특정 시점에 디스크로 기록된다.
+- 버퍼링 역할: 버퍼 풀은 디스크의 데이터 파일이나 인덱스 정보를 메모리에 캐시해 두는 공간이다. 또한 쓰기 작업을 지연시켜 일괄 작업으로 처리할 수 있게 해주는 버퍼 역할도 한다.
+- 데이터 보호: InnoDB는 변경된 데이터를 버퍼 풀에만 기록하고 디스크에는 기록하지 않은 상태에서 MySQL 서버가 비정상적으로 종료되면 데이터가 유실될 수 있다. 이런 문제를 막기 위해 리두 로그를 사용한다.
+- 변경 기록 과정: 데이터 변경 시 리두 로그에는 변경 내용을 바로 기록하고, 버퍼 풀의 데이터는 특정 시점에 디스크로 기록된다.
 - **LSN(Log Sequence Number)의 역할**
 
 LSN은 데이터베이스 변경 시점을 식별하는 숫자값으로, 로그가 기록된 시점과 해당 로그의 데이터 저장 포인트 등을 담고 있다.
@@ -674,9 +674,9 @@ InnoDB는 다음과 같은 경우에 플러시를 수행한다:
 
 플러시 리스트는 LSN 기준으로 오래된 것부터 정렬된 더티 페이지의 목록이다. 데이터가 변경되면, 해당 페이지는 플러시 리스트에 추가되고 리스트의 맨 처음은 가장 오래전에 변경된 페이지가 위치한다.
 
-- **Page Cleaner 스레드**: InnoDB는 백그라운드 스레드인 'Page Cleaner' 스레드를 이용해 주기적으로 플러시 리스트에서 오래된 페이지부터 디스크에 기록한다.
-- **적응형 플러시 알고리즘**: adaptive_flush 알고리즘은 현재 서버의 활동 상태에 따라 플러시 비율을 조정한다. `innodb_adaptive_flushing` 파라미터를 통해 이 기능을 켜거나 끌 수 있다.
-- **체크포인트와의 관계**: 체크포인트는 플러시 리스트 플러시와 관련이 깊다. 체크포인트 LSN은 플러시된 더티 페이지 중 가장 오래된 LSN을 의미한다.
+- Page Cleaner 스레드: InnoDB는 백그라운드 스레드인 'Page Cleaner' 스레드를 이용해 주기적으로 플러시 리스트에서 오래된 페이지부터 디스크에 기록한다.
+- 적응형 플러시 알고리즘: adaptive_flush 알고리즘은 현재 서버의 활동 상태에 따라 플러시 비율을 조정한다. `innodb_adaptive_flushing` 파라미터를 통해 이 기능을 켜거나 끌 수 있다.
+- 체크포인트와의 관계: 체크포인트는 플러시 리스트 플러시와 관련이 깊다. 체크포인트 LSN은 플러시된 더티 페이지 중 가장 오래된 LSN을 의미한다.
 
 ### 4.2.7.4.2 LRU 리스트 플러시
 
@@ -745,19 +745,19 @@ Double Write Buffer는 데이터 무결성을 위한 기능이라, 성능에 영
 
 MySQL 8.0에서는 다음과 같은 Double Write Buffer 관련 구성 변수를 제공한다.
 
-- **innodb_doublewrite**: Double Write Buffer의 활성화 여부를 제어한다(기본값: ON)
+- innodb_doublewrite: Double Write Buffer의 활성화 여부를 제어한다(기본값: ON)
   - MySQL 8.0.30부터는 다음 설정을 지원한다.
-    - **ON / DETECT_AND_RECOVER**: Double Write Buffer가 완전히 활성화되며, 복구 중 불완전한 페이지 쓰기를 수정하기 위해 Double Write Buffer의 데이터베이스 페이지 내용에 접근한다.
-    - **DETECT_ONLY**: 메타데이터만 Double Write Buffer에 기록되고 데이터베이스 페이지 내용은 기록되지 않는다. 이 가벼운 설정은 불완전한 페이지 쓰기를 감지하는 용도로만 사용된다.
-    - **OFF**: Double Write Buffer를 비활성화한다.
+    - ON / DETECT_AND_RECOVER: Double Write Buffer가 완전히 활성화되며, 복구 중 불완전한 페이지 쓰기를 수정하기 위해 Double Write Buffer의 데이터베이스 페이지 내용에 접근한다.
+    - DETECT_ONLY: 메타데이터만 Double Write Buffer에 기록되고 데이터베이스 페이지 내용은 기록되지 않는다. 이 가벼운 설정은 불완전한 페이지 쓰기를 감지하는 용도로만 사용된다.
+    - OFF: Double Write Buffer를 비활성화한다.
 
-- **innodb_doublewrite_dir**: Double Write 파일이 생성될 디렉토리를 정의한다. 지정하지 않으면 innodb_data_home_dir 디렉토리(기본값: 데이터 디렉토리)에 생성된다.
+- innodb_doublewrite_dir: Double Write 파일이 생성될 디렉토리를 정의한다. 지정하지 않으면 innodb_data_home_dir 디렉토리(기본값: 데이터 디렉토리)에 생성된다.
 
-- **innodb_doublewrite_files**: Double Write 파일의 수를 정의한다. 기본적으로 각 버퍼 풀 인스턴스에 대해 두 개의 Double Write 파일이 생성된다:
+- innodb_doublewrite_files: Double Write 파일의 수를 정의한다. 기본적으로 각 버퍼 풀 인스턴스에 대해 두 개의 Double Write 파일이 생성된다:
   - 플러시 리스트용 Double Write 파일
   - LRU 리스트용 Double Write 파일
 
-- **innodb_doublewrite_pages**: 스레드당 최대 Double Write 페이지 수를 제어한다. 값을 지정하지 않으면 innodb_write_io_threads 값으로 설정된다.
+- innodb_doublewrite_pages: 스레드당 최대 Double Write 페이지 수를 제어한다. 값을 지정하지 않으면 innodb_write_io_threads 값으로 설정된다.
 
 ### 파일 구조
 
@@ -831,7 +831,7 @@ sequenceDiagram
 
 두 단계를 거치는 이유가 있다. **리두 로그에는 커밋 여부와 무관하게 모든 변경이 섞여 있다.** 커밋된 것만 골라 적용하는 것보다, 전부 적용하고 안 커밋된 것을 되돌리는 편이 단순하다.
 
-### 4.2.9.3 커밋할 때 정말 디스크에 쓰는가
+### 4.2.9.3 커밋 시 디스크 기록 방식
 
 `innodb_flush_log_at_trx_commit`이 이걸 정한다.
 
@@ -845,11 +845,11 @@ sequenceDiagram
 
 2나 0으로 낮추면 쓰기 처리량이 크게 오른다. **그 대신 최대 1초치를 잃을 수 있다는 것을 받아들이는 것**이다. 로그 수집처럼 일부 유실이 허용되는 데이터라면 선택지가 된다.
 
-### 4.2.9.4 그럼 더블라이트 버퍼는 왜 필요한가
+### 4.2.9.4 더블라이트 버퍼가 필요한 이유
 
 네 번째 질문이다. **리두 로그가 있는데도 왜 부족한가.**
 
-리두 로그의 내용이 어떻게 생겼는지가 열쇠다. **"이 페이지의 이 위치를 이렇게 바꿔라"는 형태로, 페이지 전체가 아니라 변경분만 적혀 있다.**
+리두 로그의 기록 형식을 보면 이유를 알 수 있다. **"이 페이지의 이 위치를 이렇게 바꿔라"는 형태로, 페이지 전체가 아니라 변경분만 적혀 있다.**
 
 이걸 적용하려면 **바탕이 되는 페이지가 온전해야 한다.**
 

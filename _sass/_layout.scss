@@ -297,7 +297,7 @@ main {
 
 // 페이지 종류별 틀 폭
 [data-layout="home"] {
-  --frame: 1180px;
+  --frame: var(--frame-text);
 }
 
 // 본문 폭 --measure(37em, 17px 기준)를 rem 으로 환산한 값. em 으로 두면 글자 크기가 다른

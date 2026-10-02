@@ -1,6 +1,6 @@
 ---
 
-title: Server Side Session vs Token
+title: "서버 세션과 토큰 기반 인증 방식 비교"
 date: 2022-06-16
 categories: [Backend, Auth]
 tags: [Auth, Session, JWT]
@@ -59,7 +59,7 @@ sequenceDiagram
     R-->>C: 6. 자원 응답
 ```
 
-핵심은 5번이다. 자원 서버는 인증 서버에 되묻지 않고 자기가 가진 키만으로 토큰의 유효성을 판정한다. 상태를 어디에도 저장하지 않기 때문에 서버를 늘려도 공유할 것이 없다.
+5번 단계가 중요하다. 자원 서버는 인증 서버에 되묻지 않고 자기가 가진 키만으로 토큰의 유효성을 판정한다. 상태를 어디에도 저장하지 않기 때문에 서버를 늘려도 공유할 것이 없다.
 
 ### 장점 1. 발급처와 사용처를 분리할 수 있다
 
@@ -216,7 +216,7 @@ public class StandardSessionIdGenerator extends SessionIdGeneratorBase {
 
 ---
 
-## 궁금증 3. 그래서 무엇을 고를 것인가
+## 궁금증 3. 세션과 JWT 선택 기준
 
 두 방식은 `확장 비용`과 `무효화 능력`을 맞바꾼다.
 

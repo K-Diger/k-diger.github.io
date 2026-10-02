@@ -1,6 +1,6 @@
 ---
 
-title: "테스트 대역과 테스트 피라미드, 그리고 운영 중인 서비스에 테스트를 붙인 과정"
+title: "테스트 대역과 테스트 피라미드, 운영 서비스 테스트 도입 사례"
 date: 2023-11-24
 categories: [Backend, Test]
 tags: [Test, Spring, Mockito]
@@ -71,8 +71,8 @@ public void createOrder(boolean isNotify) {
 
 용어 두 개를 먼저 정한다.
 
-- **SUT(System Under Test)**: 지금 테스트하려는 대상. 위 예에서 `OrderService`
-- **DOC(Depended On Component)**: SUT가 의존하는 것. 위 예에서 `OrderRepository`, `NotificationClient`
+- SUT(System Under Test): 지금 테스트하려는 대상. 위 예에서 `OrderService`
+- DOC(Depended On Component): SUT가 의존하는 것. 위 예에서 `OrderRepository`, `NotificationClient`
 
 테스트 대역은 DOC 자리에 들어가서 실제 것처럼 행동한다.
 
@@ -378,7 +378,7 @@ class OrderServiceIntegrationTest {
 
 자동화 테스트를 UI 조작으로 하는 방식이 오래 쓰였다. 만들기 쉽고 실제 사용자 경로를 그대로 확인할 수 있다는 장점이 있다.
 
-문제는 비용이다. UI 테스트는 **느리고, 잘 깨지고, 깨졌을 때 원인을 찾기 어렵다.** 화면 요소 하나가 바뀌면 테스트가 실패하는데 그게 진짜 버그인지 테스트가 낡은 건지 매번 확인해야 한다.
+문제는 비용이다. UI 테스트는 **느리고, 잘 깨지고, 깨졌을 때 원인을 찾기 어렵다.** 화면 요소 하나가 바뀌면 테스트가 실패하는데 그게 실제 버그인지 테스트가 낡은 건지 매번 확인해야 한다.
 
 그래서 **아래로 갈수록 많이, 위로 갈수록 적게** 두는 형태를 권한다.
 

@@ -1,5 +1,5 @@
 ---
-title: "Istio 사이드카 모드 공식문서 전수 정리"
+title: "Istio 사이드카 모드 공식 문서 정리"
 date: 2026-04-20
 categories: [Kubernetes, ServiceMesh]
 tags: [Kubernetes, Istio, ServiceMesh, Envoy, mTLS]
@@ -67,7 +67,7 @@ Istio 공식 문서에서 명시하는 핵심 기능은 다음과 같다.
 
 Istio Service Mesh는 논리적으로 데이터 플레인과 컨트롤 플레인으로 나뉜다. 데이터 플레인은 사이드카로 배포되는 지능형 프록시(Envoy) 집합으로 구성된다. 이 프록시들은 마이크로서비스 간 모든 네트워크 통신을 중재하고 제어한다. 또한 모든 메시 트래픽에 대한 텔레메트리를 수집하고 보고한다. 컨트롤 플레인은 프록시를 관리하고 설정하여 트래픽을 라우팅한다.
 
-이 아키텍처의 핵심은 **관심사의 분리(Separation of Concerns)**이다. 컨트롤 플레인은 "무엇을 할 것인가"를 결정하고, 데이터 플레인은 "어떻게 실행할 것인가"를 담당한다.
+이 아키텍처에서 가장 중요한 것은 **관심사의 분리(Separation of Concerns)**이다. 컨트롤 플레인은 "무엇을 할 것인가"를 결정하고, 데이터 플레인은 "어떻게 실행할 것인가"를 담당한다.
 
 ### 2.1 전체 아키텍처 다이어그램
 
@@ -152,15 +152,15 @@ Envoy는 대규모 현대 서비스 지향 아키텍처를 위해 설계된 L7 �
 
 Istio의 데이터 플레인에서 Envoy는 다음 기능을 수행한다.
 
-- **Dynamic service discovery**: istiod로부터 xDS를 통해 서비스 목록을 동적으로 수신
-- **Load balancing**: 다양한 알고리즘 지원 (ROUND_ROBIN, LEAST_REQUEST, RANDOM, RING_HASH)
-- **TLS termination**: 인바운드/아웃바운드 mTLS 자동 처리
-- **HTTP/2 and gRPC proxies**: 프로토콜 레벨 인식 및 최적화
-- **Circuit breakers**: 연결 풀, 요청 수 기반 회로 차단
-- **Health checks**: 능동적/수동적 헬스 체크
+- Dynamic service discovery: istiod로부터 xDS를 통해 서비스 목록을 동적으로 수신
+- Load balancing: 다양한 알고리즘 지원 (ROUND_ROBIN, LEAST_REQUEST, RANDOM, RING_HASH)
+- TLS termination: 인바운드/아웃바운드 mTLS 자동 처리
+- HTTP/2 and gRPC proxies: 프로토콜 레벨 인식 및 최적화
+- Circuit breakers: 연결 풀, 요청 수 기반 회로 차단
+- Health checks: 능동적/수동적 헬스 체크
 - **Staged rollouts with %-based traffic split**: 가중치 기반 트래픽 분할
-- **Fault injection**: 지연, 중단 주입으로 카오스 테스팅
-- **Rich metrics**: L4/L7 메트릭 자동 수집 및 보고
+- Fault injection: 지연, 중단 주입으로 카오스 테스팅
+- Rich metrics: L4/L7 메트릭 자동 수집 및 보고
 
 ---
 
@@ -273,11 +273,11 @@ iptables -t nat -A ISTIO_OUTPUT -j REDIRECT --to-ports 15001
 
 pilot-agent는 Envoy 프록시의 라이프사이클을 관리하는 프로세스이다. 사이드카 컨테이너의 ENTRYPOINT로 실행되며, 다음 역할을 수행한다.
 
-- **Envoy 프로세스 관리**: 시작, 재시작, 그레이스풀 셧다운
-- **인증서 로테이션**: istiod로부터 SDS를 통해 인증서를 수신하고 Envoy에 전달
-- **헬스 체크 프록시**: 애플리케이션의 헬스 체크를 Envoy를 통해 노출
-- **Bootstrap 설정 생성**: Envoy 초기 설정 파일 생성
-- **DNS 프록시**: `.svc.cluster.local` 도메인 해석 (Istio DNS Proxy 기능)
+- Envoy 프로세스 관리: 시작, 재시작, 그레이스풀 셧다운
+- 인증서 로테이션: istiod로부터 SDS를 통해 인증서를 수신하고 Envoy에 전달
+- 헬스 체크 프록시: 애플리케이션의 헬스 체크를 Envoy를 통해 노출
+- Bootstrap 설정 생성: Envoy 초기 설정 파일 생성
+- DNS 프록시: `.svc.cluster.local` 도메인 해석 (Istio DNS Proxy 기능)
 
 ```mermaid
 graph LR
@@ -1146,7 +1146,7 @@ spec:
 
 #### 6.3.1 SPIFFE Identity
 
-ID는 모든 보안 인프라의 근본적인 개념이다.
+ID는 모든 보안 인프라의 기본 개념이다.
 
 Istio는 SPIFFE(Secure Production Identity Framework For Everyone) 표준을 따르는 ID를 모든 워크로드에 부여한다.
 
@@ -1541,10 +1541,10 @@ Service Mesh 없이 마이크로서비스를 운영하면 다음과 같은 문�
 | **VM 지원** | 지원 (WorkloadEntry) | 미지원 | 지원 (네이티브) | 지원 (Universal mode) |
 
 **선택 기준 요약:**
-- **Istio**: 기능이 가장 풍부하고 세밀한 제어가 필요한 대규모 프로덕션. 학습 비용을 감수할 수 있는 팀
-- **Linkerd**: 빠른 도입, 낮은 리소스 오버헤드, 핵심 기능만 필요한 경우. CNCF Graduated로 커뮤니티 안정적
-- **Consul Connect**: Kubernetes + VM 하이브리드 환경. HashiCorp 에코시스템(Vault, Nomad) 사용 시
-- **Kuma**: Envoy 기반이지만 Istio보다 간단한 설정을 원하는 경우. 멀티존 아키텍처
+- Istio: 기능이 가장 풍부하고 세밀한 제어가 필요한 대규모 프로덕션. 학습 비용을 감수할 수 있는 팀
+- Linkerd: 빠른 도입, 낮은 리소스 오버헤드, 핵심 기능만 필요한 경우. CNCF Graduated로 커뮤니티 안정적
+- Consul Connect: Kubernetes + VM 하이브리드 환경. HashiCorp 에코시스템(Vault, Nomad) 사용 시
+- Kuma: Envoy 기반이지만 Istio보다 간단한 설정을 원하는 경우. 멀티존 아키텍처
 
 ---
 
@@ -1676,9 +1676,9 @@ spec:
 ```
 
 xDS push 최적화 효과:
-- **메모리**: 전체 메시 설정 대신 관련 서비스 설정만 보유 (수십 배 절감 가능)
-- **CPU**: 설정 변경 시 영향받는 프록시만 push
-- **네트워크**: xDS 트래픽 감소
+- 메모리: 전체 메시 설정 대신 관련 서비스 설정만 보유 (수십 배 절감 가능)
+- CPU: 설정 변경 시 영향받는 프록시만 push
+- 네트워크: xDS 트래픽 감소
 
 ### 11.6 업그레이드 전략 (Canary Revision)
 
@@ -1738,8 +1738,8 @@ xDS는 Envoy의 동적 설정 프로토콜의 총칭이다. 'x'는 L(Listener), 
 
 SPIFFE는 현대적이고 동적인 인프라의 모든 워크로드에 특별히 제작된 X.509 인증서 형태의 보안 ID를 제공한다.
 
-- **SPIFFE**: ID 표준 (spiffe://trust-domain/path 형식)
-- **SPIRE**: SPIFFE 구현체 (identity attestation, certificate issuance)
+- SPIFFE: ID 표준 (spiffe://trust-domain/path 형식)
+- SPIRE: SPIFFE 구현체 (identity attestation, certificate issuance)
 - Istio는 자체 Citadel에서 SPIFFE 호환 인증서를 발급하며, SPIRE와도 통합 가능하다
 
 ### 12.3 Envoy Filter
@@ -1892,4 +1892,4 @@ Istio Sidecar 모드를 프로덕션에 도입할 때 점검해야 할 항목을
 
 **사이드카의 비용.** 파드마다 프록시가 하나씩 더 뜨므로 메모리와 CPU가 그만큼 곱해진다. 그리고 요청이 프록시를 두 번 지나가므로(보내는 쪽과 받는 쪽) 지연이 붙는다. **파드 수가 많은 클러스터에서는 이 곱셈이 무시할 수 없는 크기가 된다.** Ambient 모드가 나온 이유가 여기 있고, [따로 정리한 글](/posts/istio-ambient-deep-dive/)에서 다뤘다.
 
-문서를 따라가면서 가장 크게 남은 것은 **서비스 메시가 새로운 기능을 주는 것이 아니라 이미 하던 일을 옮기는 것**이라는 감각이었다. 재시도, 타임아웃, 회로 차단기, TLS, 추적은 전부 애플리케이션에서 하던 일이다. 그것을 프록시로 옮기면 언어와 무관해지고 설정으로 바뀌는 대신, **프록시라는 새 운영 대상이 생긴다.**
+재시도, 타임아웃, 회로 차단기, TLS, 추적은 원래 애플리케이션에서 처리하던 기능이다. 서비스 메시는 이 기능을 프록시로 옮겨 언어와 무관하게 설정으로 관리하게 하지만, 프록시라는 운영 대상이 추가된다.

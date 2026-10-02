@@ -1,6 +1,6 @@
 ---
 
-title: "Spring Security의 인증이 어디서 어떻게 일어나는가"
+title: "Spring Security 인증 처리 구조 (FilterChain, SecurityContext)"
 date: 2022-08-27
 categories: [Backend, Auth]
 tags: [Spring, SpringSecurity, Auth, Filter]
@@ -53,7 +53,7 @@ Spring Security를 설정 파일 몇 줄로 붙여 쓰긴 했는데, 커스텀 �
 
 **Credentials**은 그 신원을 증명하는 수단이다. 보통 비밀번호다.
 
-**인증에 성공하면 이 둘의 내용이 바뀐다.** 이 변화가 Spring Security 동작을 이해하는 열쇠다.
+**인증에 성공하면 이 둘의 내용이 바뀐다.** Spring Security 동작은 이 변화를 기준으로 이해할 수 있다.
 
 | 필드 | 인증 전 | 인증 후 |
 |---|---|---|
@@ -439,4 +439,4 @@ public void updateProfile(Long userId, ProfileRequest request) { ... }
 
 **커스텀 인증을 만들려면.** 바꾸고 싶은 지점에 해당하는 것만 구현한다. 사용자 조회만 바꾸면 `UserDetailsService` 하나면 되고, 인증 방식 자체를 바꾸려면 필터와 Provider를 만든다.
 
-정리하고 나서 남은 감각은 **각 인터페이스가 왜 그 자리에 있는지** 였다. `supports()`가 있어서 여러 인증 방식이 공존하고, 조회와 검증이 나뉘어 있어서 저장소와 해시 알고리즘을 따로 바꿀 수 있다. 인터페이스가 많아 보이지만 각각이 갈아 끼울 수 있는 지점을 하나씩 맡고 있다.
+Spring Security의 인터페이스는 각각 교체 가능한 지점 하나를 담당한다. `supports()`로 여러 인증 방식이 함께 동작하고, 사용자 조회와 비밀번호 검증이 분리되어 있어 저장소와 해시 알고리즘을 따로 바꿀 수 있다.

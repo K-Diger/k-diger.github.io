@@ -1,6 +1,6 @@
 ---
 render_with_liquid: false # Helm/Go 템플릿의 {{ }} 를 Liquid 가 지우지 않도록
-title: "Helm 공식문서 전수 정리, 차트 설계부터 서명 검증까지"
+title: "Helm 공식 문서 정리 (차트 구조, 템플릿, Hooks, 서명 검증)"
 date: 2026-02-16
 categories: [Kubernetes, Helm]
 tags: [Kubernetes, Helm]
@@ -59,9 +59,9 @@ Helm은 차트(chart)라 불리는 Kubernetes 패키지를 관리하기 위한 �
 
 Helm의 핵심 개념은 3가지이다.
 
-- **Chart**: Kubernetes 애플리케이션 인스턴스를 생성하는 데 필요한 정보 번들이다.
-- **Config**: 패키지된 차트와 병합되어 배포 가능한 오브젝트를 생성하는 설정 정보이다.
-- **Release**: 특정 Config와 결합된 Chart의 실행 중인 인스턴스이다.
+- Chart: Kubernetes 애플리케이션 인스턴스를 생성하는 데 필요한 정보 번들이다.
+- Config: 패키지된 차트와 병합되어 배포 가능한 오브젝트를 생성하는 설정 정보이다.
+- Release: 특정 Config와 결합된 Chart의 실행 중인 인스턴스이다.
 
 | 개념 | 설명 |
 |------|------|
@@ -350,7 +350,7 @@ Conditions는 (values에 설정되었을 때) 항상 Tags를 오버라이드한�
 
 ## 6. Template Engine 상세
 
-Helm의 핵심은 Template Engine이다. Go의 `text/template` 패키지를 기반으로 하며, [Sprig 함수 라이브러리](https://masterminds.github.io/sprig/)를 추가로 사용한다.
+Helm에서 가장 중요한 것은 Template Engine이다. Go의 `text/template` 패키지를 기반으로 하며, [Sprig 함수 라이브러리](https://masterminds.github.io/sprig/)를 추가로 사용한다.
 
 ### 6.1 Built-in Objects
 
@@ -489,7 +489,7 @@ server:
       port: 8080
 ```
 
-물론 논리적 그룹이 명확한 경우(예: `image.repository`, `image.tag`)에는 중첩이 자연스럽다. 핵심은 **불필요한 깊이를 피하라**는 것이다.
+물론 논리적 그룹이 명확한 경우(예: `image.repository`, `image.tag`)에는 중첩이 자연스럽다. 중요한 점은 **불필요한 깊이를 피하라**는 것이다.
 
 ### 6.6 Functions and Pipelines
 
@@ -1037,9 +1037,9 @@ flowchart TB
     mid --> app3
 ```
 
-- **Base Library**: 조직 전체에서 사용하는 레이블, annotation, SecurityContext 표준
-- **Team Library**: 팀별 리소스 기본값, Probe 패턴, Sidecar 설정
-- **App Chart**: 실제 애플리케이션별 설정
+- Base Library: 조직 전체에서 사용하는 레이블, annotation, SecurityContext 표준
+- Team Library: 팀별 리소스 기본값, Probe 패턴, Sidecar 설정
+- App Chart: 실제 애플리케이션별 설정
 
 이 패턴의 장점은 표준을 Library에서 한 번만 변경하면 모든 차트에 전파된다는 것이다.
 
@@ -1855,4 +1855,4 @@ helm test myapp --timeout 3m
 
 여기에 함정이 하나 있다. **차트가 렌더링 시점의 값에 의존하면 롤백이 그대로 되지 않는다.** 템플릿 안에서 현재 시각이나 무작위 값을 만들면 되돌릴 때 다른 결과가 나온다. 롤백을 믿으려면 **같은 값에서 항상 같은 매니페스트가 나와야 한다.**
 
-문서를 따라가면서 가장 크게 바뀐 인식은 **Helm의 값어치가 템플릿이 아니라 상태 관리에 있다는 것**이었다. 템플릿만 필요하면 다른 도구도 많다. 무엇을 언제 어떤 값으로 넣었는지를 기록해두는 것이 그 위에 얹힌 진짜 기능이었다.
+Helm의 주요 기능은 템플릿보다 릴리스 상태 관리다. 템플릿 렌더링만 필요하면 다른 도구도 많지만, 어떤 값으로 언제 배포했는지 기록하고 그 기록으로 롤백하는 기능은 Helm이 제공한다.

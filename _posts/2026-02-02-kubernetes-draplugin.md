@@ -1,5 +1,5 @@
 ---
-title: "Kubernetes DRA Plugin gRPC 연결 관리 개선기"
+title: "Kubernetes DRA Plugin gRPC 연결 관리 개선 (kubelet 기여)"
 date: 2026-02-02
 categories: [Kubernetes]
 tags: [Kubernetes, DRA, gRPC, OpenSource]
@@ -11,14 +11,14 @@ mermaid: true
 
 ## 참고자료
 
-- **PR**: [kubernetes/kubernetes#133964](https://github.com/kubernetes/kubernetes/pull/133964)
-- **관련 이슈**: [kubernetes/kubernetes#133943](https://github.com/kubernetes/kubernetes/issues/133943)
-- **DRA 공식 문서**: [Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/)
-- **DRA Health Status KEP**: [KEP-4680](https://github.com/kubernetes/enhancements/issues/4680)
-- **Health Status 블로그**: [Kubernetes v1.34: Pods Report DRA Resource Health](https://kubernetes.io/blog/2025/09/17/kubernetes-v1-34-pods-report-dra-resource-health/)
-- **gRPC-Go NewClient 마이그레이션**: [grpc/grpc-go#7090](https://github.com/grpc/grpc-go/issues/7090)
+- PR: [kubernetes/kubernetes#133964](https://github.com/kubernetes/kubernetes/pull/133964)
+- 관련 이슈: [kubernetes/kubernetes#133943](https://github.com/kubernetes/kubernetes/issues/133943)
+- DRA 공식 문서: [Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/)
+- DRA Health Status KEP: [KEP-4680](https://github.com/kubernetes/enhancements/issues/4680)
+- Health Status 블로그: [Kubernetes v1.34: Pods Report DRA Resource Health](https://kubernetes.io/blog/2025/09/17/kubernetes-v1-34-pods-report-dra-resource-health/)
+- gRPC-Go NewClient 마이그레이션: [grpc/grpc-go#7090](https://github.com/grpc/grpc-go/issues/7090)
 - **Kubernetes v1.36 마일스톤**
-- **SIG Node 승인 완료**: 2025년 12월 18일
+- SIG Node 승인 완료: 2025년 12월 18일
 
 ---
 
@@ -53,10 +53,10 @@ GPU, TPU, FPGA와 같은 특수 하드웨어 리소스를 Pod에 동적으로 �
 
 기존 Device Plugin 프레임워크는 다음과 같은 제약이 있다.
 
-- **표현력 부족**: 디바이스 수량만 보고(report)할 수 있고, 특정 속성이나 기능은 표현 불가
-- **할당 제약**: 단일 컨테이너에 전체 디바이스만 할당 가능 (부분 할당 불가)
-- **공유 불가**: 리소스 공유 메커니즘 미지원
-- **정적 관리**: 정적 보고 방식으로 동적 변경 대응 어려움
+- 표현력 부족: 디바이스 수량만 보고(report)할 수 있고, 특정 속성이나 기능은 표현 불가
+- 할당 제약: 단일 컨테이너에 전체 디바이스만 할당 가능 (부분 할당 불가)
+- 공유 불가: 리소스 공유 메커니즘 미지원
+- 정적 관리: 정적 보고 방식으로 동적 변경 대응 어려움
 
 ### DRA의 주요 개념
 
@@ -76,10 +76,10 @@ spec:
 
 주요 리소스 타입은 아래와 같다.
 
-- **DeviceClass**: GPU 종류와 같이 디바이스 카테고리 정의
-- **ResourceClaim**: 특정 하드웨어를 요청하는 티켓 (여러 Pod이 공유 가능)
-- **ResourceClaimTemplate**: 각 Pod마다 전용 ResourceClaim 자동 생성
-- **ResourceSlice**: 노드별 사용 가능한 디바이스 정보를 동적으로 광고
+- DeviceClass: GPU 종류와 같이 디바이스 카테고리 정의
+- ResourceClaim: 특정 하드웨어를 요청하는 티켓 (여러 Pod이 공유 가능)
+- ResourceClaimTemplate: 각 Pod마다 전용 ResourceClaim 자동 생성
+- ResourceSlice: 노드별 사용 가능한 디바이스 정보를 동적으로 광고
 
 ### DRA 아키텍처
 
@@ -103,8 +103,8 @@ graph TB
 
 DRA 드라이버는 두 가지 컴포넌트로 구성된다.
 
-1. **Controller Component**: 중앙에서 실행되며 ResourceSlice 관리
-2. **Kubelet Plugin Component**: 각 노드에서 DaemonSet으로 실행되며 gRPC 인터페이스 구현
+1. Controller Component: 중앙에서 실행되며 ResourceSlice 관리
+2. Kubelet Plugin Component: 각 노드에서 DaemonSet으로 실행되며 gRPC 인터페이스 구현
 
 Kubelet은 DRA 플러그인과 gRPC 통신을 통해 리소스 생명주기를 관리한다.
 
@@ -688,7 +688,7 @@ func (p *DRAPlugin) GetResourceHealthStatus(ctx context.Context,
 
 **지연 초기화가 왜 맞지 않았는가.** 여러 고루틴이 동시에 처음 호출할 수 있는 자리였기 때문이다. 잠금 없이 만들면 연결이 두 번 만들어질 수 있고, 하나는 아무도 닫아주지 않은 채 남는다. 잠금을 걸면 그만큼 복잡해진다.
 
-더 근본적인 이유는 **여기서 지연 초기화로 얻을 것이 없었다는 점**이다. 지연 초기화는 만드는 비용이 크고 안 쓸 수도 있을 때 값어치가 있다. 플러그인이 등록됐다는 것은 곧 쓴다는 뜻이므로, **미룰 이유가 없었다.**
+더 큰 이유는 **여기서 지연 초기화로 얻을 것이 없었다는 점**이다. 지연 초기화는 만드는 비용이 크고 안 쓸 수도 있을 때 값어치가 있다. 플러그인이 등록됐다는 것은 곧 쓴다는 뜻이므로, **미룰 이유가 없었다.**
 
 **패치를 보내면서 확인해야 했던 것.** 코드를 고치는 것보다 **왜 고쳐야 하는지를 설명하는 데 더 많은 시간이 들었다.** 지금 방식에서 어떤 상황에 문제가 되는지, 바꾸면 기존 동작이 달라지지 않는지, 관련 테스트가 무엇을 검증하고 있는지를 먼저 정리해야 했다.
 

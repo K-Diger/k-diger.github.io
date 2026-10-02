@@ -1,6 +1,6 @@
 ---
 
-title: Interface 명세로 알아보는 Servlet
+title: "Servlet 인터페이스 명세로 본 Servlet 동작 구조"
 date: 2022-08-15
 categories: [Backend, Spring]
 tags: [Java, Servlet, Spring]
@@ -29,7 +29,7 @@ mermaid: true
 그런데 몇 가지가 설명되지 않았다.
 
 - 컨트롤러의 필드에 상태를 담으면 왜 위험한가? 스프링 빈이 싱글톤이라는 말은 들었는데, 그 싱글톤은 어디서 오는가?
-- `@GetMapping`, `@PostMapping`은 결국 무엇으로 갈라지는가?
+- `@GetMapping`, `@PostMapping`은 어디에서 구분되는가?
 - 응답을 다 쓴 뒤에 상태 코드를 바꾸려 하면 왜 `IllegalStateException`이 나는가?
 
 세 질문 모두 답이 서블릿 명세에 있었다. 인터페이스 선언과 그 위에 붙은 명세 문구를 하나씩 읽으면서 확인했다.
@@ -126,7 +126,7 @@ public class BadController {
 
 ## HttpServlet.service()가 HTTP 메서드를 가르는 곳
 
-두 번째 질문의 답이다. `@GetMapping`과 `@PostMapping`은 결국 어디서 갈라지는가.
+두 번째 질문의 답이다. `@GetMapping`과 `@PostMapping`은 어디에서 구분되는가.
 
 `HttpServlet`은 `Servlet`의 `service(ServletRequest, ServletResponse)`를 구현하면서, HTTP 요청을 받아 메서드 이름으로 분기한다.
 
