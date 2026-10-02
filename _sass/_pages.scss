@@ -509,8 +509,8 @@
 
 .post-nav {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px 56px; // 두 제목이 한 문장처럼 이어 읽히지 않도록 칸 사이를 넓게 둔다
   padding-top: 24px;
   border-top: 1px solid var(--rule);
 
@@ -541,7 +541,8 @@
   .post-nav__title {
     display: block;
     margin-top: 4px;
-    line-height: 1.5;
+    line-height: 1.55;
+    text-wrap: balance; // 오른쪽 정렬일 때 마지막 줄만 짧게 남는 들쭉날쭉함을 줄인다
   }
 }
 
