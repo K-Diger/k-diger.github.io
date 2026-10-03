@@ -12,7 +12,7 @@ series_order: 7
 
 ## 참고자료
 
-아래 공식문서를 모두 읽으면 Ambient Mesh의 전체 범위를 커버할 수 있다.
+아래 공식문서를 모두 읽으면 Ambient Mesh(사이드카 없이 노드 프록시로 동작하는 Istio 모드)의 전체 범위를 커버할 수 있다.
 
 ### Ambient Core
 
@@ -44,22 +44,22 @@ series_order: 7
 
 ## 배경
 
-사이드카 방식을 정리하고 나니 비용이 눈에 걸렸다. **파드마다 프록시가 하나씩 더 뜬다는 것은 파드 수만큼 자원이 곱해진다는 뜻**이다.
+사이드카(Sidecar, 애플리케이션 옆에 붙는 보조 컨테이너) 방식을 정리하고 나니 비용이 눈에 걸렸다. **파드마다 프록시가 하나씩 더 뜬다는 것은 파드 수만큼 자원이 곱해진다는 뜻**이다.
 
-Ambient 모드가 그 문제를 다르게 푼다고 해서 공식문서를 읽었다. 그런데 ztunnel, HBONE, Waypoint 같은 낯선 이름이 한꺼번에 나와서 각각이 무엇을 맡는지부터 정리해야 했다.
+Ambient 모드가 그 문제를 다르게 푼다고 해서 공식문서를 읽었다. 그런데 ztunnel(zero-trust tunnel, Ambient 모드에서 노드마다 뜨는 L4 mTLS 프록시), HBONE(HTTP-Based Overlay Network Environment, mTLS로 보호된 HTTP/2 CONNECT 터널), Waypoint(L7 기능이 필요한 곳에만 띄우는 Envoy 프록시) 같은 낯선 이름이 한꺼번에 나와서 각각이 무엇을 맡는지부터 정리해야 했다.
 
 정리하면서 확인하고 싶었던 것들이다.
 
 - 사이드카를 없애면 트래픽을 누가 가로채는가?
-- L4와 L7을 나눈다는데 왜 굳이 나누는가?
-- HBONE이라는 것이 왜 필요한가? 그냥 TCP로 mTLS를 하면 안 되는가?
+- L4(Layer 4, TCP, UDP와 포트 수준)와 L7(Layer 7, HTTP 경로와 헤더 같은 요청 내용 수준)을 나눈다는데 왜 굳이 나누는가?
+- HBONE이라는 것이 왜 필요한가? 그냥 TCP로 mTLS(mutual TLS, 양쪽이 서로 인증서를 확인하는 TLS)를 하면 안 되는가?
 - 사이드카 모드와 섞어 쓸 수 있는가?
 
 ---
 
 Ambient 모드에서 Istio는 노드당 L4 프록시와, 선택적으로 네임스페이스당 L7 프록시를 사용하여 기능을 구현한다.
 
-Istio의 Sidecar 모드는 강력하지만, Pod마다 Envoy 프록시를 주입하는 구조는 리소스 오버헤드, 수명주기 관리 부담, 업그레이드 시 Pod 재시작 문제를 안고 있다. Ambient Mesh는 이 문제를 해결하기 위해 등장한 Sidecar-less 데이터 플레인 모드다. 이 글에서는 Istio 공식문서를 기반으로 Ambient Mesh의 아키텍처, ztunnel, HBONE, Waypoint Proxy의 동작 원리를 심화 정리한다.
+Istio의 Sidecar 모드는 강력하지만, Pod마다 Envoy(고성능 L4/L7 프록시) 프록시를 주입하는 구조는 리소스 오버헤드, 수명주기 관리 부담, 업그레이드 시 Pod 재시작 문제를 안고 있다. Ambient Mesh는 이 문제를 해결하기 위해 등장한 Sidecar-less 데이터 플레인(Data Plane, 실제 요청과 패킷을 처리하는 계층) 모드다. 이 글에서는 Istio 공식문서를 기반으로 Ambient Mesh의 아키텍처, ztunnel, HBONE, Waypoint Proxy의 동작 원리를 심화 정리한다.
 
 ---
 
@@ -74,11 +74,11 @@ Ambient 모드에서 Istio는 노드당 L4 프록시와, 선택적으로 네임�
 - Pod마다 별도의 Envoy 컨테이너가 CPU/Memory를 소비한다
 - Istio 버전 업그레이드 시 모든 Pod를 재시작해야 새 사이드카가 적용된다
 - 애플리케이션 시작 전에 사이드카가 준비되어야 하는 시작 순서 문제가 발생한다
-- Init Container가 iptables 규칙을 수정하므로 `NET_ADMIN` 권한이 필요하다
+- Init Container가 iptables(리눅스 패킷 필터링과 주소 변환 규칙 도구) 규칙을 수정하므로 `NET_ADMIN` 권한이 필요하다
 
 Ambient 모드는 Istio의 기능을 두 개의 명확한 계층으로 분리한다.
 
-첫 번째는 ztunnel 기반의 보안 오버레이 계층(L4)이고, 두 번째는 Waypoint Proxy 기반의 고급 기능 계층(L7)이다. 이 분리가 Ambient Mesh의 핵심 설계 원리다.
+첫 번째는 ztunnel 기반의 보안 오버레이(Overlay Network, 물리 네트워크 위에 패킷을 감싸 만든 가상 네트워크) 계층(L4)이고, 두 번째는 Waypoint Proxy 기반의 고급 기능 계층(L7)이다. 이 분리가 Ambient Mesh의 핵심 설계 원리다.
 
 ### 1.2 점진적 도입 모델
 
@@ -98,7 +98,7 @@ Ambient 모드는 Istio의 기능을 두 개의 명확한 계층으로 분리한
 
 사이드카 모드를 사용하는 Pod 및 워크로드는 Ambient 모드를 사용하는 Pod과 동일한 메시 내에서 공존할 수 있다.
 
-같은 클러스터 내에서 일부 네임스페이스는 Sidecar 모드, 다른 네임스페이스는 Ambient 모드로 운영할 수 있다. ztunnel은 사이드카가 이미 주입된 Pod의 트래픽은 가로채지 않는다. 이 설계 덕분에 기존 Sidecar 기반 서비스 메시를 운영하는 환경에서 Ambient로의 마이그레이션을 무중단으로 진행할 수 있다.
+같은 클러스터 내에서 일부 네임스페이스는 Sidecar 모드, 다른 네임스페이스는 Ambient 모드로 운영할 수 있다. ztunnel은 사이드카가 이미 주입된 Pod의 트래픽은 가로채지 않는다. 이 설계 덕분에 기존 Sidecar 기반 서비스 메시(Service Mesh, 서비스 사이 통신 기능을 프록시 계층이 맡는 구조)를 운영하는 환경에서 Ambient로의 마이그레이션을 무중단으로 진행할 수 있다.
 
 ---
 
@@ -108,7 +108,7 @@ Ambient 모드는 Istio의 기능을 두 개의 명확한 계층으로 분리한
 
 Ambient 모드는 Istio의 기능을 두 개의 명확한 계층으로 분리한다.
 
-기본 계층은 ztunnel이 제공하는 보안 오버레이로, 라우팅과 제로 트러스트 보안을 담당한다. 선택적 계층은 Waypoint Proxy가 제공하는 L7 고급 기능이다.
+기본 계층은 ztunnel이 제공하는 보안 오버레이로, 라우팅과 제로 트러스트(Zero Trust, 내부도 믿지 않고 매 요청을 확인하는 원칙) 보안을 담당한다. 선택적 계층은 Waypoint Proxy가 제공하는 L7 고급 기능이다.
 
 ```mermaid
 graph TB
@@ -147,8 +147,8 @@ graph TB
 
 이 다이어그램에서 핵심은 세 가지다.
 
-1. **istiod(Control Plane)**가 ztunnel과 Waypoint 모두에게 xDS 설정을 전달한다
-2. **ztunnel**은 DaemonSet으로 각 노드에 하나씩 배포되어, 해당 노드의 모든 Ambient 참여 Pod 트래픽을 처리한다
+1. **istiod(Control Plane)**가 ztunnel과 Waypoint 모두에게 xDS(x Discovery Service, 프록시가 컨트롤 플레인에서 설정을 받아 오는 API) 설정을 전달한다
+2. **ztunnel**은 DaemonSet(노드마다 Pod를 하나씩 띄우는 워크로드)으로 각 노드에 하나씩 배포되어, 해당 노드의 모든 Ambient 참여 Pod 트래픽을 처리한다
 3. **Waypoint Proxy**는 별도의 Pod으로 배포되며, L7 정책이 필요한 경우에만 트래픽 경로에 삽입된다
 
 ### 2.2 ztunnel (Zero-Trust Tunnel)
@@ -221,7 +221,7 @@ Waypoint는 애플리케이션 Pod 외부에서 실행되며, 독립적으로 �
 - HTTP 텔레메트리 (요청 수, 지연 시간, 응답 코드 분포)
 - 헤더 조작, 폴트 인젝션
 
-Waypoint 프록시는 AuthorizationPolicy, RequestAuthentication, WasmPlugin, Telemetry 등의 L7 정책을 적용한다.
+Waypoint 프록시는 AuthorizationPolicy, RequestAuthentication(Request Authentication, 요청의 JWT를 검증하는 리소스), WasmPlugin, Telemetry 등의 L7 정책을 적용한다.
 
 Waypoint는 일반적인 Envoy 프록시이므로 Istio의 기존 L7 기능을 그대로 사용할 수 있다. 차이점은 Pod 내부가 아닌 별도의 Pod으로 배포된다는 점이다. 이 구조 덕분에 Waypoint의 스케일링, 업그레이드, 리소스 관리가 애플리케이션과 독립적으로 이루어진다.
 
@@ -250,11 +250,11 @@ flowchart LR
 
 **단계별 동작:**
 
-1. **Pod A가 Pod B로 TCP 연결을 시도한다.** 애플리케이션은 대상 Service의 ClusterIP나 DNS 이름으로 일반적인 TCP 연결을 맺는다. 애플리케이션 코드에는 어떤 변경도 필요 없다.
+1. **Pod A가 Pod B로 TCP 연결을 시도한다.** 애플리케이션은 대상 Service의 ClusterIP(클러스터 안에서만 접근하는 Service 가상 IP)나 DNS 이름으로 일반적인 TCP 연결을 맺는다. 애플리케이션 코드에는 어떤 변경도 필요 없다.
 
 2. **트래픽 리다이렉션이 발생한다.** 앞서 인용한 공식문서 설명대로 아웃바운드 요청은 투명하게 노드 로컬 ztunnel로 리다이렉트된다. 이 리다이렉션은 커널 레벨에서 투명하게 수행되므로 애플리케이션은 인지하지 못한다.
 
-3. **소스 ztunnel이 HBONE 터널을 수립한다.** ztunnel은 대상 Pod가 위치한 노드의 ztunnel과 HTTP/2 CONNECT를 통해 HBONE 터널을 생성한다. 이 과정에서 mTLS가 자동으로 적용되며, 소스와 대상 모두 SPIFFE ID 기반으로 인증된다.
+3. **소스 ztunnel이 HBONE 터널을 수립한다.** ztunnel은 대상 Pod가 위치한 노드의 ztunnel과 HTTP/2 CONNECT를 통해 HBONE 터널을 생성한다. 이 과정에서 mTLS가 자동으로 적용되며, 소스와 대상 모두 SPIFFE(Secure Production Identity Framework For Everyone, 워크로드 신원을 URI로 표현하는 표준) ID 기반으로 인증된다.
 
 4. **대상 ztunnel이 L4 정책을 평가한다.** 수신 측 ztunnel은 트래픽이 도착하면 해당 목적지에 적용된 L4 AuthorizationPolicy를 평가한다. 정책에 의해 거부되면 연결이 차단된다.
 
@@ -320,7 +320,7 @@ flowchart LR
 | iptables | netfilter 규칙으로 REDIRECT/TPROXY 설정 | 범용성 높음, 모든 커널 지원 | 규칙 수 증가 시 성능 저하, 선형 탐색 |
 | eBPF | 커널 내 BPF 프로그램으로 패킷 경로 직접 조작 | 높은 성능, 규칙 수 무관한 O(1) 탐색 | 최소 커널 버전 요구 (5.x+) |
 
-Cilium CNI를 사용하는 환경에서는 eBPF 기반 리다이렉션이 자연스럽게 적용된다. Istio의 CNI node agent는 Cilium과의 통합을 공식 지원한다.
+Cilium CNI(Container Network Interface, Pod 네트워크를 붙이는 플러그인 규격)를 사용하는 환경에서는 eBPF(extended Berkeley Packet Filter, 커널 안에서 작은 프로그램을 안전하게 실행하는 기술) 기반 리다이렉션이 자연스럽게 적용된다. Istio의 CNI node agent는 Cilium(eBPF 기반 CNI)과의 통합을 공식 지원한다.
 
 ---
 
@@ -362,7 +362,7 @@ ztunnel의 텔레메트리는 L4 수준이므로 TCP 바이트, 연결 수, 연�
 
 ### 5.2 Waypoint HTTP 메트릭
 
-Waypoint가 필요한 기능에는 HTTP 메트릭, 접근 로깅, 트레이싱이 포함된다.
+Waypoint가 필요한 기능에는 HTTP 메트릭, 접근 로깅, 트레이싱(Trace, 요청 하나가 거친 전체 경로와 구간별 시간)이 포함된다.
 
 HTTP 레벨의 메트릭(요청 수, 응답 코드, 지연 시간)이 필요하면 Waypoint를 배포해야 한다. Prometheus 메트릭 수집 대상에 ztunnel과 Waypoint를 모두 포함해야 전체 그림이 보인다.
 
@@ -419,7 +419,7 @@ istioctl waypoint apply --namespace default --name reviews-waypoint --for servic
 
 Waypoint는 `gatewayClassName: istio-waypoint`를 사용하는 Kubernetes Gateway 리소스를 통해 배포된다.
 
-Kubernetes Gateway API를 사용한 선언적 배포도 가능하다.
+Kubernetes Gateway API(Ingress를 대체하는 쿠버네티스 표준 라우팅 API)를 사용한 선언적 배포도 가능하다.
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -534,7 +534,7 @@ graph TB
 
 참고: 아래 내용은 공식문서의 개념을 기반으로 정리한 것이다.
 
-Waypoint Proxy는 일반적인 Kubernetes Deployment이므로 리소스 설정과 HPA를 적용할 수 있다.
+Waypoint Proxy는 일반적인 Kubernetes Deployment이므로 리소스 설정과 HPA(Horizontal Pod Autoscaler, 지표를 보고 Pod 개수를 자동 조절)를 적용할 수 있다.
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -590,7 +590,7 @@ spec:
         - cluster.local/ns/default/sa/sleep
 ```
 
-이 정책은 `sleep` ServiceAccount의 워크로드만 `httpbin` 서비스에 접근할 수 있도록 허용한다. L4 레벨이므로 소스의 SPIFFE ID(ServiceAccount 기반)와 대상 포트만으로 판단한다.
+이 정책은 `sleep` ServiceAccount(Pod가 자신을 증명할 때 쓰는 계정)의 워크로드만 `httpbin` 서비스에 접근할 수 있도록 허용한다. L4 레벨이므로 소스의 SPIFFE ID(ServiceAccount 기반)와 대상 포트만으로 판단한다.
 
 L4에서 사용 가능한 필드는 다음과 같다.
 
@@ -774,7 +774,7 @@ Ambient 대신 전통적인 Sidecar 모드만 운영하는 경우의 부담을 �
 
 3. 사이드카 시작 순서 문제: `holdApplicationUntilProxyStarts`를 설정해도, 종료 시에는 `EXIT_ON_ZERO_ACTIVE_CONNECTIONS` 같은 추가 설정이 필요하다. 사이드카의 수명주기가 애플리케이션과 결합되어 있기 때문이다.
 
-4. 보안 권한 확대: Sidecar 주입을 위한 init container가 `NET_ADMIN` capability를 요구하며, 이는 PodSecurityPolicy/PodSecurityStandard에서 제한 대상이 될 수 있다.
+4. 보안 권한 확대: Sidecar 주입을 위한 init container가 `NET_ADMIN` capability를 요구하며, 이는 PodSecurityPolicy(1.25에서 제거된 옛 Pod 보안 정책)/PodSecurityStandard에서 제한 대상이 될 수 있다.
 
 ---
 

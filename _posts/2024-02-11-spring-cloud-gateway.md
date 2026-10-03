@@ -310,7 +310,7 @@ spring:
         - RemoteAddr=192.168.1.1/24
 ```
 
-위 Predicate는 요청 클라이언트의 주소를 확인하여 Predicate조건에 부합하는지 확인하는 것이다. 요청 주소를 그룹화하기 위해 CIDR를 적용할 수 있다.
+위 Predicate는 요청 클라이언트의 주소를 확인하여 Predicate조건에 부합하는지 확인하는 것이다. 요청 주소를 그룹화하기 위해 CIDR(Classless Inter-Domain Routing, IP 대역을 주소와 비트 수로 표현하는 방식)를 적용할 수 있다.
 
 그런데 만약 Gateway앞단에 프록시 서버가 있게 된다면 이 `RemoteAddr`은 실제 클라이언트 IP 주소와는 일치하지 않을 수 있다.
 
@@ -459,7 +459,7 @@ spring:
 
 응답 Header에 `Access-Control-Allow-Credentials`, `Access-Control-Allow-Origin`의 이름을 가진 중복 응답을 제거한다.
 
-보통 API Gateway 뒷단의 마이크로서비스들이 CORS설정을 추가하는 등의 동일한 Header 조작을 수행할 때 사용된다.
+보통 API Gateway 뒷단의 마이크로서비스들이 CORS(Cross-Origin Resource Sharing, 다른 출처 API 호출 허용 규칙)설정을 추가하는 등의 동일한 Header 조작을 수행할 때 사용된다.
 
 #### 5. 서킷브레이커 적용
 
@@ -1038,7 +1038,7 @@ public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
 **post 부분을 `then(...)`으로 붙이는 이유가 여기 있다.** Spring Cloud Gateway는 WebFlux 기반이라 `chain.filter()`가 즉시 결과를 돌려주지 않고 `Mono`를 돌려준다. 그 뒤에 실행할 것을 `then`으로 이어 붙여야 응답 시점에 실행된다.
 
-`chain.filter()` 다음 줄에 그냥 코드를 쓰면 **응답을 기다리지 않고 바로 실행된다.** 서블릿 기반 필터처럼 생각하면 여기서 틀린다.
+`chain.filter()` 다음 줄에 그냥 코드를 쓰면 **응답을 기다리지 않고 바로 실행된다.** 서블릿(Servlet, 웹 요청을 처리하는 Java 표준 컴포넌트) 기반 필터처럼 생각하면 여기서 틀린다.
 
 ## 7. 지표 수집
 

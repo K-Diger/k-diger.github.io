@@ -391,7 +391,7 @@ d289c575dcbc4bdd2931585fd4339089e461a27d 127.0.0.1:6381 master - 1318428931 1318
 
 ### 8. 레플리카 마이그레이션
 
-**공식 문서의 레플리카 마이그레이션 시나리오:**
+**공식 문서의 레플리카(Replica, 장애 대비 복제본) 마이그레이션 시나리오:**
 > "Master A has a single replica A1. Master A fails. A1 is promoted as new master. Three hours later A1 fails... No other replica is available for promotion since node A is still down."
 
 ```
@@ -462,7 +462,7 @@ FAIL state and has the smallest node ID."
 
 처음 던진 질문들에 대한 답이다.
 
-**키를 나누는 기준.** 해시 슬롯이다. 키를 CRC16으로 해싱해서 16384로 나눈 나머지가 슬롯 번호가 되고, 슬롯이 노드에 배정된다.
+**키를 나누는 기준.** 해시 슬롯(Redis Cluster 키 분산 구간)이다. 키를 CRC16으로 해싱해서 16384로 나눈 나머지가 슬롯 번호가 되고, 슬롯이 노드에 배정된다.
 
 **노드가 아니라 슬롯에 배정한다는 것이 핵심**이다. 노드를 추가하면 슬롯 일부를 새 노드로 옮기면 되고, **옮기지 않은 슬롯의 키는 그대로 있다.** 클라이언트에서 노드 수로 나누는 방식이 노드가 바뀔 때마다 거의 모든 키의 위치가 바뀌는 것과 대비된다.
 

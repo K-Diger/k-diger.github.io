@@ -28,7 +28,7 @@ mermaid: true
 
 ## 배경
 
-Real MySQL 4장을 읽는데 책에 나온 그림과 설명만으로는 감이 안 잡히는 곳이 많았다. 특히 버퍼 풀과 리두 로그, 더블라이트 버퍼가 서로 어떻게 얽히는지가 그랬다.
+Real MySQL 4장을 읽는데 책에 나온 그림과 설명만으로는 감이 안 잡히는 곳이 많았다. 특히 버퍼 풀(Buffer Pool, 디스크 페이지를 캐시하는 메모리 영역)과 리두 로그(Redo Log, 변경 내용을 먼저 남기는 복구용 로그), 더블라이트 버퍼가 서로 어떻게 얽히는지가 그랬다.
 
 그래서 **책을 읽으면서 같은 내용을 공식문서에서 다시 찾아보는 방식**으로 정리했다. 책은 어디를 봐야 하는지 알려주고, 공식문서는 정확한 동작을 알려준다.
 
@@ -107,7 +107,7 @@ MySQL은 멀티스레드 아키텍처를 사용하여 클라이언트 요청과 
 
 **아무것도 안 하고 오래 있으면 서버가 연결을 끊는다.** [`wait_timeout`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_wait_timeout)과 [`interactive_timeout`](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_interactive_timeout)이 그 시간을 정한다.
 
-여기서 애플리케이션 쪽과 부딪히는 지점이 있다. **커넥션 풀이 들고 있는 커넥션을 서버가 먼저 끊으면**, 애플리케이션은 그걸 모른 채로 쓰다가 끊어진 커넥션에서 예외를 받는다. HikariCP의 `maxLifetime`을 서버의 `wait_timeout`보다 짧게 두라는 권고가 이 때문이다.
+여기서 애플리케이션 쪽과 부딪히는 지점이 있다. **커넥션 풀(Connection Pool, DB 연결을 미리 만들어 재사용하는 저장소)이 들고 있는 커넥션을 서버가 먼저 끊으면**, 애플리케이션은 그걸 모른 채로 쓰다가 끊어진 커넥션에서 예외를 받는다. HikariCP(Spring Boot 기본 DB 커넥션 풀)의 `maxLifetime`을 서버의 `wait_timeout`보다 짧게 두라는 권고가 이 때문이다.
 
 스레드 상태는 `SHOW PROCESSLIST`로 볼 수 있다.
 
@@ -140,7 +140,7 @@ MySQL은 멀티스레드 아키텍처를 사용하여 클라이언트 요청과 
     - 쓰기 I/O 스레드: 변경된 페이지를 데이터 파일에 쓰기 작업 담당
     - AIO(비동기 I/O) 요청 처리로 I/O 병렬성 향상
   - 정리 스레드(Purge Thread):
-    - [MVCC(다중 버전 동시성 제어)](https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html)를 위한 언두 로그에서 더 이상 필요 없는 레코드 제거
+    - [MVCC(다중 버전 동시성 제어)](https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html)를 위한 언두 로그(Undo Log, 변경 전 데이터 기록)에서 더 이상 필요 없는 레코드 제거
     - 삭제 마크된 레코드의 실제 물리적 삭제 수행
     - [innodb_purge_threads](https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_purge_threads) 설정으로 개수 조정 가능
   - 페이지 클리너 스레드(Page Cleaner Thread):
@@ -148,12 +148,12 @@ MySQL은 멀티스레드 아키텍처를 사용하여 클라이언트 요청과 
     - MySQL 5.7부터 도입되어 이전에 마스터 스레드가 수행하던 플러시 작업 분담
     - 사용자 쿼리 처리 스레드의 응답 시간 개선에 기여
   - **[로그 스레드](https://dev.mysql.com/doc/refman/8.0/en/binary-log.html)**:
-    - 바이너리 로그 관리
+    - 바이너리 로그(Binary Log, MySQL 변경 기록 로그) 관리
     - 리두 로그 쓰기 및 플러시 작업 담당
   - **[에러 로그](https://dev.mysql.com/doc/refman/8.0/en/error-log.html) 스레드**:
     - 비동기적으로 에러 로그 메시지 기록
   - **[레플리케이션](https://dev.mysql.com/doc/refman/8.0/en/replication-implementation.html) 관련 스레드**:
-    - 바이너리 로그 덤프 스레드: 소스 서버에서 레플리카로 바이너리 로그 이벤트 전송
+    - 바이너리 로그 덤프 스레드: 소스 서버에서 레플리카(Replica, 장애 대비 복제본)로 바이너리 로그 이벤트 전송
     - 레플리케이션 I/O 스레드: 소스로부터 바이너리 로그 이벤트 수신 및 릴레이 로그에 기록
     - 레플리케이션 SQL 스레드: 릴레이 로그의 이벤트를 읽어 실행
 - 모니터링 특성:
@@ -338,7 +338,7 @@ flowchart TB
 ### 4.1.6.4. 옵티마이저 단계
 
 - 쿼리 변환: WHERE 조건 재배치, 서브쿼리 평탄화, 불필요한 조건 제거 등을 수행
-- 실행 계획 생성: 아래 사항들을 결정한다.
+- 실행 계획(DB가 쿼리를 처리할 순서와 방법) 생성: 아래 사항들을 결정한다.
   - [테이블 접근 순서 (조인 순서)](https://dev.mysql.com/doc/refman/8.0/en/nested-join-optimization.html)
   - [사용할 인덱스](https://dev.mysql.com/doc/refman/8.0/en/optimization-indexes.html)
   - 임시 테이블 필요 여부
@@ -507,7 +507,7 @@ InnoDB는 각 행에3개의 시스템 필드를 추가한다.
 
 ### 트랜잭션 격리 수준별 MVCC 동작
 
-InnoDB의 MVCC는 트랜잭션 격리 수준에 따라 다르게 동작한다.
+InnoDB의 MVCC는 트랜잭션 격리 수준(Isolation Level, 트랜잭션끼리 서로의 변경을 보는 정도)에 따라 다르게 동작한다.
 
 #### READ UNCOMMITTED
 

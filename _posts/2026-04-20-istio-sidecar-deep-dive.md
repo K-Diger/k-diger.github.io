@@ -29,26 +29,26 @@ series_order: 6
 
 서비스 사이의 통신을 암호화하고, 어느 서비스가 어느 서비스를 부르는지 보고 싶었다. 애플리케이션마다 TLS를 붙이고 로그를 남기게 하면 되지만, **서비스 수만큼 같은 일을 반복해야 하고 언어와 프레임워크가 다르면 구현도 제각각이 된다.**
 
-서비스 메시가 이 문제를 애플리케이션 밖에서 푼다는 것은 알고 있었는데, "사이드카를 붙인다"는 설명이 실제로 무엇을 뜻하는지가 손에 안 잡혔다.
+서비스 메시(Service Mesh, 서비스 사이 통신 기능을 프록시 계층이 맡는 구조)가 이 문제를 애플리케이션 밖에서 푼다는 것은 알고 있었는데, "사이드카(Sidecar, 애플리케이션 옆에 붙는 보조 컨테이너)를 붙인다"는 설명이 실제로 무엇을 뜻하는지가 손에 안 잡혔다.
 
 공식문서를 처음부터 따라가면서 정리했다.
 
 정리하면서 확인하고 싶었던 것들이다.
 
 - 애플리케이션 코드를 안 고치는데 어떻게 트래픽이 프록시를 지나가는가?
-- 컨트롤 플레인이 프록시에게 설정을 어떻게 전달하는가?
-- mTLS를 켜면 인증서는 누가 만들고 언제 갱신되는가?
+- 컨트롤 플레인(Control Plane, 클러스터 상태를 결정하고 설정을 내려보내는 관리 계층)이 프록시에게 설정을 어떻게 전달하는가?
+- mTLS(mutual TLS, 양쪽이 서로 인증서를 확인하는 TLS)를 켜면 인증서는 누가 만들고 언제 갱신되는가?
 - 사이드카 하나가 파드마다 붙는데 그 비용은 얼마나 되는가?
 
 ---
 
-Istio Sidecar 모드는 프로덕션 환경에서 가장 오래 검증된 Service Mesh 배포 방식이다. 이 글에서는 공식 문서를 기반으로 Istio의 아키텍처, Sidecar Injection 메커니즘, xDS 프로토콜, 트래픽 관리, 보안, Observability를 단계별로 깊이 있게 정리한다.
+Istio Sidecar 모드는 프로덕션 환경에서 가장 오래 검증된 Service Mesh 배포 방식이다. 이 글에서는 공식 문서를 기반으로 Istio의 아키텍처, Sidecar Injection 메커니즘, xDS(x Discovery Service, 프록시가 컨트롤 플레인에서 설정을 받아 오는 API) 프로토콜, 트래픽 관리, 보안, Observability(외부 데이터로 내부 상태를 알아내는 정도)를 단계별로 깊이 있게 정리한다.
 
 ---
 
 ## 1. Istio 소개
 
-Service Mesh는 애플리케이션에 코드 변경 없이 제로 트러스트 보안, 관측성, 고급 트래픽 관리 기능을 제공하는 인프라 계층이다. Istio는 가장 인기 있고, 강력하며, 신뢰받는 Service Mesh이다. 2016년 Google, IBM, Lyft가 공동 창립했으며, Kubernetes, Prometheus와 함께 CNCF Graduated 프로젝트이다.
+Service Mesh는 애플리케이션에 코드 변경 없이 제로 트러스트(Zero Trust, 내부도 믿지 않고 매 요청을 확인하는 원칙) 보안, 관측성, 고급 트래픽 관리 기능을 제공하는 인프라 계층이다. Istio는 가장 인기 있고, 강력하며, 신뢰받는 Service Mesh이다. 2016년 Google, IBM, Lyft가 공동 창립했으며, Kubernetes, Prometheus와 함께 CNCF Graduated 프로젝트이다.
 
 Istio는 마이크로서비스 간 네트워크 통신의 복잡성을 애플리케이션 코드에서 분리하여 인프라 계층에서 해결한다. 각 서비스가 개별적으로 재시도, 타임아웃, 암호화, 접근 제어를 구현하는 대신, 사이드카 프록시가 이 모든 것을 투명하게 처리한다.
 
@@ -67,7 +67,7 @@ Istio 공식 문서에서 명시하는 핵심 기능은 다음과 같다.
 
 ## 2. Architecture (공식문서 기반)
 
-Istio Service Mesh는 논리적으로 데이터 플레인과 컨트롤 플레인으로 나뉜다. 데이터 플레인은 사이드카로 배포되는 지능형 프록시(Envoy) 집합으로 구성된다. 이 프록시들은 마이크로서비스 간 모든 네트워크 통신을 중재하고 제어한다. 또한 모든 메시 트래픽에 대한 텔레메트리를 수집하고 보고한다. 컨트롤 플레인은 프록시를 관리하고 설정하여 트래픽을 라우팅한다.
+Istio Service Mesh는 논리적으로 데이터 플레인(Data Plane, 실제 요청과 패킷을 처리하는 계층)과 컨트롤 플레인으로 나뉜다. 데이터 플레인은 사이드카로 배포되는 지능형 프록시(Envoy) 집합으로 구성된다. 이 프록시들은 마이크로서비스 간 모든 네트워크 통신을 중재하고 제어한다. 또한 모든 메시 트래픽에 대한 텔레메트리를 수집하고 보고한다. 컨트롤 플레인은 프록시를 관리하고 설정하여 트래픽을 라우팅한다.
 
 이 아키텍처에서 가장 중요한 것은 **관심사의 분리(Separation of Concerns)**이다. 컨트롤 플레인은 "무엇을 할 것인가"를 결정하고, 데이터 플레인은 "어떻게 실행할 것인가"를 담당한다.
 
@@ -150,27 +150,27 @@ istiod는 다음과 같은 포트를 사용한다.
 
 ### 2.3 Data Plane - Envoy Proxy
 
-Envoy는 대규모 현대 서비스 지향 아키텍처를 위해 설계된 L7 프록시이자 통신 버스이다.
+Envoy는 대규모 현대 서비스 지향 아키텍처를 위해 설계된 L7(Layer 7, HTTP 경로와 헤더 같은 요청 내용 수준) 프록시이자 통신 버스이다.
 
 Istio의 데이터 플레인에서 Envoy는 다음 기능을 수행한다.
 
 - Dynamic service discovery: istiod로부터 xDS를 통해 서비스 목록을 동적으로 수신
 - Load balancing: 다양한 알고리즘 지원 (ROUND_ROBIN, LEAST_REQUEST, RANDOM, RING_HASH)
 - TLS termination: 인바운드/아웃바운드 mTLS 자동 처리
-- HTTP/2 and gRPC proxies: 프로토콜 레벨 인식 및 최적화
+- HTTP/2 and gRPC(gRPC Remote Procedure Calls, HTTP/2 기반 원격 함수 호출 프레임워크) proxies: 프로토콜 레벨 인식 및 최적화
 - Circuit breakers: 연결 풀, 요청 수 기반 회로 차단
 - Health checks: 능동적/수동적 헬스 체크
 - **Staged rollouts with %-based traffic split**: 가중치 기반 트래픽 분할
 - Fault injection: 지연, 중단 주입으로 카오스 테스팅
-- Rich metrics: L4/L7 메트릭 자동 수집 및 보고
+- Rich metrics: L4(Layer 4, TCP, UDP와 포트 수준)/L7 메트릭 자동 수집 및 보고
 
 ---
 
 ## 3. Sidecar Injection 메커니즘
 
-Istio의 사이드카 주입은 Kubernetes의 **MutatingAdmissionWebhook**을 활용한다. Pod 생성 요청이 API Server에 도달하면, istiod의 웹훅이 Pod spec을 수정하여 `istio-init` init container와 `istio-proxy` sidecar container를 추가한다.
+Istio의 사이드카 주입은 Kubernetes의 **MutatingAdmissionWebhook**(Mutating Admission Webhook, 저장 전에 요청 내용을 바꾸는 웹훅)을 활용한다. Pod 생성 요청이 API Server에 도달하면, istiod의 웹훅이 Pod spec을 수정하여 `istio-init` init container와 `istio-proxy` sidecar container를 추가한다.
 
-Istio의 모든 기능을 활용하려면 메시 내 Pod에 Istio 사이드카 프록시가 실행되어야 한다. 사이드카는 Mutating Webhook Admission Controller를 통해 자동으로 주입하거나, istioctl을 사용하여 수동으로 주입할 수 있다.
+Istio의 모든 기능을 활용하려면 메시 내 Pod에 Istio 사이드카 프록시가 실행되어야 한다. 사이드카는 Mutating Webhook Admission Controller(저장 직전에 요청을 검사하거나 바꾸는 단계)를 통해 자동으로 주입하거나, istioctl을 사용하여 수동으로 주입할 수 있다.
 
 ### 3.1 주입 제어 방법
 
@@ -243,7 +243,7 @@ sequenceDiagram
 
 ### 3.3 istio-init Container (iptables 설정)
 
-istio-init은 init container로 실행되어 Pod의 네트워크 네임스페이스에 iptables 규칙을 설정한다. 이 규칙에 의해 모든 인바운드/아웃바운드 트래픽이 Envoy 프록시를 경유하게 된다.
+istio-init은 init container로 실행되어 Pod의 네트워크 네임스페이스에 iptables(리눅스 패킷 필터링과 주소 변환 규칙 도구) 규칙을 설정한다. 이 규칙에 의해 모든 인바운드/아웃바운드 트래픽이 Envoy 프록시를 경유하게 된다.
 
 Envoy는 Pod의 모든 인바운드 및 아웃바운드 트래픽을 가로챈다.
 
@@ -276,7 +276,7 @@ iptables -t nat -A ISTIO_OUTPUT -j REDIRECT --to-ports 15001
 pilot-agent는 Envoy 프록시의 라이프사이클을 관리하는 프로세스이다. 사이드카 컨테이너의 ENTRYPOINT로 실행되며, 다음 역할을 수행한다.
 
 - Envoy 프로세스 관리: 시작, 재시작, 그레이스풀 셧다운
-- 인증서 로테이션: istiod로부터 SDS를 통해 인증서를 수신하고 Envoy에 전달
+- 인증서 로테이션: istiod로부터 SDS(Secret Discovery Service, 인증서와 키를 받는 xDS API)를 통해 인증서를 수신하고 Envoy에 전달
 - 헬스 체크 프록시: 애플리케이션의 헬스 체크를 Envoy를 통해 노출
 - Bootstrap 설정 생성: Envoy 초기 설정 파일 생성
 - DNS 프록시: `.svc.cluster.local` 도메인 해석 (Istio DNS Proxy 기능)
@@ -1029,7 +1029,7 @@ spec:
 
 Request 인증 정책은 JSON Web Token(JWT)을 검증하는 데 필요한 값을 지정한다. 요청에 토큰이 없으면 기본적으로 수락된다.
 
-주의: RequestAuthentication은 JWT가 존재할 때만 검증하고, JWT가 없는 요청은 통과시킨다. JWT 없는 요청을 차단하려면 AuthorizationPolicy를 함께 사용해야 한다.
+주의: RequestAuthentication은 JWT가 존재할 때만 검증하고, JWT가 없는 요청은 통과시킨다. JWT 없는 요청을 차단하려면 AuthorizationPolicy(Authorization Policy, 신원과 경로로 접근을 허용하거나 막는 리소스)를 함께 사용해야 한다.
 
 ### 6.2 Authorization (인가)
 
@@ -1308,7 +1308,7 @@ istiod 자체도 다음 메트릭을 노출한다.
 
 분산 추적은 사용자가 여러 서비스에 분산된 메시를 통과하는 요청을 추적할 수 있게 한다.
 
-Istio는 Envoy 프록시에서 자동으로 스팬(span)을 생성한다. 그러나 분산 추적이 정상적으로 동작하려면 **애플리케이션이 트레이스 컨텍스트 헤더를 전파(propagation)해야 한다**. 이는 Istio가 해결할 수 없는 애플리케이션 책임이다.
+Istio는 Envoy 프록시에서 자동으로 스팬(span)을 생성한다. 그러나 분산 추적이 정상적으로 동작하려면 **애플리케이션이 트레이스(Trace, 요청 하나가 거친 전체 경로와 구간별 시간) 컨텍스트 헤더를 전파(propagation)해야 한다**. 이는 Istio가 해결할 수 없는 애플리케이션 책임이다.
 
 #### 7.2.1 전파해야 하는 헤더
 
@@ -1741,7 +1741,7 @@ xDS는 Envoy의 동적 설정 프로토콜의 총칭이다. 'x'는 L(Listener), 
 SPIFFE는 현대적이고 동적인 인프라의 모든 워크로드에 특별히 제작된 X.509 인증서 형태의 보안 ID를 제공한다.
 
 - SPIFFE: ID 표준 (spiffe://trust-domain/path 형식)
-- SPIRE: SPIFFE 구현체 (identity attestation, certificate issuance)
+- SPIRE(SPIFFE Runtime Environment, SPIFFE 신원 인증서를 발급하는 런타임): SPIFFE 구현체 (identity attestation, certificate issuance)
 - Istio는 자체 Citadel에서 SPIFFE 호환 인증서를 발급하며, SPIRE와도 통합 가능하다
 
 ### 12.3 Envoy Filter
@@ -1810,7 +1810,7 @@ WebAssembly 플러그인의 장점:
 
 ### 12.5 Istio CNI
 
-Istio CNI 플러그인은 istio-init 컨테이너의 필요성을 제거한다.
+Istio CNI(Container Network Interface, Pod 네트워크를 붙이는 플러그인 규격) 플러그인은 istio-init 컨테이너의 필요성을 제거한다.
 
 istio-init container는 iptables 규칙을 설정하기 위해 `NET_ADMIN`과 `NET_RAW` capability가 필요하다. 보안 정책이 엄격한 환경(PodSecurityPolicy, PSA restricted)에서는 이것이 문제가 된다. Istio CNI 플러그인은 노드 레벨에서 네트워크 규칙을 설정하므로 init container가 불필요해진다.
 
@@ -1834,7 +1834,7 @@ Istio Sidecar 모드를 프로덕션에 도입할 때 점검해야 할 항목을
 
 - [ ] Istio 프로파일 선택 (demo, default, minimal, ambient)
 - [ ] istiod 리소스 설정 (CPU/Memory request/limit)
-- [ ] Ingress Gateway 배포 및 LoadBalancer/NodePort 설정
+- [ ] Ingress(외부 HTTP 요청을 Service로 보내는 옛 표준 리소스) Gateway 배포 및 LoadBalancer(외부 로드밸런서를 붙이는 Service 타입)/NodePort(모든 노드의 같은 포트로 Service를 여는 방식) 설정
 - [ ] Istio CNI 사용 여부 결정 (보안 요구사항에 따라)
 - [ ] 네임스페이스 라벨링 전략 수립 (`istio-injection=enabled` 또는 revision label)
 
@@ -1868,7 +1868,7 @@ Istio Sidecar 모드를 프로덕션에 도입할 때 점검해야 할 항목을
 
 - [ ] 사이드카 리소스 제한 설정 (annotation 또는 global)
 - [ ] 사이드카 제외 대상 설정 (DaemonSet, batch Job 등)
-- [ ] HPA 설정 시 사이드카 리소스 고려
+- [ ] HPA(Horizontal Pod Autoscaler, 지표를 보고 Pod 개수를 자동 조절) 설정 시 사이드카 리소스 고려
 - [ ] 프록시 동시성(concurrency) 설정 (기본 2 worker threads)
 
 ### 운영
@@ -1890,7 +1890,7 @@ Istio Sidecar 모드를 프로덕션에 도입할 때 점검해야 할 항목을
 
 **컨트롤 플레인이 설정을 어떻게 전달하는가.** xDS라는 프로토콜로 전달한다. 프록시가 컨트롤 플레인에 연결을 열어두고, 설정이 바뀌면 컨트롤 플레인이 밀어준다. 폴링이 아니라 밀어주는 방식이라 반영이 빠르고, 프록시를 재시작할 필요가 없다.
 
-**mTLS 인증서는 누가 만들고 언제 갱신되는가.** 컨트롤 플레인이 인증 기관 역할을 한다. 프록시가 자기 신원을 증명하는 요청을 보내면 짧은 수명의 인증서를 발급해준다. **수명이 짧기 때문에 프록시가 알아서 주기적으로 다시 받아간다.** 사람이 갱신할 일이 없고, 유출돼도 금방 만료된다.
+**mTLS 인증서는 누가 만들고 언제 갱신되는가.** 컨트롤 플레인이 인증 기관(Certificate Authority, 인증서를 발급하고 서명하는 기관) 역할을 한다. 프록시가 자기 신원을 증명하는 요청을 보내면 짧은 수명의 인증서를 발급해준다. **수명이 짧기 때문에 프록시가 알아서 주기적으로 다시 받아간다.** 사람이 갱신할 일이 없고, 유출돼도 금방 만료된다.
 
 **사이드카의 비용.** 파드마다 프록시가 하나씩 더 뜨므로 메모리와 CPU가 그만큼 곱해진다. 그리고 요청이 프록시를 두 번 지나가므로(보내는 쪽과 받는 쪽) 지연이 붙는다. **파드 수가 많은 클러스터에서는 이 곱셈이 무시할 수 없는 크기가 된다.** Ambient 모드가 나온 이유가 여기 있고, [따로 정리한 글](/posts/istio-ambient-deep-dive/)에서 다뤘다.
 

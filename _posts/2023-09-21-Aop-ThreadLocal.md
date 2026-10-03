@@ -57,7 +57,7 @@ fun getNews(@RequestHeader("Authorization") token: String): NewsResponse {
 annotation class Auth
 ```
 
-`AnnotationRetention.RUNTIME`이 필요하다. AOP가 실행 중에 리플렉션으로 읽어야 하기 때문이다.
+`AnnotationRetention.RUNTIME`이 필요하다. AOP(Aspect-Oriented Programming, 반복되는 부가 기능을 분리하는 관점 지향 프로그래밍)가 실행 중에 리플렉션(Reflection, 실행 중 클래스 구조를 읽고 호출하는 기능)으로 읽어야 하기 때문이다.
 
 ### 1.2 저장소
 
@@ -309,7 +309,7 @@ static class Entry extends WeakReference<ThreadLocal<?>> {
 
 이유가 있다. 맵은 스레드 객체에 붙어 있고, 스레드는 풀에서 오래 살아남는다. 만약 키를 강하게 참조하면, `ThreadLocal` 객체를 아무도 안 쓰게 된 뒤에도 맵이 붙잡고 있어서 회수되지 않는다.
 
-약한 참조면 다른 곳에서 참조가 사라지는 순간 GC가 가져간다. 그러면 엔트리의 키가 `null`이 되고, `ThreadLocalMap`은 다음에 `set()`이나 `get()`을 할 때 이런 엔트리를 정리한다.
+약한 참조면 다른 곳에서 참조가 사라지는 순간 GC(안 쓰는 객체 메모리를 자동 회수)가 가져간다. 그러면 엔트리의 키가 `null`이 되고, `ThreadLocalMap`은 다음에 `set()`이나 `get()`을 할 때 이런 엔트리를 정리한다.
 
 **그런데 값은 강한 참조다.** 여기서 문제가 생긴다.
 
@@ -362,7 +362,7 @@ sequenceDiagram
 
 `Member` 하나면 작지만, 여기에 연관 엔티티가 물려 있으면 딸려 온다. 스레드 풀 크기만큼 곱해진다. 톰캣 기본값이 200이면 200개가 계속 살아 있는다.
 
-**애플리케이션을 재배포해도 안 없어지는 경우가 있다.** 웹 애플리케이션 클래스로더가 이 참조 때문에 회수되지 않으면 클래스로더 누수가 된다.
+**애플리케이션을 재배포해도 안 없어지는 경우가 있다.** 웹 애플리케이션 클래스로더(.class 파일을 메모리에 올리는 구성 요소)가 이 참조 때문에 회수되지 않으면 클래스로더 누수가 된다.
 
 ### 3.3 finally 블록에서 값 정리
 

@@ -106,7 +106,7 @@ Nginx 기반으로 캐시 정책(cache_lock, lock_timeout, lock_age 같은 옵�
 
 3월, 공식 문서를 근거로 리소스 할당 정책(requests/limits)을 다시 설계했다. K3s로 배치만 돌리던 것과 달리 이때부터는 상시 서비스를 올릴 클러스터를 실제로 만들기 시작했다.
 
-5월에는 Cilium을 CNI로 선택하고 노드 네트워크 설정(rp_filter, firewalld)을 맞췄다. 이 시기 겪은 CiliumNetworkPolicy의 알려진 결함(네임스페이스와 Pod selector 조합이 정책 반영에서 누락되는 문제)과 회피 방법은 [Compose→K8s 이관 글](/posts/compose-to-kubernetes-migration-lessons/)에 정리했다.
+5월에는 Cilium(eBPF 기반 CNI)을 CNI(Container Network Interface, Pod 네트워크를 붙이는 플러그인 규격)로 선택하고 노드 네트워크 설정(rp_filter, firewalld)을 맞췄다. 이 시기 겪은 CiliumNetworkPolicy(Cilium Network Policy, Cilium의 확장 네트워크 정책)의 알려진 결함(네임스페이스와 Pod selector 조합이 정책 반영에서 누락되는 문제)과 회피 방법은 [Compose→K8s 이관 글](/posts/compose-to-kubernetes-migration-lessons/)에 정리했다.
 
 ---
 
@@ -128,7 +128,7 @@ Nginx 기반으로 캐시 정책(cache_lock, lock_timeout, lock_age 같은 옵�
 
 7월 13일, 남아있던 Kong Gateway 경로 일부를 Envoy Gateway(Gateway API)로 이관했다. 처음 시도가 문제를 일으켜 되돌렸다가, 원인(헤더 이중 처리)을 고치고 다시 적용했다. 무중단 배포를 둘러싼 판단과 이 게이트웨이 전환의 자세한 내용은 [Compose→K8s 이관 글](/posts/compose-to-kubernetes-migration-lessons/)에 있다.
 
-같은 달, 성격이 다른 작업도 시작했다. 팀 전체가 LLM 에이전트를 쓰기 시작하면서 LLM/MCP 트래픽을 위한 별도 플랫폼(AI Studio)을 기존 클러스터와 노드풀, 네임스페이스를 분리해 새로 지었다. 이 게이트웨이를 고르는 과정에서 두 오픈소스 프로젝트를 직접 벤치마크한 내용은 [AI 에이전트 글](/posts/ai-agent-for-infra-operations/)에 정리했다.
+같은 달, 성격이 다른 작업도 시작했다. 팀 전체가 LLM(Large Language Model, 대규모 언어 모델) 에이전트를 쓰기 시작하면서 LLM/MCP(Model Context Protocol, AI 앱과 외부 도구를 잇는 표준 프로토콜) 트래픽을 위한 별도 플랫폼(AI Studio)을 기존 클러스터와 노드풀, 네임스페이스를 분리해 새로 지었다. 이 게이트웨이를 고르는 과정에서 두 오픈소스 프로젝트를 직접 벤치마크한 내용은 [AI 에이전트 글](/posts/ai-agent-for-infra-operations/)에 정리했다.
 
 7월 26일에는 지금까지의 전환 과정을 팀 내부에 공유하는 자료를 만들었다. 이 글에 쓴 KPI 수치(반복 작업 시간 75~100% 절감, 장애를 감지하고 복구하는 시간이 30분대에서 수십 초로 단축)가 그 자료에서 나온 실측치다.
 
@@ -138,7 +138,7 @@ Nginx 기반으로 캐시 정책(cache_lock, lock_timeout, lock_age 같은 옵�
 
 2025년 7월에 넘겨받았던 캐시서버가 관측성 스택에 연동됐다(8월 19일). 넘겨받은 지 1년 만이다. 새로 만든 시스템은 태어날 때부터 관측성을 갖지만 넘겨받은 시스템은 그 격차를 메우는 데 그만큼 시간이 걸린다는 걸 다시 확인했다.
 
-이 글을 쓰면서 느낀 게 하나 있다. 지난 2년은 동작하게 만드는 것에 집중한 시간이었다. MetalLB, kube-proxy, CNI의 역할 구분이나 `docker stop`이 보내는 시그널처럼, 이미 손으로 다뤄본 것도 막상 남에게 설명하려면 막히는 지점들이 있었다. 도구를 설정할 줄 아는 것과 원리를 이해하는 것 사이의 격차인데, 이건 별도로 정리해뒀다.
+이 글을 쓰면서 느낀 게 하나 있다. 지난 2년은 동작하게 만드는 것에 집중한 시간이었다. MetalLB(온프레미스에서 LoadBalancer IP를 붙여 주는 구현체), kube-proxy(Kubernetes Proxy, Service IP로 온 트래픽을 Pod로 보내는 노드 컴포넌트), CNI의 역할 구분이나 `docker stop`이 보내는 시그널처럼, 이미 손으로 다뤄본 것도 막상 남에게 설명하려면 막히는 지점들이 있었다. 도구를 설정할 줄 아는 것과 원리를 이해하는 것 사이의 격차인데, 이건 별도로 정리해뒀다.
 
 ---
 

@@ -323,7 +323,7 @@ class CacheConfig {
 
 **`initialCapacity`** 는 항목 개수가 아니라 **내부 해시 테이블의 초기 크기**다. 이걸 미리 잡아두면 항목이 늘어날 때 테이블을 다시 만드는 일이 줄어든다.
 
-**`maximumSize`** 는 최대 항목 수다. 여기서 W-TinyLFU가 실제로 동작하기 시작한다.
+**`maximumSize`** 는 최대 항목 수다. 여기서 W-TinyLFU(Window TinyLFU, 빈도 추정 기반 캐시 교체 정책)가 실제로 동작하기 시작한다.
 
 **`expireAfterWrite`** 와 **`expireAfterAccess`** 의 차이가 중요하다.
 
@@ -340,7 +340,7 @@ class CacheConfig {
 
 처음에는 실시간 캐시에 `weakValues()`, 대용량 캐시에 `softValues()`를 넣었다가 뺐다.
 
-**`weakValues()`** 는 그 값을 가리키는 강한 참조가 없어지는 순간 GC 대상이 된다. 캐시에 넣은 값은 대개 아무도 따로 안 들고 있으므로 **다음 GC에서 바로 사라진다.** 캐시로서 동작하지 않는다.
+**`weakValues()`** 는 그 값을 가리키는 강한 참조가 없어지는 순간 GC(안 쓰는 객체 메모리를 자동 회수) 대상이 된다. 캐시에 넣은 값은 대개 아무도 따로 안 들고 있으므로 **다음 GC에서 바로 사라진다.** 캐시로서 동작하지 않는다.
 
 **`softValues()`** 는 메모리가 부족할 때만 회수되므로 그럴듯해 보인다. 하지만 GC가 이 참조를 판단하는 비용이 있고, 회수 시점이 예측되지 않아서 **응답 시간이 튀는 원인**이 된다. 메모리 압박이 걱정이면 `maximumSize`나 `maximumWeight`로 명시적으로 제한하는 편이 낫다.
 
@@ -420,7 +420,7 @@ fun getProductWithStock(productId: Long): ProductWithStock { ... }
 
 **`@Caching`의 `cacheable`은 "같은 값을 여러 키로 찾을 수 있게" 할 때 쓰는 것**이지, 서로 다른 값을 각각 캐싱하는 용도가 아니다.
 
-**프록시를 안 거치면 캐시가 안 걸린다.** 같은 클래스 안에서 `getProduct()`를 직접 부르면 `@Cacheable`이 동작하지 않는다. 스프링 AOP가 프록시 기반이기 때문이다. [프록시에 관한 글](/posts/Reflection-DynamicProxy-CGLIB-AOP/)에 정리한 것과 같은 문제다.
+**프록시를 안 거치면 캐시가 안 걸린다.** 같은 클래스 안에서 `getProduct()`를 직접 부르면 `@Cacheable`이 동작하지 않는다. 스프링 AOP(Aspect-Oriented Programming, 반복되는 부가 기능을 분리하는 관점 지향 프로그래밍)가 프록시 기반이기 때문이다. [프록시에 관한 글](/posts/Reflection-DynamicProxy-CGLIB-AOP/)에 정리한 것과 같은 문제다.
 
 ### 5.6 캐시 스탬피드
 

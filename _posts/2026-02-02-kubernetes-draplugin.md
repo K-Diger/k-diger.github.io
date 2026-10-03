@@ -15,10 +15,10 @@ series_order: 14
 
 - PR: [kubernetes/kubernetes#133964](https://github.com/kubernetes/kubernetes/pull/133964)
 - 관련 이슈: [kubernetes/kubernetes#133943](https://github.com/kubernetes/kubernetes/issues/133943)
-- DRA 공식 문서: [Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/)
+- DRA(GPU 같은 장치를 동적으로 할당하는 기능) 공식 문서: [Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/)
 - DRA Health Status KEP: [KEP-4680](https://github.com/kubernetes/enhancements/issues/4680)
 - Health Status 블로그: [Kubernetes v1.34: Pods Report DRA Resource Health](https://kubernetes.io/blog/2025/09/17/kubernetes-v1-34-pods-report-dra-resource-health/)
-- gRPC-Go NewClient 마이그레이션: [grpc/grpc-go#7090](https://github.com/grpc/grpc-go/issues/7090)
+- gRPC(gRPC Remote Procedure Calls, HTTP/2 기반 원격 함수 호출 프레임워크)-Go NewClient 마이그레이션: [grpc/grpc-go#7090](https://github.com/grpc/grpc-go/issues/7090)
 - **Kubernetes v1.36 마일스톤**
 - SIG Node 승인 완료: 2025년 12월 18일
 
@@ -106,13 +106,13 @@ graph TB
 DRA 드라이버는 두 가지 컴포넌트로 구성된다.
 
 1. Controller Component: 중앙에서 실행되며 ResourceSlice 관리
-2. Kubelet Plugin Component: 각 노드에서 DaemonSet으로 실행되며 gRPC 인터페이스 구현
+2. Kubelet Plugin Component: 각 노드에서 DaemonSet(노드마다 Pod를 하나씩 띄우는 워크로드)으로 실행되며 gRPC 인터페이스 구현
 
 Kubelet은 DRA 플러그인과 gRPC 통신을 통해 리소스 생명주기를 관리한다.
 
 ## DRA API와 Health API의 역할
 
-DRA 플러그인은 kubelet과 통신하기 위해 두 가지 주요 gRPC API를 구현한다. 이 API들은 서로 다른 목적을 가지고 있지만, 동일한 gRPC 연결을 공유한다.
+DRA 플러그인은 kubelet(각 노드에서 컨테이너를 실행하고 상태를 보고하는 에이전트)과 통신하기 위해 두 가지 주요 gRPC API를 구현한다. 이 API들은 서로 다른 목적을 가지고 있지만, 동일한 gRPC 연결을 공유한다.
 
 ### DRA API (Core Resource Management)
 

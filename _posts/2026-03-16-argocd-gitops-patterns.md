@@ -28,11 +28,11 @@ series_order: 4
 
 ## 배경
 
-Docker Compose로 서버마다 배포하던 것을 쿠버네티스로 옮기면서 GitOps를 도입했다. 도구는 ArgoCD로 정했는데, 그 다음이 문제였다.
+Docker Compose로 서버마다 배포하던 것을 쿠버네티스로 옮기면서 GitOps(Git에 선언한 상태를 클러스터가 따라가게 하는 운영 방식)를 도입했다. 도구는 ArgoCD(Git과 클러스터 상태를 맞춰 주는 GitOps 도구)로 정했는데, 그 다음이 문제였다.
 
 - Application을 서비스마다 하나씩 만들면 되는가? 그러면 새 서비스가 생길 때마다 사람이 `kubectl apply`를 해야 하는가?
 - 애드온과 애플리케이션을 같은 Application에 넣어도 되는가?
-- 순서가 필요한 리소스는 어떻게 하는가? NetworkPolicy가 없는 상태로 Pod가 뜨면 통신이 막힌다.
+- 순서가 필요한 리소스는 어떻게 하는가? NetworkPolicy(Pod 사이 통신을 라벨과 포트로 허용하거나 막는 리소스)가 없는 상태로 Pod가 뜨면 통신이 막힌다.
 - `kubectl scale`로 복제본을 늘렸는데 몇 분 뒤 되돌아갔다. 왜인가?
 - 머지했는데 클러스터에 반영이 안 된다. git에는 없는 내용을 참조하는 에러가 난다.
 
@@ -66,7 +66,7 @@ GitOps는 풀 방식이다. 클러스터 안의 에이전트가 git을 읽어와
 
 ### 1.2 ArgoCD의 Application
 
-ArgoCD가 CRD로 추가하는 오브젝트다. **"이 git 경로의 내용을 이 클러스터의 이 네임스페이스에 맞춰라"** 는 선언이다.
+ArgoCD가 CRD(CustomResourceDefinition, 쿠버네티스에 새 리소스 종류를 추가하는 정의)로 추가하는 오브젝트다. **"이 git 경로의 내용을 이 클러스터의 이 네임스페이스에 맞춰라"** 는 선언이다.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -151,7 +151,7 @@ spec:
 
 `bootstrap/dev/`에 Application YAML을 서비스 수만큼 두는 방법도 있다. 하지만 서비스가 아홉 개면 거의 같은 파일이 아홉 개가 된다.
 
-Helm의 `range`로 목록에서 생성하도록 만들었다.
+Helm(매니페스트를 템플릿과 값으로 묶어 배포하는 도구)의 `range`로 목록에서 생성하도록 만들었다.
 
 ```yaml
 {{- $root := . -}}
@@ -213,7 +213,7 @@ disabledServices:
 
 `finalizers`에 붙은 항목도 짚고 넘어간다. `resources-finalizer.argocd.argoproj.io`가 있으면 Application을 지울 때 **그 Application이 만든 리소스도 함께 지운다.** 없으면 Application만 사라지고 리소스는 클러스터에 고아로 남는다.
 
-반대로 리소스를 남기면서 Application만 지우고 싶을 때가 있다. 그때는 finalizer를 먼저 제거한다.
+반대로 리소스를 남기면서 Application만 지우고 싶을 때가 있다. 그때는 finalizer(정리 작업이 끝날 때까지 삭제를 멈춰 두는 표시)를 먼저 제거한다.
 
 ```bash
 kubectl patch app <name> -n argocd -p '{"metadata":{"finalizers":null}}' --type merge
@@ -260,7 +260,7 @@ spec:
         namespace: '{{namespace}}'
 ```
 
-**Helm range와 ApplicationSet 중 무엇을 쓸 것인가.** 기준을 이렇게 잡았다.
+**Helm range와 ApplicationSet(템플릿 하나로 ArgoCD 앱 여러 개를 만드는 리소스) 중 무엇을 쓸 것인가.** 기준을 이렇게 잡았다.
 
 | | Helm range | ApplicationSet |
 |---|---|---|
@@ -330,7 +330,7 @@ spec:
 
 `clusterResourceWhitelist`가 화이트리스트라는 점이 문제를 만든다. **새 CRD 종류를 쓰기 시작하면 그것을 목록에 추가해야 한다.**
 
-정책 엔진을 도입하면서 `ClusterPolicy`라는 새 kind를 쓰게 됐는데, 애드온 프로젝트의 화이트리스트에 넣는 것을 빠뜨렸다.
+정책 엔진을 도입하면서 `ClusterPolicy`라는 새 kind(Kubernetes IN Docker, Docker 컨테이너로 로컬 클러스터를 띄우는 도구)를 쓰게 됐는데, 애드온 프로젝트의 화이트리스트에 넣는 것을 빠뜨렸다.
 
 증상이 이랬다.
 

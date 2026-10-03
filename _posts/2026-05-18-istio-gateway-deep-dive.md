@@ -30,7 +30,7 @@ series_order: 8
 
 메시 안쪽 통신을 정리하고 나니 **밖에서 들어오는 트래픽**이 남았다. 사용자 요청이 클러스터로 들어오는 입구를 어떻게 만들 것인가의 문제다.
 
-쿠버네티스에는 이미 Ingress가 있고, Istio에는 Gateway가 있고, 최근에는 Gateway API가 나왔다. **셋이 같은 일을 하는 것 같은데 왜 따로 있는지** 몰라서 정리했다.
+쿠버네티스에는 이미 Ingress(외부 HTTP 요청을 Service로 보내는 옛 표준 리소스)가 있고, Istio에는 Gateway가 있고, 최근에는 Gateway API(Ingress를 대체하는 쿠버네티스 표준 라우팅 API)가 나왔다. **셋이 같은 일을 하는 것 같은데 왜 따로 있는지** 몰라서 정리했다.
 
 정리하면서 확인하고 싶었던 것들이다.
 
@@ -43,7 +43,7 @@ series_order: 8
 
 Kubernetes Ingress 리소스 지원과 함께, Istio는 Istio Gateway 또는 Kubernetes Gateway 리소스를 사용하여 인그레스 트래픽을 구성할 수 있다.
 
-Kubernetes 클러스터에서 외부 트래픽이 내부 서비스에 도달하려면 반드시 **경계(edge)** 를 통과해야 한다. Istio는 이 경계를 **Gateway**라는 추상화로 표준화하며, 단순한 L4/L7 라우팅을 넘어 mTLS termination, 호스트 기반 라우팅, 정책 중앙화까지 제공한다.
+Kubernetes 클러스터에서 외부 트래픽이 내부 서비스에 도달하려면 반드시 **경계(edge)** 를 통과해야 한다. Istio는 이 경계를 **Gateway**라는 추상화로 표준화하며, 단순한 L4(Layer 4, TCP, UDP와 포트 수준)/L7(Layer 7, HTTP 경로와 헤더 같은 요청 내용 수준) 라우팅을 넘어 mTLS(mutual TLS, 양쪽이 서로 인증서를 확인하는 TLS) termination, 호스트 기반 라우팅, 정책 중앙화까지 제공한다.
 
 이 글에서는 Istio의 Ingress Gateway와 Egress Gateway를 공식 문서 기반으로 심층 분석하고, Istio 고유 API(Gateway + VirtualService)와 Kubernetes Gateway API(Gateway + HTTPRoute) 두 가지 접근 방식을 비교한다. 각 리소스의 동작 원리, TLS 구성 패턴, 실무 설계 주의점까지 다룬다.
 
@@ -53,22 +53,22 @@ Kubernetes 클러스터에서 외부 트래픽이 내부 서비스에 도달하�
 
 ### 1.1 North-South vs East-West
 
-Gateway는 메시의 경계에서 실행되는 독립형 Envoy 프록시를 사용하여 메시의 인바운드 및 아웃바운드 트래픽을 관리한다.
+Gateway는 메시의 경계에서 실행되는 독립형 Envoy(고성능 L4/L7 프록시) 프록시를 사용하여 메시의 인바운드 및 아웃바운드 트래픽을 관리한다.
 
-서비스 메시에서 트래픽은 크게 두 방향으로 분류된다.
+서비스 메시(Service Mesh, 서비스 사이 통신 기능을 프록시 계층이 맡는 구조)에서 트래픽은 크게 두 방향으로 분류된다.
 
 | 방향 | 설명 | Istio 컴포넌트 |
 |---|---|---|
 | **North-South** | 클러스터 외부 ↔ 내부 서비스 | Ingress Gateway, Egress Gateway |
 | **East-West** | 클러스터 내부 서비스 ↔ 서비스 | Sidecar Proxy (Envoy) |
 
-North-South 트래픽을 제어하지 않으면, 서비스별 개별 LoadBalancer나 Ingress가 난립하게 된다. 인증서 관리, 도메인 라우팅, 접근 제어가 팀별로 분산되어 보안 사고의 표면적이 넓어진다. Istio가 메시 경계에 독립형 Envoy 프록시를 배치하는 이유가 바로 이 중앙 집중 관리에 있다.
+North-South(North-South Traffic, 클러스터 밖과 안을 오가는 트래픽) 트래픽을 제어하지 않으면, 서비스별 개별 LoadBalancer(외부 로드밸런서를 붙이는 Service 타입)나 Ingress가 난립하게 된다. 인증서 관리, 도메인 라우팅, 접근 제어가 팀별로 분산되어 보안 사고의 표면적이 넓어진다. Istio가 메시 경계에 독립형 Envoy 프록시를 배치하는 이유가 바로 이 중앙 집중 관리에 있다.
 
 ### 1.2 Istio Gateway의 역할
 
 Gateway는 Ingress보다 더 광범위한 커스터마이징과 유연성을 제공하며, 모니터링 및 라우팅 규칙 같은 Istio 기능을 클러스터에 진입하는 트래픽에 적용할 수 있게 한다.
 
-중요한 점은 **경계에서 동작하는 전용 Envoy 프록시**라는 점이다. 일반적인 Kubernetes Ingress Controller(NGINX Ingress 등)와 달리, Istio Gateway는 메시 내부의 mTLS, 트래픽 관리, Observability를 그대로 활용할 수 있다.
+중요한 점은 **경계에서 동작하는 전용 Envoy 프록시**라는 점이다. 일반적인 Kubernetes Ingress Controller(NGINX Ingress 등)와 달리, Istio Gateway는 메시 내부의 mTLS, 트래픽 관리, Observability(외부 데이터로 내부 상태를 알아내는 정도)를 그대로 활용할 수 있다.
 
 Gateway는 L4-L6 로드밸런싱 속성을 구성하며, 애플리케이션 계층 라우팅을 위해 VirtualService와 쌍으로 사용된다.
 
@@ -238,7 +238,7 @@ spec:
 
 사전 구성된 게이트웨이: `istio-ingressgateway`와 `istio-egressgateway`가 제공된다.
 
-`selector` 필드가 중요하다. 이 셀렉터로 지정된 Pod(일반적으로 `istio-system` 네임스페이스의 Ingress Gateway Deployment)가 이 Gateway 설정을 Envoy xDS로 수신하여 적용한다. Istio 설치 시 사전 구성되는 `istio-ingressgateway` Deployment가 기본 대상이다.
+`selector` 필드가 중요하다. 이 셀렉터로 지정된 Pod(일반적으로 `istio-system` 네임스페이스의 Ingress Gateway Deployment)가 이 Gateway 설정을 Envoy xDS(x Discovery Service, 프록시가 컨트롤 플레인에서 설정을 받아 오는 API)로 수신하여 적용한다. Istio 설치 시 사전 구성되는 `istio-ingressgateway` Deployment가 기본 대상이다.
 
 ### 3.2 VirtualService 연결
 
@@ -319,7 +319,7 @@ VirtualService에는 어떤 Gateway 리소스가 트래픽을 라우팅할 수 �
 **연결 규칙:**
 - VirtualService의 `gateways` 필드에 Gateway 이름을 지정한다 (cross-namespace 시 `namespace/name` 형식)
 - VirtualService의 `hosts`와 Gateway의 `hosts`가 교집합이 있어야 한다
-- `gateways` 필드를 생략하면 `mesh`가 기본값으로 설정되어, 메시 내부 sidecar에만 적용된다
+- `gateways` 필드를 생략하면 `mesh`가 기본값으로 설정되어, 메시 내부 sidecar(애플리케이션 옆에 붙는 보조 컨테이너)에만 적용된다
 
 메시 내 다른 서비스에서 오는 내부 요청은 이 규칙의 적용 대상이 아니며, 기본적으로 라운드 로빈 라우팅이 적용된다.
 
@@ -542,7 +542,7 @@ spec:
 
 ## 4. Kubernetes Gateway API
 
-Kubernetes SIG-Network이 주도하는 차세대 Gateway 표준이다. Istio, Envoy Gateway, Cilium, Kong 등 다양한 구현체가 지원하며, 벤더 중립적 인터페이스를 제공한다.
+Kubernetes SIG-Network이 주도하는 차세대 Gateway 표준이다. Istio, Envoy Gateway(Envoy 기반 Gateway API 구현체), Cilium(eBPF 기반 CNI), Kong 등 다양한 구현체가 지원하며, 벤더 중립적 인터페이스를 제공한다.
 
 ### 4.1 Gateway API 3계층 구조
 
@@ -652,7 +652,7 @@ Kubernetes Gateway API에서는 Gateway 리소스가 gateway를 구성하고 배
 
 기본적으로 각 Gateway는 자동으로 Service와 Deployment를 프로비저닝한다.
 
-이것은 Kubernetes Gateway API 사용 시의 핵심 장점이다. Istio API에서는 Ingress Gateway Deployment를 Helm values나 IstioOperator로 별도 관리해야 했지만, Gateway API에서는 Gateway 리소스 하나만 생성하면 된다.
+이것은 Kubernetes Gateway API 사용 시의 핵심 장점이다. Istio API에서는 Ingress Gateway Deployment를 Helm(매니페스트를 템플릿과 값으로 묶어 배포하는 도구) values나 IstioOperator로 별도 관리해야 했지만, Gateway API에서는 Gateway 리소스 하나만 생성하면 된다.
 
 ```mermaid
 sequenceDiagram
@@ -812,7 +812,7 @@ spec:
 
 참고: 아래 내용은 공식문서의 개념을 기반으로 정리한 것이다.
 
-gRPC 서비스를 위한 전용 라우팅 리소스이다. Gateway API에서 프로토콜별로 리소스를 분리하는 설계 원칙에 따라, gRPC 트래픽은 GRPCRoute로 별도 관리한다.
+gRPC(gRPC Remote Procedure Calls, HTTP/2 기반 원격 함수 호출 프레임워크) 서비스를 위한 전용 라우팅 리소스이다. Gateway API에서 프로토콜별로 리소스를 분리하는 설계 원칙에 따라, gRPC 트래픽은 GRPCRoute로 별도 관리한다.
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -963,7 +963,7 @@ flowchart LR
 
 ### 5.2 ServiceEntry
 
-외부 서비스를 메시에 등록하려면 ServiceEntry를 사용한다.
+외부 서비스를 메시에 등록하려면 ServiceEntry(Service Entry, 메시 밖 서비스를 등록하는 리소스)를 사용한다.
 
 ServiceEntry는 Istio가 내부적으로 유지하는 서비스 레지스트리에 항목을 추가한다.
 
@@ -1228,7 +1228,7 @@ Gateway API는 풍부한 라우팅 기능을 제공하지만, 아직 Istio의 �
 
 - **동일 호스트/경로에 대해 두 API를 중복 정의하지 않는다** (충돌 발생)
 - 서비스 단위로 순차적 마이그레이션: 새 서비스는 Gateway API, 기존 서비스는 점진 전환
-- Gateway API로 전환 후에도 `DestinationRule`, `ServiceEntry`, `PeerAuthentication` 등 Istio 전용 CRD는 계속 필요하다
+- Gateway API로 전환 후에도 `DestinationRule`, `ServiceEntry`, `PeerAuthentication` 등 Istio 전용 CRD(CustomResourceDefinition, 쿠버네티스에 새 리소스 종류를 추가하는 정의)는 계속 필요하다
 
 ---
 
@@ -1264,7 +1264,7 @@ Istio Gateway 외에도 North-South 트래픽을 처리할 수 있는 기술은 
 
 참고: 아래 내용은 공식문서의 개념을 기반으로 정리한 것이다.
 
-Gateway Pod는 모든 외부 트래픽이 통과하는 병목점이다. 반드시 적절한 리소스와 HPA를 설정해야 한다.
+Gateway Pod는 모든 외부 트래픽이 통과하는 병목점이다. 반드시 적절한 리소스와 HPA(Horizontal Pod Autoscaler, 지표를 보고 Pod 개수를 자동 조절)를 설정해야 한다.
 
 ```yaml
 # Gateway API 방식에서 Deployment 커스터마이징
@@ -1517,7 +1517,7 @@ flowchart TB
 
 - [ ] Gateway Pod의 CPU/Memory 사용량 모니터링
 - [ ] HPA 설정 및 스케일링 테스트 완료
-- [ ] PodDisruptionBudget 설정
+- [ ] PodDisruptionBudget(중단 중에도 유지할 최소 Pod 수) 설정
 - [ ] 인증서 만료 알림 설정 (cert-manager 미사용 시)
 - [ ] 접근 로그 수집 및 분석 파이프라인 구축
 - [ ] 장애 시 트래픽 우회 절차 문서화

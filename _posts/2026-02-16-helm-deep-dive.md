@@ -34,11 +34,11 @@ series_order: 2
 
 ## 배경
 
-Compose로 돌던 서비스를 쿠버네티스로 옮기다 보니 매니페스트가 빠르게 늘었다. 서비스 하나에 Deployment, Service, ConfigMap, Secret, Ingress가 붙고, 그것을 개발과 스테이징과 운영에 각각 두면 곱하기 세 배다.
+Compose로 돌던 서비스를 쿠버네티스로 옮기다 보니 매니페스트가 빠르게 늘었다. 서비스 하나에 Deployment, Service, ConfigMap(설정 값을 Pod 밖에 저장해 주입하는 오브젝트), Secret, Ingress(외부 HTTP 요청을 Service로 보내는 옛 표준 리소스)가 붙고, 그것을 개발과 스테이징과 운영에 각각 두면 곱하기 세 배다.
 
 같은 파일을 세 벌 복사해두고 값만 다르게 두는 방식은 **하나를 고치면 나머지 둘을 잊는다.**
 
-Helm이 이 문제를 푸는 도구라는 것은 알았는데, 템플릿 문법 이상으로 무엇을 해주는지는 몰랐다. 공식문서를 처음부터 읽었다.
+Helm(매니페스트를 템플릿과 값으로 묶어 배포하는 도구)이 이 문제를 푸는 도구라는 것은 알았는데, 템플릿 문법 이상으로 무엇을 해주는지는 몰랐다. 공식문서를 처음부터 읽었다.
 
 정리하면서 확인하고 싶었던 것들이다.
 
@@ -123,7 +123,7 @@ kubectl get secrets -l owner=helm -n default
 # sh.helm.release.v1.myapp.v2   helm.sh/release.v1   1      2m
 ```
 
-Helm 2에서는 Tiller라는 서버 컴포넌트가 클러스터 내부에 존재했지만, Helm 3에서 제거되었다. Tiller 제거로 인해 RBAC이 단순해지고, 보안 표면이 크게 줄었다.
+Helm 2에서는 Tiller라는 서버 컴포넌트가 클러스터 내부에 존재했지만, Helm 3에서 제거되었다. Tiller 제거로 인해 RBAC(Role-Based Access Control, 역할 기반 접근 제어)이 단순해지고, 보안 표면이 크게 줄었다.
 
 ### 2.4 전체 아키텍처 다이어그램
 
@@ -1040,7 +1040,7 @@ flowchart TB
 ```
 
 - Base Library: 조직 전체에서 사용하는 레이블, annotation, SecurityContext 표준
-- Team Library: 팀별 리소스 기본값, Probe 패턴, Sidecar 설정
+- Team Library: 팀별 리소스 기본값, Probe 패턴, Sidecar(애플리케이션 옆에 붙는 보조 컨테이너) 설정
 - App Chart: 실제 애플리케이션별 설정
 
 이 패턴의 장점은 표준을 Library에서 한 번만 변경하면 모든 차트에 전파된다는 것이다.
@@ -1297,7 +1297,7 @@ flowchart LR
 
 ## 12. CRDs 관리
 
-Custom Resource Definitions(CRDs)은 Kubernetes의 특별한 종류의 리소스이다. 커스텀 리소스를 정의하는 방법을 제공한다. Helm은 CRD를 특별하게 취급한다.
+Custom Resource Definitions(CRDs)은 Kubernetes의 특별한 종류의 리소스이다. 커스텀 리소스를 정의하는 방법을 제공한다. Helm은 CRD(CustomResourceDefinition, 쿠버네티스에 새 리소스 종류를 추가하는 정의)를 특별하게 취급한다.
 
 ### 12.1 CRD 설치 규칙
 
@@ -1796,7 +1796,7 @@ data:
 
 ### 19.4 배포/운영
 
-- [ ] `helm upgrade --install`로 멱등성 확보
+- [ ] `helm upgrade --install`로 멱등성(Idempotence, 여러 번 보내도 결과가 같은 성질) 확보
 - [ ] `--atomic` 옵션으로 실패 시 자동 롤백
 - [ ] `--wait` 옵션으로 모든 리소스 Ready 대기
 - [ ] Hook 삭제 정책 명시 (`before-hook-creation` 기본 권장)
@@ -1808,7 +1808,7 @@ data:
 - [ ] `helm template`으로 로컬 렌더링 검증
 - [ ] `helm lint --strict`로 경고 포함 검증
 - [ ] `helm test`를 배포 후 검증 단계에 포함
-- [ ] ArgoCD/Flux에서 Helm Chart 소스 연동 설정
+- [ ] ArgoCD(Git과 클러스터 상태를 맞춰 주는 GitOps 도구)/Flux에서 Helm Chart 소스 연동 설정
 - [ ] OCI Registry Push/Pull 자동화
 
 ```bash

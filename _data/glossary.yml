@@ -1,5 +1,6 @@
 # 용어 사전. 글 본문에서 각 용어가 처음 나오는 곳에 점선 밑줄을 달고, 누르면(또는 마우스를 올리면) 정의를 보여 준다.
 # term: 화면에 보이는 대표 표기 / aka: 본문에서 같은 용어로 찾을 다른 표기 / cat: 분류 / def: 한두 문장 정의(다/이다 체)
+# short: 본문 첫 등장 괄호에 넣는 짧은 설명(_tools/inline_terms.py가 사용)
 # full: 풀네임(약어 원문, 원어) / why: 이름이 붙은 이유
 # scope: 이 분류(글 categories) 중 하나에 속한 글에서만 표시. 뜻이 겹치는 말(토큰: AI 토큰 vs 인증 토큰)에 쓴다. 없으면 모든 글
 # 일반 개발 용어(API, HTTP, JSON 등)는 넣지 않고, 각 글이 다루는 분야의 전문 용어만 넣는다.
@@ -11,146 +12,177 @@
   full: "Control Plane"
   why: "네트워크 장비에서 쓰던 말이다. 장비 안을 \"제어하는 층(plane)\"과 \"패킷을 실어 나르는 층\"으로 나눠 부르던 관례에서 왔다."
   def: "클러스터의 상태를 결정하고 관리하는 구성 요소 묶음이다. API 서버, etcd, 스케줄러, 컨트롤러 매니저가 여기에 속한다. 서비스 메시에서는 프록시에 설정을 내려보내는 쪽(예: istiod)을 가리킨다."
+  short: "클러스터 상태를 결정하고 설정을 내려보내는 관리 계층"
 - term: 데이터 플레인
   aka: [Data Plane, data plane, 데이터플레인]
   cat: 쿠버네티스
   full: "Data Plane"
   why: "컨트롤 플레인의 짝이다. 실제 데이터(패킷, 요청)가 지나가는 층이라 이렇게 부른다."
   def: "실제 요청과 패킷을 처리하는 쪽이다. 컨트롤 플레인이 정한 설정대로 트래픽을 받아 전달한다. 서비스 메시에서는 Envoy나 ztunnel 같은 프록시가 데이터 플레인이다."
+  short: "실제 요청과 패킷을 처리하는 계층"
 - term: etcd
   cat: 쿠버네티스
   full: "\"/etc\" + d(distributed)"
   why: "유닉스에서 설정 파일을 두는 /etc 디렉터리에 \"분산(distributed)\"의 d를 붙인 이름이다. 여러 서버에 나눠 둔 설정 저장소라는 뜻이다."
   def: "쿠버네티스가 모든 오브젝트의 상태를 저장하는 분산 키-값 저장소다. Raft 합의 알고리즘으로 여러 노드에 같은 데이터를 유지한다."
+  short: "쿠버네티스 상태를 저장하는 분산 키-값 저장소"
 - term: kubelet
   cat: 쿠버네티스
   full: "Kube + -let"
   why: "\"작은 것\"을 뜻하는 접미사 -let을 붙였다. 각 노드에 하나씩 있는 작은 쿠버네티스 에이전트라는 뜻이다."
   def: "각 노드에서 실행되는 에이전트다. API 서버에서 이 노드에 배정된 Pod 명세를 받아 컨테이너 런타임으로 컨테이너를 실행하고 상태를 보고한다."
+  short: "각 노드에서 컨테이너를 실행하고 상태를 보고하는 에이전트"
 - term: kube-proxy
   cat: 쿠버네티스
   full: "Kubernetes Proxy"
   why: "Service로 온 요청을 Pod로 대신 전달해 주는 대리인(proxy) 역할에서 왔다."
   def: "Service의 가상 IP로 온 트래픽을 실제 Pod로 보내도록 노드의 iptables나 IPVS 규칙을 관리하는 컴포넌트다. Cilium 같은 eBPF 기반 CNI는 이 역할을 대체할 수 있다."
+  short: "Service IP로 온 트래픽을 Pod로 보내는 노드 컴포넌트"
 - term: CRD
   aka: [CustomResourceDefinition]
   cat: 쿠버네티스
   full: "CustomResourceDefinition"
   why: "사용자가 직접 만든(custom) 리소스의 정의(definition)라는 뜻이다."
   def: "쿠버네티스 API에 새로운 오브젝트 종류를 추가하는 정의다. 예를 들어 Istio의 VirtualService, ArgoCD의 Application이 CRD로 추가된 오브젝트다."
+  short: "쿠버네티스에 새 리소스 종류를 추가하는 정의"
 - term: CRI
   cat: 쿠버네티스
   full: "Container Runtime Interface"
   why: "kubelet과 컨테이너 실행기(runtime) 사이의 약속된 접점(interface)이라는 뜻이다."
   def: "kubelet이 컨테이너 런타임(containerd, CRI-O 등)과 통신하는 표준 인터페이스다."
+  short: "kubelet과 컨테이너 런타임 사이의 표준 인터페이스"
 - term: CNI
   cat: 쿠버네티스
   full: "Container Network Interface"
   why: "컨테이너 네트워크를 붙이는 플러그인과 런타임 사이의 표준 접점이라는 뜻이다."
   def: "Pod에 네트워크 인터페이스와 IP를 붙이고 Pod 사이 통신 경로를 만드는 플러그인 규격이다. Cilium, Calico, Flannel이 CNI 구현체다."
+  short: "Pod 네트워크를 붙이는 플러그인 규격"
 - term: DaemonSet
   cat: 쿠버네티스
   full: "Daemon + Set"
   why: "유닉스에서 뒤에서 계속 도는 프로세스를 데몬(daemon)이라 부른다. 노드마다 하나씩 뒤에서 도는 Pod 묶음이라는 뜻이다."
   def: "클러스터의 모든 노드(또는 선택한 노드)마다 Pod를 하나씩 띄우는 워크로드다. 로그 수집기, CNI 에이전트, ztunnel처럼 노드마다 하나씩 필요한 것에 쓴다."
+  short: "노드마다 Pod를 하나씩 띄우는 워크로드"
 - term: ReplicaSet
   cat: 쿠버네티스
   full: "Replica + Set"
   why: "똑같은 복제본(replica) Pod들의 묶음(set)이라는 뜻이다."
   def: "지정한 개수의 Pod 복제본이 항상 떠 있도록 유지하는 오브젝트다. 보통 Deployment가 ReplicaSet을 만들고 관리한다."
+  short: "Pod 복제본 개수를 유지하는 오브젝트"
 - term: ConfigMap
   cat: 쿠버네티스
   def: "설정 값을 Pod 밖에 저장해 두고 환경 변수나 파일로 주입하는 오브젝트다. 비밀 값은 Secret에 둔다."
+  short: "설정 값을 Pod 밖에 저장해 주입하는 오브젝트"
 - term: ServiceAccount
   cat: 쿠버네티스
   def: "Pod 안의 프로세스가 쿠버네티스 API나 다른 서비스에 자신을 증명할 때 쓰는 계정이다. 사람 계정과 달리 네임스페이스에 속한다."
+  short: "Pod가 자신을 증명할 때 쓰는 계정"
 - term: RBAC
   cat: 쿠버네티스
   full: "Role-Based Access Control"
   why: "사람마다 권한을 주지 않고 역할(role)에 권한을 묶은 뒤 그 역할을 부여하는 방식이라 이렇게 부른다."
   def: "역할 기반 접근 제어다. 어떤 주체가 어떤 리소스에 어떤 동작(get, create 등)을 할 수 있는지 Role과 RoleBinding으로 정한다."
+  short: "역할 기반 접근 제어"
 - term: ClusterIP
   cat: 쿠버네티스
   def: "클러스터 안에서만 접근할 수 있는 Service의 기본 타입이다. 고정된 가상 IP 하나로 여러 Pod에 트래픽을 나눠 보낸다."
+  short: "클러스터 안에서만 접근하는 Service 가상 IP"
 - term: NodePort
   cat: 쿠버네티스
   def: "모든 노드의 같은 포트(기본 30000~32767)로 들어온 트래픽을 Service로 보내는 타입이다. 클라우드 로드밸런서가 없는 온프레미스에서 외부 장비가 이 포트로 트래픽을 넘긴다."
+  short: "모든 노드의 같은 포트로 Service를 여는 방식"
 - term: LoadBalancer
   cat: 쿠버네티스
   def: "외부 로드밸런서를 자동으로 만들어 Service 앞에 붙이는 타입이다. 클라우드에서는 컨트롤러가 처리하지만 온프레미스에서는 MetalLB 같은 구현이 따로 필요하다."
+  short: "외부 로드밸런서를 붙이는 Service 타입"
 - term: EndpointSlice
   cat: 쿠버네티스
   full: "Endpoint + Slice"
   why: "하나의 큰 Endpoints 목록을 여러 조각(slice)으로 잘라 담는다는 뜻이다."
   def: "Service 뒤에 있는 실제 Pod IP와 포트 목록을 나눠 담는 오브젝트다. Endpoints를 대체해 대규모 클러스터에서 갱신 부하를 줄인다."
+  short: "Service 뒤 Pod 주소 목록을 나눠 담는 오브젝트"
 - term: HPA
   aka: [HorizontalPodAutoscaler]
   cat: 쿠버네티스
   full: "Horizontal Pod Autoscaler"
   why: "Pod 하나를 키우는(수직) 대신 개수를 늘리는(수평, horizontal) 방향으로 자동 조절한다는 뜻이다."
   def: "CPU 사용률 같은 지표를 보고 Pod 개수를 자동으로 늘리거나 줄이는 오브젝트다."
+  short: "지표를 보고 Pod 개수를 자동 조절"
 - term: PDB
   aka: [PodDisruptionBudget]
   cat: 쿠버네티스
   full: "PodDisruptionBudget"
   why: "중단(disruption)을 허용할 수 있는 한도(budget)라는 뜻이다."
   def: "노드 drain 같은 자발적 중단 중에도 최소 몇 개의 Pod가 살아 있어야 하는지 정하는 오브젝트다."
+  short: "중단 중에도 유지할 최소 Pod 수"
 - term: LimitRange
   cat: 쿠버네티스
   def: "네임스페이스 안 컨테이너의 CPU와 메모리 요청량, 제한량의 기본값과 범위를 정하는 오브젝트다."
+  short: "컨테이너 자원 요청과 제한의 기본값"
 - term: ResourceQuota
   cat: 쿠버네티스
   def: "네임스페이스 전체가 쓸 수 있는 CPU, 메모리, 오브젝트 개수의 총량을 제한하는 오브젝트다."
+  short: "네임스페이스 전체 자원 총량 제한"
 - term: Admission Controller
   aka: [어드미션 컨트롤러, admission]
   cat: 쿠버네티스
   full: "Admission Controller"
   why: "\"입장 허가(admission)\"를 심사하는 관문이라는 뜻이다. 요청이 저장소에 들어가기 전에 통과시킬지 정한다."
   def: "API 서버가 요청을 저장하기 직전에 검사하거나 수정하는 단계다. Kyverno, OPA Gatekeeper가 이 단계에 웹훅으로 끼어들어 정책을 강제한다."
+  short: "저장 직전에 요청을 검사하거나 바꾸는 단계"
 - term: MutatingAdmissionWebhook
   cat: 쿠버네티스
   full: "Mutating Admission Webhook"
   why: "입장 심사 단계에서 요청 내용을 바꾸는(mutate) 웹훅이라는 뜻이다."
   def: "오브젝트가 저장되기 전에 내용을 바꿀 수 있는 어드미션 웹훅이다. Istio 사이드카 주입이 이 방식으로 Pod에 컨테이너를 추가한다."
+  short: "저장 전에 요청 내용을 바꾸는 웹훅"
 - term: ValidatingAdmissionPolicy
   cat: 쿠버네티스
   full: "Validating Admission Policy"
   why: "입장 심사 단계에서 바꾸지 않고 검사만(validate) 하는 정책이라는 뜻이다."
   def: "웹훅 서버 없이 CEL 표현식으로 요청을 검사하는 쿠버네티스 내장 정책 기능이다."
+  short: "CEL 식으로 요청을 검사하는 내장 정책"
 - term: CEL
   cat: 쿠버네티스
   full: "Common Expression Language"
   why: "여러 시스템에서 공통으로(common) 쓰려고 구글이 만든 간단한 식(expression) 언어라는 뜻이다."
   def: "쿠버네티스 정책이나 검증 규칙을 짧은 식으로 쓰는 표현 언어다."
+  short: "정책을 짧은 식으로 쓰는 표현 언어"
 - term: PSA
   aka: [Pod Security Admission]
   cat: 쿠버네티스
   full: "Pod Security Admission"
   why: "Pod 보안 기준을 입장 심사(admission) 단계에서 강제한다는 뜻이다."
   def: "네임스페이스 라벨로 privileged, baseline, restricted 세 단계 보안 기준을 강제하는 내장 기능이다. PodSecurityPolicy를 대체했다."
+  short: "네임스페이스 라벨로 Pod 보안 기준을 강제하는 기능"
 - term: PodSecurityPolicy
   cat: 쿠버네티스
   def: "Pod 보안 설정을 제한하던 옛 기능이다. 쿠버네티스 1.25에서 제거되고 PSA로 대체됐다."
+  short: "1.25에서 제거된 옛 Pod 보안 정책"
 - term: Helm
   cat: 쿠버네티스
   full: "Helm (배의 키)"
   why: "쿠버네티스(Kubernetes)는 그리스어로 \"조타수\"다. 조타수가 잡는 배의 키(helm)라는 뜻으로 이름을 맞췄다."
   def: "쿠버네티스 매니페스트를 템플릿과 값(values)으로 묶어 패키지(차트)로 배포하는 도구다."
+  short: "매니페스트를 템플릿과 값으로 묶어 배포하는 도구"
 - term: GitOps
   cat: 쿠버네티스
   full: "Git + Operations"
   why: "Git을 운영(operations)의 기준으로 삼는다는 뜻이다."
   def: "원하는 인프라 상태를 Git 저장소에 선언해 두고, 클러스터가 그 상태를 자동으로 따라가게 하는 운영 방식이다. ArgoCD가 대표 도구다."
+  short: "Git에 선언한 상태를 클러스터가 따라가게 하는 운영 방식"
 - term: ArgoCD
   cat: 쿠버네티스
   full: "Argo + Continuous Delivery"
   why: "CD는 지속적 배포(Continuous Delivery)다. Argo 프로젝트의 배포 도구라는 뜻이다."
   def: "Git 저장소의 매니페스트와 클러스터 상태를 계속 비교해 차이가 있으면 맞춰 주는 GitOps 도구다."
+  short: "Git과 클러스터 상태를 맞춰 주는 GitOps 도구"
 - term: ApplicationSet
   cat: 쿠버네티스
   full: "Application + Set"
   why: "ArgoCD Application을 여러 개 묶어(set) 찍어 내는 리소스라는 뜻이다."
   def: "ArgoCD에서 템플릿 하나로 여러 Application을 자동 생성하는 리소스다. 환경이나 클러스터마다 같은 구조의 앱을 반복 선언할 때 쓴다."
+  short: "템플릿 하나로 ArgoCD 앱 여러 개를 만드는 리소스"
 - term: Finalizer
   aka: [finalizer]
   cat: 쿠버네티스
@@ -158,57 +190,68 @@
   why: "\"마무리 짓는 것\"이라는 뜻이다. 오브젝트가 사라지기 전에 마무리 작업을 할 기회를 준다."
   scope: [Kubernetes]
   def: "오브젝트를 지울 때 컨트롤러가 정리 작업을 마칠 때까지 삭제를 멈춰 두는 표시다. 정리 담당 컨트롤러가 없어지면 오브젝트가 지워지지 않고 남는다."
+  short: "정리 작업이 끝날 때까지 삭제를 멈춰 두는 표시"
 - term: Gateway API
   cat: 쿠버네티스
   def: "Ingress를 대체하는 쿠버네티스 표준 라우팅 API다. GatewayClass(인프라), Gateway(운영자), HTTPRoute(앱 개발자)로 역할을 나눠 설정한다."
+  short: "Ingress를 대체하는 쿠버네티스 표준 라우팅 API"
 - term: HTTPRoute
   cat: 쿠버네티스
   full: "HTTP Route"
   why: "HTTP 요청이 갈 경로(route)를 정한다는 뜻이다."
   def: "Gateway API에서 호스트와 경로 조건에 따라 요청을 어느 Service로 보낼지 정하는 리소스다."
+  short: "요청을 어느 Service로 보낼지 정하는 Gateway API 리소스"
 - term: Ingress
   cat: 쿠버네티스
   full: "Ingress (들어옴)"
   why: "\"들어옴, 진입\"이라는 뜻의 영어 단어다. 클러스터 안으로 들어오는 트래픽을 다룬다. 반대말은 egress(나감)다."
   def: "클러스터 밖에서 들어오는 HTTP 요청을 경로나 호스트에 따라 Service로 보내는 옛 표준 리소스다. 세부 기능이 애노테이션에 섞여 Gateway API로 넘어가는 추세다."
+  short: "외부 HTTP 요청을 Service로 보내는 옛 표준 리소스"
 - term: DRA
   aka: [Dynamic Resource Allocation]
   cat: 쿠버네티스
   full: "Dynamic Resource Allocation"
   why: "장치 같은 자원을 고정 개수가 아니라 요청에 따라 동적으로(dynamic) 할당한다는 뜻이다."
   def: "GPU 같은 특수 장치를 Pod에 할당하는 방식을 드라이버가 정할 수 있게 한 쿠버네티스 기능이다."
+  short: "GPU 같은 장치를 동적으로 할당하는 기능"
 - term: kind
   cat: 쿠버네티스
   full: "Kubernetes IN Docker"
   why: "쿠버네티스를 Docker 안에서 돌린다는 뜻의 머리글자다."
   scope: [Kubernetes]
   def: "Docker 컨테이너를 노드처럼 써서 로컬에 쿠버네티스 클러스터를 띄우는 도구다. 실험과 테스트에 쓴다."
+  short: "Docker 컨테이너로 로컬 클러스터를 띄우는 도구"
 - term: IRSA
   cat: 쿠버네티스
   full: "IAM Roles for Service Accounts"
   why: "쿠버네티스 서비스 어카운트에 AWS IAM 역할을 붙인다는 뜻이다. IAM은 Identity and Access Management(신원과 접근 관리)다."
   def: "EKS에서 쿠버네티스 ServiceAccount에 AWS IAM 역할을 연결해 Pod가 키 없이 AWS API를 호출하게 하는 방식이다."
+  short: "ServiceAccount에 AWS IAM 역할을 연결하는 방식"
 - term: EKS
   cat: 쿠버네티스
   full: "Elastic Kubernetes Service"
   why: "AWS 서비스 이름에 자주 붙는 Elastic(탄력적으로 늘고 주는)을 붙인 쿠버네티스 서비스다."
   def: "AWS가 컨트롤 플레인을 관리해 주는 쿠버네티스 서비스다."
+  short: "AWS의 관리형 쿠버네티스"
 - term: MetalLB
   cat: 쿠버네티스
   full: "Metal + Load Balancer"
   why: "클라우드가 아닌 베어메탈(bare metal) 서버 환경용 로드밸런서라는 뜻이다."
   def: "온프레미스 클러스터에서 LoadBalancer 타입 Service에 외부 IP를 붙여 주는 구현체다. ARP나 BGP로 IP를 광고한다."
+  short: "온프레미스에서 LoadBalancer IP를 붙여 주는 구현체"
 - term: Kyverno
   cat: 쿠버네티스
   full: "Kyverno (그리스어 \"다스리다\")"
   why: "그리스어 kyverno(다스리다, 통치하다)에서 왔다. 쿠버네티스와 같은 그리스어 뿌리이고, 클러스터를 정책으로 다스린다는 뜻을 담았다."
   def: "YAML로 정책을 작성해 어드미션 단계에서 쿠버네티스 리소스를 검사, 수정, 생성하는 정책 엔진이다."
+  short: "YAML로 쓰는 쿠버네티스 정책 엔진"
 - term: OPA
   aka: [Open Policy Agent]
   cat: 쿠버네티스
   full: "Open Policy Agent"
   why: "특정 제품에 묶이지 않는(open) 정책(policy) 판단 에이전트라는 뜻이다."
   def: "Rego라는 언어로 정책을 쓰는 범용 정책 엔진이다. 쿠버네티스에서는 Gatekeeper를 통해 어드미션 정책으로 쓴다."
+  short: "Rego로 정책을 쓰는 범용 정책 엔진"
 
 # ── 네트워크 ──
 - term: eBPF
@@ -216,158 +259,189 @@
   full: "extended Berkeley Packet Filter"
   why: "버클리 대학(UC Berkeley)의 BSD 유닉스에서 나온 패킷 필터(BPF)를 크게 확장(extended)했다는 뜻이다. 지금은 패킷 필터를 넘어 커널 프로그램 실행 기술 전체를 가리킨다."
   def: "리눅스 커널 안에서 검증된 작은 프로그램을 안전하게 실행하는 기술이다. 커널을 고치거나 모듈을 넣지 않고도 패킷 처리, 관측, 보안 기능을 커널 수준에서 구현할 수 있다."
+  short: "커널 안에서 작은 프로그램을 안전하게 실행하는 기술"
 - term: BPF
   cat: 네트워크
   full: "Berkeley Packet Filter"
   why: "버클리 대학의 BSD 유닉스에서 만든 패킷 필터라는 뜻이다."
   def: "원래 패킷 필터링용으로 만든 커널 내 가상 머신이다. 지금은 확장판인 eBPF를 가리키는 말로도 쓴다."
+  short: "커널 안의 패킷 필터 가상 머신"
 - term: XDP
   cat: 네트워크
   full: "eXpress Data Path"
   why: "커널 네트워크 스택을 거치지 않는 급행(express) 데이터 경로라는 뜻이다."
   def: "네트워크 카드 드라이버가 패킷을 받자마자 eBPF 프로그램으로 처리해 커널 네트워크 스택을 거치지 않고 버리거나 전달하는 기능이다."
+  short: "드라이버 단계에서 패킷을 처리하는 eBPF 경로"
 - term: iptables
   cat: 네트워크
   full: "IP + tables"
   why: "IP 패킷 처리 규칙을 여러 표(table)로 나눠 관리하는 도구라는 뜻이다."
   def: "리눅스 커널의 패킷 필터링과 주소 변환 규칙을 관리하는 도구다. 규칙이 많아지면 순차 비교 때문에 느려진다."
+  short: "리눅스 패킷 필터링과 주소 변환 규칙 도구"
 - term: IPVS
   cat: 네트워크
   full: "IP Virtual Server"
   why: "여러 실제 서버를 가상 서버(virtual server) 하나로 보이게 하는 IP 계층 로드밸런서라는 뜻이다."
   def: "리눅스 커널의 L4 로드밸런서다. 해시 테이블을 써서 규칙이 많아도 iptables보다 빠르다."
+  short: "리눅스 커널의 L4 로드밸런서"
 - term: NAT
   cat: 네트워크
   full: "Network Address Translation"
   why: "네트워크 주소를 다른 주소로 번역(translation)한다는 뜻이다."
   def: "패킷의 출발지나 목적지 IP를 바꿔 쓰는 주소 변환이다. 출발지를 바꾸면 SNAT, 목적지를 바꾸면 DNAT다."
+  short: "패킷 주소 변환"
 - term: SNAT
   cat: 네트워크
   full: "Source NAT"
   why: "출발지(source) 주소를 바꾸는 NAT라는 뜻이다."
   def: "패킷의 출발지 주소를 바꾸는 NAT다. Pod가 클러스터 밖으로 나갈 때 노드 IP로 바꾸는 masquerade가 여기에 속한다."
+  short: "출발지 주소 변환"
 - term: DNAT
   cat: 네트워크
   full: "Destination NAT"
   why: "목적지(destination) 주소를 바꾸는 NAT라는 뜻이다."
   def: "패킷의 목적지 주소를 바꾸는 NAT다. Service IP로 온 요청을 실제 Pod IP로 바꾸는 것이 대표적이다."
+  short: "목적지 주소 변환"
 - term: Masquerade
   aka: [masquerade, masquerading, 매스커레이드]
   cat: 네트워크
   full: "Masquerade (가면무도회)"
   why: "\"가면을 쓰고 다른 사람인 척하다\"라는 뜻이다. 내부 Pod 주소가 노드 주소의 가면을 쓰고 나간다는 비유다."
   def: "내부 주소에서 나가는 패킷의 출발지를 노드의 IP로 바꾸는 SNAT 방식이다. 응답이 같은 노드로 돌아오게 한다."
+  short: "나가는 패킷의 출발지를 노드 IP로 바꾸는 SNAT"
 - term: 오버레이 네트워크
   aka: [오버레이, overlay]
   cat: 네트워크
+  scope: [Networking, ServiceMesh, Cloud]
   full: "Overlay Network"
   why: "기존 네트워크 위에 한 겹 덧씌운(overlay) 네트워크라는 뜻이다."
-  scope: [Kubernetes, Networking, ServiceMesh]
   def: "실제 물리 네트워크 위에 패킷을 한 번 더 감싸(캡슐화) 가상의 네트워크를 만드는 방식이다. VXLAN, Geneve가 대표적이다."
+  short: "물리 네트워크 위에 패킷을 감싸 만든 가상 네트워크"
 - term: 캡슐화
   aka: [encapsulation]
   cat: 네트워크
+  scope: [Networking, ServiceMesh]
   full: "Encapsulation"
   why: "패킷을 캡슐에 넣듯 다른 헤더로 감싼다는 뜻이다."
   def: "원래 패킷을 다른 프로토콜 헤더로 한 번 더 감싸 보내는 것이다. 받는 쪽에서 바깥 헤더를 벗겨 원래 패킷을 꺼낸다."
+  short: "패킷을 다른 헤더로 한 번 더 감싸는 것"
 - term: VXLAN
   cat: 네트워크
   full: "Virtual eXtensible LAN"
   why: "VLAN의 개수 한계(약 4천 개)를 넘어 확장 가능한(extensible) 가상 LAN이라는 뜻이다."
   def: "L2 이더넷 프레임을 UDP 패킷 안에 감싸 L3 네트워크 너머로 보내는 오버레이 프로토콜이다."
+  short: "L2 프레임을 UDP로 감싸는 오버레이 프로토콜"
 - term: Geneve
   cat: 네트워크
   full: "Generic Network Virtualization Encapsulation"
   why: "특정 용도에 묶이지 않는(generic) 네트워크 가상화용 캡슐화 방식이라는 뜻이다."
   def: "VXLAN과 비슷한 오버레이 캡슐화 프로토콜이다. 헤더에 확장 필드를 붙일 수 있어 메타데이터를 함께 실어 보낸다."
+  short: "확장 필드를 지원하는 오버레이 캡슐화 프로토콜"
 - term: MTU
   cat: 네트워크
   full: "Maximum Transmission Unit"
   why: "한 번에 전송할 수 있는 최대(maximum) 단위라는 뜻이다."
   def: "한 번에 보낼 수 있는 패킷의 최대 크기다. 캡슐화나 암호화 헤더가 붙으면 그만큼 MTU를 줄여야 패킷이 쪼개지지 않는다."
+  short: "한 번에 보낼 수 있는 패킷 최대 크기"
 - term: BGP
   cat: 네트워크
   full: "Border Gateway Protocol"
   why: "서로 다른 네트워크의 경계(border)에 있는 관문(gateway)끼리 쓰는 프로토콜이라는 뜻이다."
   def: "네트워크 사이에 \"어떤 IP 대역으로 가려면 나를 거쳐라\"는 경로 정보를 주고받는 라우팅 프로토콜이다."
+  short: "네트워크끼리 경로 정보를 주고받는 라우팅 프로토콜"
 - term: ARP
   cat: 네트워크
   full: "Address Resolution Protocol"
   why: "IP 주소를 MAC 주소로 풀어내는(resolution) 프로토콜이라는 뜻이다."
   def: "같은 네트워크 안에서 IP 주소에 해당하는 MAC 주소를 알아내는 프로토콜이다."
+  short: "IP에 해당하는 MAC 주소를 찾는 프로토콜"
 - term: CIDR
   cat: 네트워크
   full: "Classless Inter-Domain Routing"
   why: "예전의 A, B, C 클래스(class) 구분 없이(classless) 대역을 자유롭게 나누는 방식이라는 뜻이다."
   def: "IP 대역을 \"10.244.0.0/16\"처럼 주소와 앞쪽 고정 비트 수로 표현하는 방식이다."
+  short: "IP 대역을 주소와 비트 수로 표현하는 방식"
 - term: IPAM
   cat: 네트워크
   full: "IP Address Management"
   why: "IP 주소 관리라는 뜻이다."
   def: "어떤 Pod에 어떤 IP를 줄지 대역을 나누고 할당하는 기능이다."
+  short: "Pod IP 할당 관리"
 - term: FQDN
   cat: 네트워크
   full: "Fully Qualified Domain Name"
   why: "생략 없이 완전하게(fully qualified) 적은 도메인 이름이라는 뜻이다."
   def: "호스트 이름과 도메인을 모두 포함한 완전한 도메인 이름이다. 예를 들어 api.example.com이다."
+  short: "호스트와 도메인을 모두 적은 완전한 이름"
 - term: SNI
   cat: 네트워크
   full: "Server Name Indication"
   why: "접속하려는 서버 이름(server name)을 미리 알려 준다(indication)는 뜻이다."
   def: "TLS 연결을 시작할 때 클라이언트가 접속하려는 호스트 이름을 평문으로 알려 주는 확장이다. 하나의 IP에서 여러 도메인의 인증서를 고를 수 있게 한다."
+  short: "TLS 시작 때 접속할 호스트 이름을 알려 주는 확장"
 - term: L4
   aka: [4계층]
   cat: 네트워크
   full: "Layer 4 (전송 계층)"
   why: "네트워크를 7개 층으로 나눈 OSI 모델의 4번째 층(layer)이라는 뜻이다."
   def: "OSI 모델의 전송 계층이다. TCP, UDP와 포트 번호 수준에서 트래픽을 다룬다. L4 프록시는 요청 내용(경로, 헤더)은 보지 않는다."
+  short: "TCP, UDP와 포트 수준"
 - term: L7
   aka: [7계층]
   cat: 네트워크
   full: "Layer 7 (애플리케이션 계층)"
   why: "OSI 모델의 가장 위인 7번째 층이라는 뜻이다."
   def: "OSI 모델의 애플리케이션 계층이다. HTTP 경로, 헤더, 메서드처럼 요청 내용을 보고 판단한다."
+  short: "HTTP 경로와 헤더 같은 요청 내용 수준"
 - term: DSR
   cat: 네트워크
   full: "Direct Server Return"
   why: "응답을 서버가 직접(direct) 돌려준다(return)는 뜻이다."
   def: "로드밸런서를 거쳐 들어온 요청의 응답을 로드밸런서를 거치지 않고 서버가 클라이언트에게 직접 보내는 방식이다."
+  short: "응답을 서버가 클라이언트에 직접 보내는 방식"
 - term: Hubble
   cat: 네트워크
   full: "Hubble"
   why: "허블 우주 망원경과 같은 이름이라 \"관측 도구\"를 떠올리게 하지만, 프로젝트가 공식적으로 밝힌 유래는 찾지 못했다."
   def: "Cilium의 관측 도구다. eBPF로 수집한 흐름 정보를 바탕으로 어떤 Pod가 어디와 통신했고 어떤 정책에 막혔는지 보여 준다."
+  short: "Cilium의 네트워크 흐름 관측 도구"
 - term: Cilium
   cat: 네트워크
   full: "Cilium (섬모)"
   why: "단어 뜻은 라틴어 cilium(속눈썹)이고, 생물학에서는 세포 표면의 작은 털인 섬모를 가리킨다. 프로젝트가 이름의 유래를 공식적으로 밝힌 자료는 찾지 못했다."
   def: "eBPF로 Pod 네트워킹, 네트워크 정책, 로드밸런싱, 암호화를 구현하는 CNI다. kube-proxy를 대체할 수 있다."
+  short: "eBPF 기반 CNI"
 - term: NetworkPolicy
   cat: 네트워크
   def: "Pod 사이 통신을 라벨과 포트 기준으로 허용하거나 막는 쿠버네티스 표준 리소스다. 실제 적용은 CNI가 맡는다."
+  short: "Pod 사이 통신을 라벨과 포트로 허용하거나 막는 리소스"
 - term: CiliumNetworkPolicy
   aka: [CNP]
   cat: 네트워크
   full: "Cilium Network Policy"
   why: "Cilium이 확장한 네트워크 정책이라는 뜻이다. 줄여서 CNP다."
   def: "Cilium이 제공하는 확장 네트워크 정책이다. 표준 NetworkPolicy에 더해 FQDN, L7 HTTP 조건 등을 쓸 수 있다."
+  short: "Cilium의 확장 네트워크 정책"
 - term: CiliumClusterwideNetworkPolicy
   aka: [CCNP]
   cat: 네트워크
   full: "Cilium Clusterwide Network Policy"
   why: "네임스페이스가 아니라 클러스터 전체(clusterwide)에 적용되는 Cilium 정책이라는 뜻이다. 줄여서 CCNP다."
   def: "네임스페이스에 묶이지 않고 클러스터 전체에 적용되는 Cilium 네트워크 정책이다."
+  short: "클러스터 전체에 적용되는 Cilium 정책"
 - term: link-local
   aka: [링크 로컬]
   cat: 네트워크
   full: "Link-Local Address"
   why: "같은 링크(link) 안에서만(local) 통하는 주소라는 뜻이다."
   def: "같은 링크 안에서만 쓰는 주소 대역(169.254.0.0/16)이다. 라우팅되지 않으며, Istio ambient는 kubelet 헬스 체크를 구분하는 데 이 대역을 쓴다."
+  short: "같은 링크 안에서만 쓰는 169.254.0.0/16 주소"
 - term: QUIC
   cat: 네트워크
   full: "QUIC (처음에는 Quick UDP Internet Connections)"
   why: "구글이 처음 만들 때는 \"빠른 UDP 인터넷 연결\"의 머리글자였다. IETF 표준이 된 뒤에는 약어가 아닌 고유 이름으로 쓴다."
   def: "UDP 위에서 동작하는 전송 프로토콜이다. 연결 수립이 빠르고 패킷 하나가 늦어도 다른 스트림이 막히지 않는다. HTTP/3가 이 위에서 동작한다."
+  short: "UDP 위의 빠른 전송 프로토콜"
 
 # ── 서비스 메시 ──
 - term: 서비스 메시
@@ -376,6 +450,7 @@
   full: "Service Mesh"
   why: "서비스들이 그물(mesh)처럼 서로 얽혀 통신하는 구조를 한 계층으로 다룬다는 뜻이다."
   def: "서비스 사이 통신에서 암호화(mTLS), 재시도, 트래픽 분배, 관측 같은 기능을 애플리케이션 코드 대신 프록시 계층이 맡는 구조다."
+  short: "서비스 사이 통신 기능을 프록시 계층이 맡는 구조"
 - term: 사이드카
   aka: [sidecar, Sidecar]
   cat: 서비스 메시
@@ -383,51 +458,60 @@
   why: "오토바이 옆에 붙이는 보조 좌석(사이드카)에서 왔다. 애플리케이션 옆에 붙어 함께 달리는 보조 컨테이너라는 비유다."
   scope: [Kubernetes, ServiceMesh, Networking]
   def: "애플리케이션 컨테이너 옆에 같은 Pod로 붙어 함께 실행되는 보조 컨테이너다. Istio 사이드카 모드는 Pod마다 Envoy를 붙여 모든 트래픽을 가로챈다."
+  short: "애플리케이션 옆에 붙는 보조 컨테이너"
 - term: Envoy
   cat: 서비스 메시
   full: "Envoy (사절)"
   why: "\"사절, 대리인\"이라는 뜻의 영어 단어다. 서비스를 대신해 통신을 처리하는 프록시의 역할과 뜻이 맞닿는다."
   def: "C++로 만든 고성능 L4/L7 프록시다. Istio, Envoy Gateway 등 여러 서비스 메시와 게이트웨이가 데이터 플레인으로 쓴다."
+  short: "고성능 L4/L7 프록시"
 - term: istiod
   cat: 서비스 메시
   full: "Istio + d(daemon)"
   why: "Istio는 그리스어로 \"돛\"이다. 여기에 데몬(daemon)의 d를 붙였다. 예전에 Pilot, Citadel, Galley로 나뉘어 있던 컨트롤 플레인을 데몬 하나로 합쳤다."
   def: "Istio의 컨트롤 플레인이다. 라우팅 규칙을 프록시 설정으로 바꿔 xDS로 내려보내고, 워크로드 인증서를 발급한다."
+  short: "Istio 컨트롤 플레인"
 - term: xDS
   cat: 서비스 메시
   full: "x Discovery Service"
   why: "앞의 x는 L(Listener), R(Route), C(Cluster), E(Endpoint), S(Secret)처럼 앞 글자만 바뀌는 여러 Discovery Service를 한꺼번에 가리키는 자리표시자다. Discovery Service는 \"설정을 찾아 받아 오는 서비스\"라는 뜻이다."
   def: "Envoy 같은 프록시가 컨트롤 플레인에서 설정을 실시간으로 받아 오는 API 묶음이다. 리스너(LDS), 라우트(RDS), 클러스터(CDS), 엔드포인트(EDS), 인증서(SDS)를 각각 받는 하위 API를 통틀어 xDS라고 부른다."
+  short: "프록시가 컨트롤 플레인에서 설정을 받아 오는 API"
 - term: LDS
   cat: 서비스 메시
   full: "Listener Discovery Service"
   why: "리스너(listener) 설정을 받아 오는(discovery) 서비스라는 뜻이다. 리스너는 연결을 기다리는 포트와 주소다."
   scope: [Kubernetes, ServiceMesh]
   def: "프록시가 어느 포트에서 어떤 연결을 받을지(리스너) 설정을 받는 xDS 하위 API다."
+  short: "리스너 설정을 받는 xDS API"
 - term: RDS
   cat: 서비스 메시
   full: "Route Discovery Service"
   why: "라우트(route) 설정을 받아 오는 서비스라는 뜻이다. AWS에서는 Relational Database Service의 약자다."
   scope: [Kubernetes, ServiceMesh]
   def: "요청을 어느 클러스터로 보낼지 라우팅 규칙을 받는 xDS 하위 API다. 문맥에 따라 AWS의 관계형 DB 서비스를 가리키기도 한다."
+  short: "라우트 설정을 받는 xDS API"
 - term: CDS
   cat: 서비스 메시
   full: "Cluster Discovery Service"
   why: "Envoy의 클러스터(cluster) 설정을 받아 오는 서비스라는 뜻이다. 여기서 클러스터는 쿠버네티스 클러스터가 아니라 \"같은 서비스를 제공하는 업스트림 서버 묶음\"이다."
   scope: [Kubernetes, ServiceMesh]
   def: "요청을 받을 업스트림 서비스 묶음(Envoy의 클러스터) 설정을 받는 xDS 하위 API다."
+  short: "업스트림 서버 묶음 설정을 받는 xDS API"
 - term: EDS
   cat: 서비스 메시
   full: "Endpoint Discovery Service"
   why: "엔드포인트(endpoint), 즉 실제 Pod IP와 포트 목록을 받아 오는 서비스라는 뜻이다."
   scope: [Kubernetes, ServiceMesh]
   def: "각 클러스터에 속한 실제 Pod IP와 포트 목록을 받는 xDS 하위 API다."
+  short: "엔드포인트 목록을 받는 xDS API"
 - term: SDS
   cat: 서비스 메시
   full: "Secret Discovery Service"
   why: "비밀(secret), 즉 인증서와 키를 받아 오는 서비스라는 뜻이다."
   scope: [Kubernetes, ServiceMesh]
   def: "프록시가 쓸 TLS 인증서와 키를 받는 xDS 하위 API다. 인증서를 파일로 두지 않고 메모리로 교체할 수 있다."
+  short: "인증서와 키를 받는 xDS API"
 - term: Ambient
   aka: [ambient, Ambient 모드, ambient mode, 앰비언트]
   cat: 서비스 메시
@@ -435,11 +519,13 @@
   why: "\"주변에 늘 깔려 있는\"이라는 뜻의 영어 단어다. Pod마다 사이드카를 붙이지 않아도 메시 기능이 노드에 배경처럼 깔려 있는 구조를 가리킨다."
   scope: [Kubernetes, ServiceMesh, Networking]
   def: "사이드카 없이 노드마다 하나씩 뜨는 ztunnel이 L4 mTLS를 처리하고, L7 기능이 필요한 곳에만 waypoint 프록시를 붙이는 Istio의 데이터 플레인 방식이다."
+  short: "사이드카 없이 노드 프록시로 동작하는 Istio 모드"
 - term: ztunnel
   cat: 서비스 메시
   full: "zero-trust tunnel"
   why: "제로 트러스트(zero trust) 원칙으로 트래픽을 터널링하는 프록시라는 뜻이다."
   def: "Istio ambient 모드에서 노드마다 하나씩 실행되는 L4 프록시다. 그 노드 Pod들의 트래픽을 가로채 mTLS로 암호화하고 신원을 확인한다."
+  short: "Ambient 모드에서 노드마다 뜨는 L4 mTLS 프록시"
 - term: Waypoint
   aka: [waypoint, waypoint proxy, Waypoint Proxy]
   cat: 서비스 메시
@@ -447,71 +533,85 @@
   why: "여행 경로의 경유지라는 뜻이다. L7 처리가 필요한 트래픽만 이곳을 거쳐 간다."
   scope: [Kubernetes, ServiceMesh, Networking]
   def: "Istio ambient 모드에서 L7 기능(HTTP 라우팅, 재시도, 경로 단위 인가)이 필요한 서비스 앞에만 따로 띄우는 Envoy 프록시다."
+  short: "L7 기능이 필요한 곳에만 띄우는 Envoy 프록시"
 - term: HBONE
   cat: 서비스 메시
   full: "HTTP-Based Overlay Network Environment"
   why: "HTTP(HTTP/2 CONNECT)를 기반으로 만든 오버레이 네트워크라는 뜻이다."
   def: "Istio ambient의 ztunnel끼리 통신할 때 쓰는 터널 방식이다. 원래 TCP 연결을 mTLS로 보호된 HTTP/2 CONNECT 터널(포트 15008) 안에 실어 보낸다."
+  short: "mTLS로 보호된 HTTP/2 CONNECT 터널"
 - term: istio-cni
   cat: 서비스 메시
   full: "Istio CNI plugin"
   why: "CNI 체인에 끼어드는 Istio의 플러그인이라는 뜻이다."
   def: "Pod가 뜰 때 그 Pod의 트래픽을 ztunnel이나 사이드카로 돌리는 네트워크 규칙을 설치하는 Istio 노드 에이전트다. 기존 CNI 뒤에 체인으로 붙는다."
+  short: "Pod 트래픽을 ztunnel로 돌리는 Istio 노드 에이전트"
 - term: VirtualService
   cat: 서비스 메시
   full: "Virtual Service"
   why: "실제 쿠버네티스 Service 위에 라우팅 규칙을 덧씌운 가상(virtual)의 서비스라는 뜻이다."
   def: "Istio에서 요청을 어느 서비스, 어느 버전으로 보낼지(경로 매칭, 가중치 분배, 재시도) 정하는 리소스다."
+  short: "요청 라우팅 규칙을 정하는 Istio 리소스"
 - term: DestinationRule
   cat: 서비스 메시
   full: "Destination Rule"
   why: "목적지(destination)에 도착한 뒤 적용할 규칙(rule)이라는 뜻이다."
   def: "Istio에서 목적지 서비스로 보낸 뒤의 정책(로드밸런싱 방식, 커넥션 풀, 서브셋, TLS 설정)을 정하는 리소스다."
+  short: "목적지에 적용할 로드밸런싱, TLS 정책"
 - term: ServiceEntry
   cat: 서비스 메시
   full: "Service Entry"
   why: "Istio 서비스 목록에 항목(entry)을 하나 추가한다는 뜻이다."
   def: "메시 밖의 외부 서비스를 Istio 서비스 목록에 등록하는 리소스다. 외부 호출에도 라우팅과 정책을 걸 수 있게 한다."
+  short: "메시 밖 서비스를 등록하는 리소스"
 - term: PeerAuthentication
   cat: 서비스 메시
   full: "Peer Authentication"
   why: "통신 상대(peer) 워크로드를 인증한다는 뜻이다. 사람이 아니라 서비스끼리의 인증이다."
   def: "Istio에서 워크로드가 받는 연결에 mTLS를 요구할지 정하는 리소스다. STRICT면 mTLS 연결만 받고, PERMISSIVE면 평문도 받는다."
+  short: "워크로드 간 mTLS 요구 여부를 정하는 리소스"
 - term: RequestAuthentication
   cat: 서비스 메시
   full: "Request Authentication"
   why: "개별 요청(request)에 붙은 최종 사용자 토큰을 인증한다는 뜻이다."
   def: "Istio에서 요청에 붙은 JWT의 서명과 발급자를 검증하는 리소스다. 토큰이 없을 때 막는 것은 AuthorizationPolicy가 한다."
+  short: "요청의 JWT를 검증하는 리소스"
 - term: AuthorizationPolicy
   cat: 서비스 메시
   full: "Authorization Policy"
   why: "인증(authentication)으로 누구인지 확인한 뒤, 무엇을 할 수 있는지 허가(authorization)하는 정책이라는 뜻이다."
   def: "Istio에서 누가(신원, 네임스페이스) 무엇을(경로, 메서드) 할 수 있는지 허용하거나 거부하는 접근 제어 리소스다."
+  short: "신원과 경로로 접근을 허용하거나 막는 리소스"
 - term: SPIFFE
   cat: 서비스 메시
   full: "Secure Production Identity Framework For Everyone"
   why: "운영 환경 워크로드를 위한 누구나(for everyone) 쓸 수 있는 보안 신원 체계라는 뜻이다."
   def: "워크로드 신원을 \"spiffe://도메인/ns/네임스페이스/sa/서비스어카운트\" 같은 URI로 표현하는 표준이다. Istio mTLS 인증서에 이 신원이 들어간다."
+  short: "워크로드 신원을 URI로 표현하는 표준"
 - term: SPIRE
   cat: 서비스 메시
   full: "SPIFFE Runtime Environment"
   why: "SPIFFE를 실제로 돌리는 실행 환경이라는 뜻이다."
   def: "SPIFFE 표준을 구현해 워크로드에 신원 인증서를 발급하는 오픈소스 런타임이다."
+  short: "SPIFFE 신원 인증서를 발급하는 런타임"
 - term: Envoy Gateway
   cat: 서비스 메시
   def: "Envoy를 데이터 플레인으로 쓰는 Gateway API 구현체다. 서비스 메시 없이 클러스터 입구 게이트웨이만 필요할 때 쓴다."
+  short: "Envoy 기반 Gateway API 구현체"
 - term: east-west
   aka: [동서 트래픽, East-West]
   cat: 서비스 메시
   full: "East-West Traffic"
   why: "네트워크 구성도에서 외부는 위아래(남북)에, 내부 서버들은 옆으로(동서) 나란히 그리던 관례에서 왔다. 내부 서버끼리 옆으로 오가는 트래픽이다."
   def: "클러스터 안 서비스끼리 오가는 내부 트래픽이다. 외부에서 들어오는 트래픽은 north-south라고 한다."
+  short: "클러스터 내부 서비스끼리 오가는 트래픽"
 - term: north-south
   aka: [남북 트래픽, North-South]
   cat: 서비스 메시
   full: "North-South Traffic"
   why: "구성도의 위(외부)와 아래(내부)를 오가는 트래픽이라는 뜻이다."
   def: "클러스터 밖에서 안으로 들어오거나 밖으로 나가는 트래픽이다."
+  short: "클러스터 밖과 안을 오가는 트래픽"
 
 # ── 보안 ──
 - term: mTLS
@@ -519,86 +619,103 @@
   full: "mutual TLS"
   why: "양쪽이 서로(mutual) 인증서를 확인하는 TLS라는 뜻이다. TLS는 Transport Layer Security(전송 계층 보안)다."
   def: "상호 TLS다. 일반 TLS는 서버만 인증서로 신원을 증명하지만 mTLS는 클라이언트도 인증서를 내서 양쪽이 서로를 확인하고 통신을 암호화한다."
+  short: "양쪽이 서로 인증서를 확인하는 TLS"
 - term: WireGuard
   cat: 보안
   def: "리눅스 커널에 들어 있는 경량 VPN 프로토콜이다. 노드 사이 터널을 만들어 그 사이를 지나는 모든 패킷을 암호화한다. Cilium이 노드 간 암호화에 쓴다."
+  short: "리눅스 커널의 경량 VPN 프로토콜"
 - term: IPsec
   cat: 보안
   full: "IP Security"
   why: "IP 계층의 보안이라는 뜻이다."
   def: "IP 계층에서 패킷을 암호화하고 인증하는 표준 프로토콜 묶음이다. WireGuard보다 설정 항목이 많다."
+  short: "IP 계층 암호화 프로토콜 묶음"
 - term: CA
   aka: [인증 기관]
   cat: 보안
   full: "Certificate Authority"
   why: "인증서(certificate)를 발급할 권한(authority)이 있는 기관이라는 뜻이다."
   def: "공개 키가 특정 주체의 것임을 보증하는 인증서를 발급하고 서명하는 기관이나 시스템이다."
+  short: "인증서를 발급하고 서명하는 기관"
 - term: CSR
   cat: 보안
   full: "Certificate Signing Request"
   why: "인증서에 서명(signing)해 달라는 요청이라는 뜻이다."
   def: "인증서를 발급받기 위해 공개 키와 신원 정보를 담아 CA에 보내는 요청이다."
+  short: "인증서 발급 요청"
 - term: 중간자 공격
   aka: [MITM]
   cat: 보안
   full: "Man-In-The-Middle Attack (MITM)"
   why: "두 사람 사이(middle)에 끼어든 사람이 하는 공격이라는 뜻이다."
   def: "통신하는 두 사람 사이에 몰래 끼어들어 내용을 엿보거나 바꾸는 공격이다. 인증서로 상대 신원을 확인하면 막을 수 있다."
+  short: "통신 사이에 끼어들어 엿보거나 바꾸는 공격"
 - term: HMAC
   cat: 보안
   full: "Hash-based Message Authentication Code"
   why: "해시 함수 기반의 메시지 인증 코드라는 뜻이다."
   def: "비밀 키와 해시 함수를 함께 써서 만드는 메시지 인증 코드다. 키를 아는 쪽만 같은 값을 만들 수 있어 위조 여부를 확인한다."
+  short: "비밀 키와 해시로 만든 메시지 인증 코드"
 - term: ECDH
   cat: 보안
   full: "Elliptic Curve Diffie-Hellman"
   why: "타원 곡선(elliptic curve) 수학을 쓴 Diffie-Hellman 키 교환이다. Diffie와 Hellman은 1976년에 이 방식을 발표한 두 사람의 이름이다."
   def: "타원 곡선 기반 Diffie-Hellman 키 교환이다. 양쪽이 공개 값만 주고받고도 같은 비밀 키를 계산해 낸다."
+  short: "타원 곡선 기반 키 교환"
 - term: 제로 트러스트
   aka: [zero-trust, Zero Trust, 제로트러스트]
   cat: 보안
   full: "Zero Trust"
   why: "기본 신뢰를 0(zero)으로 둔다는 뜻이다. 내부라서 믿어 주는 일이 없다."
   def: "내부 네트워크라도 믿지 않고 모든 요청마다 신원과 권한을 확인하는 보안 원칙이다."
+  short: "내부도 믿지 않고 매 요청을 확인하는 원칙"
 - term: OIDC
   aka: [OpenID Connect]
   cat: 보안
   full: "OpenID Connect"
   why: "공개 신원(OpenID) 표준을 OAuth 2.0에 연결(connect)했다는 뜻이다."
   def: "OAuth 2.0 위에 사용자 신원 정보(ID 토큰)를 표준화해 얹은 인증 프로토콜이다."
+  short: "OAuth 2.0 위의 신원 인증 표준"
 - term: PKCE
   cat: 보안
   full: "Proof Key for Code Exchange"
   why: "인가 코드 교환(code exchange) 때 정당한 요청자임을 증명하는 키(proof key)라는 뜻이다. \"픽시\"라고 읽는다."
   def: "인가 코드가 중간에 탈취돼도 쓸 수 없도록, 클라이언트가 만든 임의 값으로 코드 교환 요청을 증명하는 OAuth 확장이다."
+  short: "인가 코드 탈취를 막는 OAuth 확장"
 - term: CORS
   cat: 보안
   full: "Cross-Origin Resource Sharing"
   why: "출처(origin)가 다른 곳끼리(cross) 리소스를 공유하는 규칙이라는 뜻이다."
   def: "브라우저가 다른 출처(도메인)의 API를 호출할 때 서버가 허용한 출처인지 확인하는 규칙이다."
+  short: "다른 출처 API 호출 허용 규칙"
 - term: Falco
   cat: 보안
   full: "Falco (라틴어 \"매\")"
   why: "라틴어로 매(falcon)를 뜻하는 단어다."
   def: "커널 시스템 콜을 감시해 컨테이너 안의 수상한 동작(셸 실행, 민감 파일 접근)을 실시간으로 탐지하는 런타임 보안 도구다."
+  short: "시스템 콜을 감시하는 런타임 보안 도구"
 - term: Trivy
   cat: 보안
   def: "컨테이너 이미지와 설정 파일의 알려진 취약점(CVE)과 잘못된 설정을 찾아 주는 스캐너다."
+  short: "이미지 취약점 스캐너"
 - term: kube-bench
   cat: 보안
   full: "Kubernetes + benchmark"
   why: "CIS 쿠버네티스 벤치마크(benchmark, 보안 점검 기준)로 클러스터를 점검한다는 뜻이다."
   def: "노드와 컨트롤 플레인 설정이 CIS 쿠버네티스 벤치마크 보안 기준을 지키는지 점검하는 도구다."
+  short: "CIS 기준 쿠버네티스 보안 점검 도구"
 - term: CVE
   cat: 보안
   full: "Common Vulnerabilities and Exposures"
   why: "공통으로(common) 쓰는 취약점(vulnerability)과 노출(exposure) 목록이라는 뜻이다."
   def: "공개된 보안 취약점에 붙는 고유 식별 번호다. 예를 들어 CVE-2024-3094다."
+  short: "공개 취약점 식별 번호"
 - term: OWASP
   cat: 보안
   full: "Open Worldwide Application Security Project"
   why: "애플리케이션 보안을 다루는 공개 국제 프로젝트라는 뜻이다. 2023년에 Open Web에서 Open Worldwide로 이름을 바꿨다."
   def: "웹 애플리케이션 보안 취약점과 대응 방법을 정리해 공개하는 비영리 단체다. 대표 자료가 OWASP Top 10이다."
+  short: "웹 보안 취약점을 정리하는 단체"
 
 # ── 관측성 ──
 - term: 관측 가능성
@@ -607,17 +724,20 @@
   full: "Observability"
   why: "제어 이론에서 온 말이다. 시스템의 출력만 보고 내부 상태를 알아낼 수 있는(observe + ability) 정도를 뜻한다."
   def: "시스템이 밖으로 내보내는 데이터(메트릭, 로그, 트레이스)만 보고 내부에서 무슨 일이 일어나는지 알아낼 수 있는 정도다."
+  short: "외부 데이터로 내부 상태를 알아내는 정도"
 - term: OpenTelemetry
   aka: [OTel]
   cat: 관측성
   full: "Open + Telemetry"
   why: "telemetry는 \"원격(tele) 측정(metry)\"이라는 뜻이다. OpenTracing과 OpenCensus 두 프로젝트를 합쳐 만든 공개 표준이라 Open을 붙였다."
   def: "트레이스, 메트릭, 로그를 수집하고 전송하는 방식을 표준화한 CNCF 프로젝트다. SDK, 자동 계측 에이전트, Collector로 구성된다."
+  short: "트레이스, 메트릭, 로그 수집 표준"
 - term: OTLP
   cat: 관측성
   full: "OpenTelemetry Protocol"
   why: "OpenTelemetry의 전송 프로토콜이라는 뜻이다."
   def: "트레이스, 메트릭, 로그를 Collector나 백엔드로 보내는 표준 전송 프로토콜이다."
+  short: "OpenTelemetry 전송 프로토콜"
 - term: Collector
   aka: [OTel Collector, otelcol]
   cat: 관측성
@@ -625,6 +745,7 @@
   why: "텔레메트리 데이터를 모으는(collect) 프로그램이라는 뜻이다."
   scope: [Observability, Kubernetes, AI]
   def: "여러 곳에서 텔레메트리 데이터를 받아 가공하고 백엔드로 내보내는 OpenTelemetry 중계 프로그램이다."
+  short: "텔레메트리를 받아 가공해 보내는 중계기"
 - term: 트레이스
   aka: [Trace, trace, 트레이싱]
   cat: 관측성
@@ -632,6 +753,7 @@
   why: "\"발자취, 자취를 따라가다\"라는 뜻이다. 요청이 남긴 경로를 따라간다."
   scope: [Observability, AI, Kubernetes]
   def: "요청 하나가 여러 서비스를 거치는 전체 경로와 각 구간의 소요 시간을 기록한 것이다. 구간 하나하나를 span이라고 한다."
+  short: "요청 하나가 거친 전체 경로와 구간별 시간"
 - term: Span
   aka: [span, 스팬]
   cat: 관측성
@@ -639,67 +761,81 @@
   why: "\"기간, 걸쳐 있는 구간\"이라는 뜻이다. 작업 하나가 시작부터 끝까지 걸친 시간 구간이다."
   scope: [Observability, AI]
   def: "트레이스를 이루는 작업 단위 하나다. 시작 시각, 걸린 시간, 부모 span 정보를 담는다."
+  short: "트레이스를 이루는 작업 구간 하나"
 - term: LGTM
   cat: 관측성
   full: "Loki, Grafana, Tempo, Mimir"
   why: "네 제품 이름의 머리글자다. 코드 리뷰에서 쓰는 \"Looks Good To Me(좋아 보인다)\"와 철자가 같다."
   def: "Grafana Labs의 오픈소스 관측 스택이다. Loki(로그), Grafana(시각화), Tempo(트레이스), Mimir(메트릭)의 머리글자다."
+  short: "Loki, Grafana, Tempo, Mimir 관측 스택"
 - term: Loki
   cat: 관측성
   def: "로그 내용 전체가 아니라 라벨만 색인해 저장 비용을 줄인 로그 저장소다. LogQL로 조회한다."
+  short: "라벨만 색인하는 로그 저장소"
 - term: Mimir
   cat: 관측성
   def: "Prometheus 메트릭을 장기간 대량으로 저장하고 조회하는 분산 저장소다."
+  short: "Prometheus 메트릭 장기 저장소"
 - term: Tempo
   cat: 관측성
   def: "분산 트레이스를 저장하고 조회하는 Grafana Labs의 트레이스 백엔드다."
+  short: "분산 트레이스 저장소"
 - term: PromQL
   cat: 관측성
   full: "Prometheus Query Language"
   why: "Prometheus의 질의(query) 언어라는 뜻이다."
   def: "Prometheus 메트릭을 조회하고 계산하는 쿼리 언어다."
+  short: "Prometheus 쿼리 언어"
 - term: LogQL
   cat: 관측성
   full: "Log Query Language"
   why: "로그를 질의하는 언어라는 뜻이다. PromQL을 본떠 만들었다."
   def: "Loki에서 로그를 라벨로 고르고 내용을 걸러 집계하는 쿼리 언어다."
+  short: "Loki 쿼리 언어"
 - term: 카디널리티
   aka: [cardinality]
   cat: 관측성
   full: "Cardinality"
   why: "수학에서 집합에 들어 있는 원소의 개수를 뜻하는 말이다."
   def: "메트릭 라벨 조합이 만들어 내는 서로 다른 시계열의 개수다. 라벨 값 종류가 많을수록 저장소 부담이 커진다."
+  short: "라벨 조합이 만드는 시계열 개수"
 - term: SLO
   cat: 관측성
   full: "Service Level Objective"
   why: "서비스 수준(service level)의 목표(objective)라는 뜻이다."
   def: "\"요청의 99.9%가 300ms 안에 성공한다\"처럼 서비스가 지켜야 할 신뢰성 목표치다."
+  short: "서비스 신뢰성 목표치"
 - term: SLI
   cat: 관측성
   full: "Service Level Indicator"
   why: "서비스 수준을 나타내는 지표(indicator)라는 뜻이다."
   def: "SLO를 판단하는 데 쓰는 실제 측정 지표(성공률, 응답 시간 등)다."
+  short: "SLO 판단에 쓰는 측정 지표"
 - term: 에러 버짓
   aka: [Error Budget, error budget]
   cat: 관측성
   full: "Error Budget"
   why: "쓸 수 있는 오류의 예산(budget)이라는 뜻이다. 예산처럼 다 쓰면 더 쓸 수 없다."
   def: "SLO가 허용하는 실패의 양이다. 99.9% 목표라면 0.1%만큼 실패해도 된다는 뜻이고, 이를 다 쓰면 배포를 멈추고 안정화에 집중한다."
+  short: "SLO가 허용하는 실패의 양"
 - term: Alertmanager
   cat: 관측성
   full: "Alert + Manager"
   why: "알림(alert)을 관리하는 컴포넌트라는 뜻이다."
   def: "Prometheus 규칙이 발생시킨 알림을 묶고, 중복을 줄이고, Slack이나 메일로 보내는 컴포넌트다."
+  short: "알림을 묶어 보내는 컴포넌트"
 - term: APM
   cat: 관측성
   full: "Application Performance Monitoring"
   why: "애플리케이션 성능 모니터링이라는 뜻이다."
   def: "애플리케이션의 응답 시간, 오류, 호출 경로를 추적하는 모니터링 도구다."
+  short: "애플리케이션 성능 모니터링"
 - term: RUM
   cat: 관측성
   full: "Real User Monitoring"
   why: "테스트용이 아닌 실제 사용자(real user)를 모니터링한다는 뜻이다."
   def: "실제 사용자 브라우저에서 페이지 로딩 시간과 오류를 수집하는 모니터링이다."
+  short: "실제 사용자 브라우저 모니터링"
 
 # ── 데이터와 미들웨어 ──
 - term: MVCC
@@ -707,47 +843,55 @@
   full: "Multi-Version Concurrency Control"
   why: "데이터의 여러 버전(multi-version)을 두어 동시성(concurrency)을 제어한다는 뜻이다."
   def: "데이터를 바꿀 때 이전 버전을 남겨 두어, 읽는 쪽은 잠금 없이 일관된 시점의 데이터를 보게 하는 방식이다."
+  short: "이전 버전을 남겨 잠금 없이 읽게 하는 동시성 제어"
 - term: 격리 수준
   aka: [Isolation Level, isolation level]
   cat: 데이터
   full: "Isolation Level"
   why: "트랜잭션끼리 서로 격리(isolation)되는 정도(level)라는 뜻이다."
   def: "동시에 실행되는 트랜잭션이 서로의 변경을 얼마나 볼 수 있는지 정하는 단계다. READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE 순으로 엄격해진다."
+  short: "트랜잭션끼리 서로의 변경을 보는 정도"
 - term: 갭 락
   aka: [Gap Lock, gap lock]
   cat: 데이터
   full: "Gap Lock"
   why: "레코드 사이의 틈(gap)을 잠근다는 뜻이다."
   def: "InnoDB가 인덱스 레코드 사이의 빈 공간을 잠가 그 범위에 새 행이 끼어드는 것을 막는 잠금이다."
+  short: "인덱스 레코드 사이 빈 공간 잠금"
 - term: 넥스트 키 락
   aka: [Next-Key Lock, next-key lock]
   cat: 데이터
   full: "Next-Key Lock"
   why: "레코드와 그 앞쪽 틈을 함께 잠가, 다음(next) 키가 들어올 자리까지 막는다는 뜻이다."
   def: "레코드 잠금과 그 앞 갭 락을 합친 InnoDB의 잠금이다. REPEATABLE READ에서 팬텀 읽기를 막는다."
+  short: "레코드와 그 앞 갭을 함께 잠그는 락"
 - term: 팬텀 리드
   aka: [Phantom Read, phantom read, 팬텀 읽기]
   cat: 데이터
   full: "Phantom Read"
   why: "없던 행이 유령(phantom)처럼 나타나는 읽기라는 뜻이다."
   def: "같은 조건으로 두 번 조회했을 때 그사이 다른 트랜잭션이 넣은 행이 새로 보이는 현상이다."
+  short: "다시 조회하면 없던 행이 보이는 현상"
 - term: 언두 로그
   aka: [Undo Log, undo log]
   cat: 데이터
   full: "Undo Log"
   why: "변경을 되돌리기(undo) 위한 로그라는 뜻이다."
   def: "변경 전 데이터를 기록한 로그다. 롤백과 MVCC의 이전 버전 조회에 쓴다."
+  short: "변경 전 데이터 기록"
 - term: 리두 로그
   aka: [Redo Log, redo log]
   cat: 데이터
   full: "Redo Log"
   why: "변경을 다시 수행하기(redo) 위한 로그라는 뜻이다."
   def: "변경 내용을 디스크 데이터 파일보다 먼저 기록하는 로그다. 장애 후 재시작할 때 이 로그로 커밋된 변경을 복구한다."
+  short: "변경 내용을 먼저 남기는 복구용 로그"
 - term: WAL
   cat: 데이터
   full: "Write-Ahead Logging"
   why: "데이터를 쓰기 앞서(ahead) 로그를 먼저 쓴다는 뜻이다."
   def: "데이터를 실제로 바꾸기 전에 변경 내용을 먼저 로그에 쓰는 방식이다. 장애가 나도 로그로 복구할 수 있다."
+  short: "데이터보다 로그를 먼저 쓰는 방식"
 - term: 버퍼 풀
   aka: [Buffer Pool, buffer pool]
   cat: 데이터
@@ -755,93 +899,110 @@
   why: "디스크 페이지를 담아 두는 버퍼(buffer)를 한곳에 모아 둔 웅덩이(pool)라는 뜻이다."
   scope: [Database]
   def: "InnoDB가 디스크의 데이터와 인덱스 페이지를 메모리에 캐시해 두는 영역이다."
+  short: "디스크 페이지를 캐시하는 메모리 영역"
 - term: 클러스터드 인덱스
   aka: [Clustered Index, clustered index]
   cat: 데이터
   full: "Clustered Index"
   why: "데이터가 인덱스 순서대로 한데 모여(clustered) 저장된다는 뜻이다."
   def: "테이블 데이터 자체가 기본 키 순서로 정렬되어 저장되는 인덱스다. InnoDB 테이블은 기본 키가 클러스터드 인덱스다."
+  short: "데이터가 기본 키 순으로 저장되는 인덱스"
 - term: 커버링 인덱스
   aka: [Covering Index, covering index]
   cat: 데이터
   full: "Covering Index"
   why: "쿼리에 필요한 컬럼을 인덱스가 모두 덮는다(cover)는 뜻이다."
   def: "쿼리에 필요한 컬럼이 모두 인덱스에 들어 있어 테이블 본문을 읽지 않고 인덱스만으로 결과를 내는 경우다."
+  short: "인덱스만으로 쿼리 결과를 내는 경우"
 - term: 실행 계획
   aka: [EXPLAIN]
   cat: 데이터
   def: "DB가 쿼리를 어떤 인덱스와 순서로 처리할지 정한 계획이다. EXPLAIN으로 확인한다."
+  short: "DB가 쿼리를 처리할 순서와 방법"
 - term: CDC
   cat: 데이터
   full: "Change Data Capture"
   why: "데이터의 변경(change)을 잡아낸다(capture)는 뜻이다."
   def: "DB의 변경(삽입, 수정, 삭제)을 로그에서 읽어 다른 시스템으로 실시간 전달하는 방식이다."
+  short: "DB 변경을 실시간으로 전달하는 방식"
 - term: Debezium
   cat: 데이터
   full: "DBs + -ium"
   why: "데이터베이스 여러 개(DBs)에 원소 이름에 붙는 접미사 -ium을 붙였다고 Debezium 프로젝트가 설명한다."
   def: "MySQL binlog 같은 DB 변경 로그를 읽어 Kafka 이벤트로 바꿔 주는 CDC 커넥터다."
+  short: "DB 변경 로그를 Kafka 이벤트로 바꾸는 CDC 커넥터"
 - term: binlog
   aka: [바이너리 로그]
   cat: 데이터
   full: "Binary Log"
   why: "사람이 읽는 텍스트가 아닌 이진(binary) 형식으로 남기는 로그라는 뜻이다."
   def: "MySQL이 데이터 변경 내용을 순서대로 기록하는 로그다. 복제와 CDC의 원천이 된다."
+  short: "MySQL 변경 기록 로그"
 - term: KRaft
   cat: 데이터
   full: "Kafka + Raft"
   why: "Kafka가 자체적으로 Raft 합의 알고리즘을 쓴다는 뜻이다."
   def: "Kafka가 ZooKeeper 없이 자체 Raft 합의로 메타데이터를 관리하는 모드다."
+  short: "ZooKeeper 없는 Kafka 메타데이터 모드"
 - term: ZooKeeper
   cat: 데이터
   full: "ZooKeeper (동물원 관리인)"
   why: "Hadoop 생태계 프로젝트들에 동물 이름(Pig, Hive 등)이 많아, 이들을 관리하는 동물원 관리인이라는 뜻으로 붙였다."
   def: "분산 시스템의 설정과 리더 선출 같은 조정 작업을 맡는 코디네이션 서비스다. Kafka는 KRaft로 이 의존을 없앴다."
+  short: "분산 시스템 조정 서비스"
 - term: Raft
   cat: 데이터
   full: "Raft (뗏목)"
   why: "저자 Diego Ongaro는 세 가지를 떠올리며 지었다고 설명한다. reliable, replicated, redundant, fault-tolerant(신뢰할 수 있고 복제되고 중복되고 장애를 견디는)라는 말, 로그(통나무)로 만들 수 있는 것인 뗏목, 그리고 이해하기 어려운 Paxos라는 섬에서 탈출하는 방법이다."
   def: "여러 노드가 같은 로그 순서에 합의하도록 리더를 뽑고 복제하는 합의 알고리즘이다. etcd와 KRaft가 쓴다."
+  short: "리더 선출과 로그 복제 합의 알고리즘"
 - term: 파티션
   aka: [Partition]
   cat: 데이터
-  scope: [Middleware, Kafka]
+  scope: [Kafka]
   def: "Kafka 토픽을 나눈 단위다. 파티션 안에서는 메시지 순서가 보장되고, 파티션 수만큼 컨슈머가 병렬로 읽을 수 있다."
+  short: "Kafka 토픽을 나눈 순서 보장 단위"
 - term: 컨슈머 그룹
   aka: [Consumer Group, consumer group]
   cat: 데이터
-  scope: [Middleware, Kafka]
+  scope: [Kafka]
   def: "같은 토픽을 나눠 읽는 컨슈머 묶음이다. 그룹 안에서 파티션 하나는 컨슈머 하나에게만 배정된다."
+  short: "토픽을 나눠 읽는 컨슈머 묶음"
 - term: 리밸런싱
   aka: [Rebalance, rebalance, 리밸런스]
   cat: 데이터
+  scope: [Kafka]
   full: "Rebalancing"
   why: "다시(re) 균형(balance)을 맞춘다는 뜻이다."
-  scope: [Middleware, Kafka]
   def: "컨슈머가 그룹에 들어오거나 나갈 때 파티션 배정을 다시 나누는 과정이다. 이 동안 소비가 멈출 수 있다."
+  short: "파티션 배정을 다시 나누는 과정"
 - term: ISR
   cat: 데이터
+  scope: [Kafka]
   full: "In-Sync Replicas"
   why: "리더와 동기화된(in-sync) 복제본들이라는 뜻이다."
-  scope: [Middleware, Kafka]
   def: "리더 파티션과 데이터가 충분히 따라붙은 복제본 목록이다. 이 목록 안에서만 새 리더를 뽑는다."
+  short: "리더와 동기화된 복제본 목록"
 - term: 멱등성
   aka: [Idempotence, idempotence, 멱등, idempotent]
   cat: 데이터
   full: "Idempotence"
   why: "라틴어 idem(같은)과 potent(힘)에서 온 수학 용어다. 여러 번 적용해도 결과가 같은 성질이다."
   def: "같은 요청을 여러 번 보내도 결과가 한 번 보낸 것과 같은 성질이다. Kafka 멱등 프로듀서는 재전송으로 인한 중복 저장을 막는다."
+  short: "여러 번 보내도 결과가 같은 성질"
 - term: Exactly-Once
   aka: [exactly-once, EOS]
   cat: 데이터
   full: "Exactly-Once Semantics (EOS)"
   why: "정확히(exactly) 한 번(once)이라는 뜻이다. At-most-once(최대 한 번), At-least-once(최소 한 번)와 구분된다."
   def: "메시지가 유실되지도 중복되지도 않고 정확히 한 번만 처리되는 전송 보장 수준이다."
+  short: "정확히 한 번 처리 보장"
 - term: 해시 슬롯
   aka: [Hash Slot, hash slot]
   cat: 데이터
   scope: [Middleware, Redis]
   def: "Redis Cluster가 키를 나누는 16384개 구간이다. 키의 해시 값으로 슬롯을 정하고, 슬롯을 노드에 나눠 배치한다."
+  short: "Redis Cluster 키 분산 구간"
 - term: 샤드
   aka: [Shard, shard, 샤딩]
   cat: 데이터
@@ -849,6 +1010,7 @@
   why: "깨진 유리나 도자기의 조각이라는 뜻의 영어 단어다."
   scope: [Middleware, Database]
   def: "큰 데이터를 여러 노드에 나눠 저장한 조각이다. Elasticsearch 인덱스는 여러 샤드로 나뉜다."
+  short: "데이터를 나눠 저장한 조각"
 - term: 레플리카
   aka: [Replica, replica]
   cat: 데이터
@@ -856,12 +1018,14 @@
   why: "원본을 그대로 본뜬 복제품이라는 뜻이다."
   scope: [Middleware, Database]
   def: "장애 대비와 읽기 분산을 위해 원본 데이터를 복제해 둔 사본이다."
+  short: "장애 대비 복제본"
 - term: 형태소 분석기
   aka: [형태소 분석]
   cat: 데이터
   full: "Morphological Analyzer"
   why: "뜻을 가진 가장 작은 말의 단위인 형태소(morpheme)를 분석한다는 뜻이다."
   def: "문장을 의미를 가진 가장 작은 단위(형태소)로 나누고 품사를 붙이는 도구다. 한국어 검색과 키워드 추출에 필요하다."
+  short: "문장을 형태소로 나누는 도구"
 
 # ── JVM과 백엔드 ──
 - term: JIT
@@ -870,6 +1034,7 @@
   full: "Just-In-Time Compiler"
   why: "실행에 필요한 바로 그 순간(just in time)에 컴파일한다는 뜻이다."
   def: "Just-In-Time 컴파일러. 자주 실행되는 바이트코드를 실행 중에 기계어로 바꿔 이후 실행을 빠르게 한다."
+  short: "자주 쓰는 바이트코드를 실행 중 기계어로 바꾸는 컴파일러"
 - term: GC
   aka: [Garbage Collector, 가비지 컬렉터, 가비지 컬렉션]
   cat: JVM
@@ -877,106 +1042,126 @@
   why: "쓰레기(garbage)가 된 객체를 수거(collect)한다는 뜻이다."
   scope: [Backend, JVM, Java, Observability]
   def: "더 이상 참조되지 않는 객체를 찾아 메모리를 자동으로 회수하는 JVM 기능이다."
+  short: "안 쓰는 객체 메모리를 자동 회수"
 - term: STW
   aka: [Stop-The-World, stop-the-world]
   cat: JVM
   full: "Stop-The-World"
   why: "GC 동안 애플리케이션이라는 세상(world) 전체가 멈춘다(stop)는 뜻이다."
   def: "GC가 작업하는 동안 애플리케이션 스레드를 모두 멈추는 구간이다. 이 시간이 길면 응답 지연이 생긴다."
+  short: "GC 동안 애플리케이션 스레드가 멈추는 구간"
 - term: G1 GC
   aka: [G1]
   cat: JVM
   full: "Garbage-First Garbage Collector"
   why: "쓰레기(garbage)가 가장 많은 영역을 먼저(first) 회수한다는 뜻이다."
   def: "힙을 같은 크기의 영역(region)으로 나눠 쓰레기가 많은 영역부터 회수하는 GC다. Java 9부터 기본 GC다."
+  short: "쓰레기 많은 영역부터 회수하는 GC"
 - term: ZGC
   cat: JVM
   full: "Z Garbage Collector"
   why: "Oracle이 만든 저지연 GC의 이름이다."
   def: "힙 크기와 관계없이 멈춤 시간을 밀리초 수준으로 유지하도록 설계된 저지연 GC다."
+  short: "멈춤을 밀리초 수준으로 줄인 GC"
 - term: 클래스 로더
   aka: [ClassLoader, 클래스로더]
   cat: JVM
   def: ".class 파일을 찾아 JVM 메모리에 올리는 구성 요소다. 부모 로더에게 먼저 위임하는 계층 구조로 동작한다."
+  short: ".class 파일을 메모리에 올리는 구성 요소"
 - term: 리플렉션
   aka: [Reflection, reflection]
   cat: JVM
   full: "Reflection (반사)"
   why: "거울에 비추듯 프로그램이 실행 중에 자기 자신의 구조를 들여다본다는 뜻이다."
   def: "실행 중에 클래스의 필드, 메서드, 애노테이션 정보를 읽고 호출하는 Java 기능이다. 프레임워크가 애노테이션을 처리할 때 쓴다."
+  short: "실행 중 클래스 구조를 읽고 호출하는 기능"
 - term: 동적 프록시
   aka: [Dynamic Proxy, JDK 동적 프록시]
   cat: JVM
   full: "Dynamic Proxy"
   why: "실행 중에 동적으로(dynamic) 만들어지는 대리 객체(proxy)라는 뜻이다."
   def: "실행 중에 인터페이스를 구현한 프록시 객체를 만들어 메서드 호출을 가로채는 방식이다. Spring AOP가 이 방식이나 CGLIB을 쓴다."
+  short: "실행 중 만드는 대리 객체"
 - term: CGLIB
   cat: JVM
   full: "Code Generation Library"
   why: "바이트코드를 생성하는(code generation) 라이브러리라는 뜻이다."
   def: "클래스를 상속한 프록시를 바이트코드로 생성하는 라이브러리다. 인터페이스가 없는 클래스에도 프록시를 만들 수 있다."
+  short: "상속 기반 프록시 생성 라이브러리"
 - term: AOP
   cat: JVM
   full: "Aspect-Oriented Programming"
   why: "여러 곳에 걸친 관심사(aspect)를 중심으로 코드를 나눈다는 뜻이다."
   def: "관점 지향 프로그래밍. 로깅, 트랜잭션처럼 여러 곳에 반복되는 부가 기능을 핵심 로직과 분리해 한곳에서 적용한다."
+  short: "반복되는 부가 기능을 분리하는 관점 지향 프로그래밍"
 - term: ThreadLocal
   cat: JVM
   full: "Thread + Local"
   why: "스레드(thread)마다 따로 가지는(local) 변수라는 뜻이다."
   def: "스레드마다 따로 값을 저장하는 변수다. 같은 요청을 처리하는 스레드 안에서 인증 정보를 전달할 때 쓰며, 스레드 풀에서는 사용 후 지워야 한다."
+  short: "스레드마다 따로 값을 두는 변수"
 - term: ByteBuddy
   cat: JVM
   def: "실행 중에 Java 클래스를 생성하거나 수정하는 바이트코드 조작 라이브러리다. OpenTelemetry Java Agent가 자동 계측에 쓴다."
+  short: "바이트코드 조작 라이브러리"
 - term: Java Agent
   aka: [javaagent, 자바 에이전트]
   cat: JVM
   full: "Java Agent"
   why: "JVM에 붙어 대신 일하는 대리인(agent) 프로그램이라는 뜻이다."
   def: "JVM 시작 옵션으로 붙여 클래스가 로딩될 때 바이트코드를 바꿀 수 있는 프로그램이다. 코드 수정 없이 계측 기능을 넣는다."
+  short: "클래스 로딩 때 바이트코드를 바꾸는 JVM 부착 프로그램"
 - term: HikariCP
   cat: JVM
   full: "Hikari + Connection Pool"
   why: "Hikari는 일본어로 \"빛\"이다. 빛처럼 빠른 커넥션 풀(Connection Pool)이라는 뜻이다."
   def: "Spring Boot의 기본 DB 커넥션 풀이다. 커넥션을 미리 만들어 두고 빌려주고 돌려받는다."
+  short: "Spring Boot 기본 DB 커넥션 풀"
 - term: 커넥션 풀
   aka: [Connection Pool, connection pool]
   cat: JVM
   full: "Connection Pool"
   why: "연결(connection)을 웅덩이(pool)에 모아 두고 퍼 쓴다는 뜻이다."
   def: "DB 연결을 미리 여러 개 만들어 두고 재사용하는 저장소다. 연결 생성 비용을 줄이지만, 반납되지 않으면 풀이 고갈되어 요청이 대기한다."
+  short: "DB 연결을 미리 만들어 재사용하는 저장소"
 - term: DispatcherServlet
   cat: JVM
   full: "Dispatcher + Servlet"
   why: "요청을 알맞은 곳으로 보내는(dispatch) 서블릿이라는 뜻이다."
   def: "Spring MVC에서 모든 요청을 먼저 받아 알맞은 컨트롤러로 보내는 프런트 컨트롤러 서블릿이다."
+  short: "모든 요청을 받아 컨트롤러로 보내는 서블릿"
 - term: 서블릿
   aka: [Servlet]
   cat: JVM
   full: "Servlet"
   why: "서버(server)와 \"작은 것\"을 뜻하는 접미사 -let을 합친 말이다. 서버에서 도는 작은 프로그램이라는 뜻이다."
   def: "웹 요청을 받아 응답을 만드는 Java 표준 컴포넌트다. 서블릿 컨테이너(Tomcat 등)가 생명주기를 관리한다."
+  short: "웹 요청을 처리하는 Java 표준 컴포넌트"
 - term: CQRS
   cat: JVM
   full: "Command Query Responsibility Segregation"
   why: "명령(command)과 조회(query)의 책임(responsibility)을 분리(segregation)한다는 뜻이다."
   def: "데이터를 바꾸는 쪽(명령)과 읽는 쪽(조회)의 모델과 저장소를 분리하는 설계 방식이다."
+  short: "명령과 조회 모델을 분리하는 설계"
 - term: gRPC
   cat: JVM
   full: "gRPC Remote Procedure Calls"
   why: "이름 안에 자기 자신이 들어간 재귀 약어다. 앞의 g는 버전마다 다른 단어로 정해 두는 장난이고, 흔히 Google의 g로 이해한다. RPC는 원격(remote) 함수(procedure) 호출이다."
   def: "Protocol Buffers로 메시지를 정의하고 HTTP/2 위에서 원격 함수를 호출하는 RPC 프레임워크다."
+  short: "HTTP/2 기반 원격 함수 호출 프레임워크"
 - term: Protocol Buffers
   aka: [protobuf, ProtoBuf]
   cat: JVM
   full: "Protocol Buffers"
   why: "프로토콜 메시지를 담는 버퍼라는 뜻이다. 줄여서 protobuf라고 부른다."
   def: "메시지 구조를.proto 파일로 정의하고 작고 빠른 바이너리 형식으로 직렬화하는 구글의 데이터 형식이다."
+  short: "구글의 바이너리 직렬화 형식"
 - term: W-TinyLFU
   cat: JVM
   full: "Window TinyLFU"
   why: "LFU는 Least Frequently Used(가장 덜 쓰인 것을 먼저 버림)다. Tiny는 적은 메모리로 빈도를 추정한다는 뜻이고, Window는 최근 항목을 잠깐 담아 두는 작은 창 영역이다."
   def: "최근 사용 빈도를 적은 메모리로 추정해 캐시에 남길 항목을 고르는 교체 정책이다. Caffeine 캐시가 쓴다."
+  short: "빈도 추정 기반 캐시 교체 정책"
 
 # ── AI ──
 - term: LLM
@@ -984,6 +1169,7 @@
   full: "Large Language Model"
   why: "아주 큰(large) 언어 모델(language model)이라는 뜻이다. 언어 모델은 문장에서 다음에 올 말을 예측하는 모델이다."
   def: "대규모 언어 모델. 많은 텍스트로 학습해 다음에 올 토큰을 예측하는 방식으로 글을 이해하고 생성하는 모델이다."
+  short: "대규모 언어 모델"
 - term: 토큰
   aka: [Token, token]
   cat: AI
@@ -991,21 +1177,25 @@
   why: "\"표, 증표\"라는 뜻이다. 텍스트를 잘라 낸 낱개 단위 하나하나를 표 한 장처럼 센다."
   scope: [AI]
   def: "언어 모델이 텍스트를 처리하는 단위다. 단어 하나가 여러 토큰으로 나뉘기도 하며, 비용과 길이 제한이 토큰 수로 계산된다."
+  short: "언어 모델이 텍스트를 처리하는 단위"
 - term: 컨텍스트 윈도우
   aka: [Context Window, context window, 컨텍스트 창]
   cat: AI
   full: "Context Window"
   why: "모델이 문맥(context)으로 볼 수 있는 창(window)의 크기라는 뜻이다."
   def: "모델이 한 번에 입력으로 볼 수 있는 최대 토큰 수다. 대화 기록, 문서, 지시가 모두 이 안에 들어가야 한다."
+  short: "모델이 한 번에 보는 최대 토큰 수"
 - term: 프롬프트 캐싱
   aka: [Prompt Caching, prompt caching]
   cat: AI
   def: "반복해서 보내는 프롬프트 앞부분의 처리 결과를 저장해 두고 재사용해 비용과 응답 시간을 줄이는 기능이다."
+  short: "반복 프롬프트 처리 결과 재사용"
 - term: RAG
   cat: AI
   full: "Retrieval-Augmented Generation"
   why: "검색(retrieval)으로 보강한(augmented) 생성(generation)이라는 뜻이다."
   def: "질문과 관련된 문서를 먼저 검색해 프롬프트에 넣고, 모델이 그 내용을 근거로 답하게 하는 방식이다."
+  short: "관련 문서를 검색해 답의 근거로 쓰는 방식"
 - term: 임베딩
   aka: [Embedding, embedding]
   cat: AI
@@ -1013,17 +1203,20 @@
   why: "\"끼워 넣다, 박아 넣다\"라는 뜻이다. 단어나 문장을 벡터 공간 안의 한 점으로 박아 넣는다."
   scope: [AI]
   def: "텍스트의 의미를 숫자 벡터로 바꾼 것이다. 의미가 비슷한 문장은 벡터 공간에서 가까이 놓인다."
+  short: "텍스트 의미를 벡터로 바꾼 것"
 - term: 벡터 DB
   aka: [벡터 데이터베이스, Vector DB]
   cat: AI
   def: "임베딩 벡터를 저장하고 주어진 벡터와 가까운 항목을 빠르게 찾아 주는 데이터베이스다."
+  short: "벡터 유사도 검색 데이터베이스"
 - term: 에이전트
-  aka: [Agent, AI 에이전트]
+  aka: [AI 에이전트]
   cat: AI
   full: "Agent (대리인)"
   why: "사람 대신 일을 처리하는 대리인이라는 뜻이다."
   scope: [AI, Observability]
   def: "모델이 목표를 받아 스스로 도구를 고르고 호출하며 결과를 보고 다음 행동을 정하는 반복 구조다."
+  short: "도구를 골라 쓰며 스스로 다음 행동을 정하는 반복 구조"
 - term: Tool Use
   aka: [도구 사용, tool use, function calling, Function Calling]
   cat: AI
@@ -1031,22 +1224,26 @@
   why: "모델이 도구(tool)를 쓴다는 뜻이다. OpenAI는 같은 기능을 함수 호출(function calling)이라고 부른다."
   scope: [AI]
   def: "모델이 직접 실행할 수 없는 일(검색, 계산, API 호출)을 위해 정해진 형식으로 도구 호출을 요청하고, 애플리케이션이 실행한 결과를 다시 받는 방식이다."
+  short: "모델이 도구 호출을 요청하는 방식"
 - term: MCP
   aka: [Model Context Protocol]
   cat: AI
   full: "Model Context Protocol"
   why: "모델(model)에게 맥락(context)을 공급하는 방법을 정한 프로토콜이라는 뜻이다."
   def: "AI 애플리케이션이 외부 도구와 데이터 소스를 같은 방식으로 연결하도록 표준화한 프로토콜이다. 서버가 도구, 리소스, 프롬프트를 제공한다."
+  short: "AI 앱과 외부 도구를 잇는 표준 프로토콜"
 - term: 서브에이전트
   aka: [Subagent, subagent, 서브 에이전트]
   cat: AI
   scope: [AI]
   def: "메인 에이전트가 일을 맡기는 보조 에이전트다. 별도 컨텍스트에서 실행되어 결과만 돌려주므로 메인 대화의 컨텍스트를 아낀다."
+  short: "별도 컨텍스트에서 일을 맡는 보조 에이전트"
 - term: 스킬
   aka: [Skill, Skills]
   cat: AI
   scope: [AI]
   def: "Claude Code에서 특정 작업의 절차와 참고 자료를 폴더로 묶은 것이다. 작업 내용이 설명과 맞으면 모델이 불러와 따른다."
+  short: "작업 절차를 묶은 Claude Code 폴더"
 - term: 훅
   aka: [Hook, Hooks, hooks]
   cat: AI
@@ -1054,18 +1251,21 @@
   why: "정해진 시점에 갈고리를 걸어 끼어든다는 비유다. 프로그래밍에서 오래 써 온 말이다."
   scope: [AI]
   def: "Claude Code에서 도구 실행 전후 같은 정해진 시점에 자동으로 실행되는 셸 명령이다. 위험한 명령 차단이나 검사에 쓴다."
+  short: "정해진 시점에 자동 실행되는 셸 명령"
 - term: 프롬프트 인젝션
   aka: [Prompt Injection, prompt injection]
   cat: AI
   full: "Prompt Injection"
   why: "SQL 인젝션처럼 입력에 명령을 주입(injection)한다는 뜻이다."
   def: "입력 데이터 안에 숨긴 지시문으로 모델이 원래 지시를 무시하고 공격자의 지시를 따르게 만드는 공격이다."
+  short: "입력에 숨긴 지시로 모델을 조종하는 공격"
 - term: 할루시네이션
   aka: [환각, Hallucination, hallucination]
   cat: AI
   full: "Hallucination (환각)"
   why: "사람이 없는 것을 보는 환각에 빗댄 말이다."
   def: "모델이 사실이 아닌 내용을 그럴듯하게 만들어 내는 현상이다."
+  short: "사실이 아닌 내용을 만들어 내는 현상"
 - term: Transformer
   aka: [트랜스포머]
   cat: AI
@@ -1073,6 +1273,7 @@
   why: "\"변환하는 것\"이라는 뜻의 영어 단어다. 입력 시퀀스를 출력 시퀀스로 바꾸는(transform) 구조를 가리킨다."
   scope: [AI]
   def: "어텐션으로 문장 안 모든 토큰 사이의 관계를 한꺼번에 계산하는 신경망 구조다. 현재 LLM 대부분의 기반이다."
+  short: "어텐션 기반 신경망 구조"
 - term: 어텐션
   aka: [Attention, attention, 셀프 어텐션]
   cat: AI
@@ -1080,30 +1281,35 @@
   why: "사람이 문장을 읽을 때 중요한 단어에 주의(attention)를 기울이는 것에 빗댄 이름이다."
   scope: [AI]
   def: "각 토큰이 다른 토큰들 중 어디에 얼마나 주목할지 가중치를 계산해 문맥을 반영하는 연산이다."
+  short: "토큰 사이 관계에 가중치를 주는 연산"
 - term: 퍼셉트론
   aka: [Perceptron]
   cat: AI
   full: "Perceptron"
   why: "지각(perception)에 기계 이름에 쓰던 접미사 -tron을 붙인 말이다. 지각하는 기계라는 뜻이다."
   def: "입력에 가중치를 곱해 더한 값이 기준을 넘으면 1, 아니면 0을 내는 가장 단순한 인공 신경 단위다."
+  short: "가장 단순한 인공 신경 단위"
 - term: 활성화 함수
   aka: [Activation Function]
   cat: AI
   full: "Activation Function"
   why: "뉴런이 신호를 내보낼지(활성화될지) 정하는 함수라는 뜻이다. 생물 뉴런의 발화에서 왔다."
   def: "신경망 층의 출력에 비선형성을 더하는 함수다. ReLU, 시그모이드가 대표적이다. 이것이 없으면 층을 여러 개 쌓아도 직선 하나와 같은 표현력만 가진다."
+  short: "층 출력에 비선형성을 더하는 함수"
 - term: 역전파
   aka: [Backpropagation, backpropagation]
   cat: AI
   full: "Backpropagation"
   why: "오차를 거꾸로(back) 전파한다(propagation)는 뜻이다."
   def: "출력의 오차를 뒤에서 앞으로 전달하며 각 가중치가 오차에 얼마나 기여했는지(기울기)를 계산하는 알고리즘이다."
+  short: "오차를 거꾸로 전달해 기울기를 구하는 알고리즘"
 - term: 경사 하강법
   aka: [Gradient Descent, gradient descent, 경사하강법]
   cat: AI
   full: "Gradient Descent"
   why: "기울기(gradient)를 따라 내려간다(descent)는 뜻이다. 산에서 가장 가파른 내리막으로 걸어 내려가는 것에 비유한다."
   def: "오차가 줄어드는 방향(기울기의 반대)으로 가중치를 조금씩 바꿔 가며 최적값을 찾는 학습 방법이다."
+  short: "기울기 반대 방향으로 가중치를 조정하는 학습법"
 - term: 파인튜닝
   aka: [Fine-tuning, fine-tuning, 미세 조정]
   cat: AI
@@ -1111,12 +1317,14 @@
   why: "악기를 미세하게(fine) 조율(tuning)하듯 모델을 조금 더 다듬는다는 뜻이다."
   scope: [AI]
   def: "이미 학습된 모델을 특정 작업이나 도메인 데이터로 추가 학습시켜 맞춤화하는 것이다."
+  short: "학습된 모델의 추가 학습"
 - term: 자기 지도 학습
   aka: [Self-supervised Learning, self-supervision]
   cat: AI
   full: "Self-Supervised Learning"
   why: "정답(지도, supervision)을 사람이 아니라 데이터 자신(self)이 만든다는 뜻이다."
   def: "사람이 붙인 정답 없이 데이터 자체에서 정답을 만들어 학습하는 방식이다. 문장의 다음 단어 맞히기가 대표적이다."
+  short: "데이터 자체에서 정답을 만들어 학습"
 - term: Temperature
   aka: [temperature, 온도]
   cat: AI
@@ -1124,3 +1332,4 @@
   why: "통계역학에서 온도가 높을수록 입자가 무작위로 움직이는 것에서 빌린 말이다. 확률 분포를 평평하게 할지 뾰족하게 할지 정한다."
   scope: [AI]
   def: "모델이 다음 토큰을 고를 때 무작위성을 조절하는 값이다. 낮으면 가장 확률 높은 답을, 높으면 다양한 답을 낸다."
+  short: "다음 토큰 선택의 무작위성 조절 값"

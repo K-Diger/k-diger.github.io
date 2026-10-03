@@ -307,7 +307,7 @@ CustomJwtFilter 가동!
 
 ### 필터 빈이 등록되는 경로
 
-`Filter`를 구현한 클래스에 `@Component`를 붙이면 스프링 부트가 이 빈을 찾아 서블릿 컨테이너에 자동으로 등록한다. 이 작업을 하는 것이 `ServletContextInitializerBeans`다. 등록과 정렬을 담당하는 부분을 보면 이렇다.
+`Filter`를 구현한 클래스에 `@Component`를 붙이면 스프링 부트가 이 빈을 찾아 서블릿(웹 요청을 처리하는 Java 표준 컴포넌트) 컨테이너에 자동으로 등록한다. 이 작업을 하는 것이 `ServletContextInitializerBeans`다. 등록과 정렬을 담당하는 부분을 보면 이렇다.
 
 ```java
 private <T> List<Entry<String, T>> getOrderedBeansOfType(ListableBeanFactory beanFactory, Class<T> type,

@@ -63,7 +63,7 @@ sequenceDiagram
 
 ### 2.1 프록시가 가로챈다
 
-`@Async`는 AOP로 동작한다. 그 메서드를 직접 부르는 것이 아니라 **스프링이 만든 프록시가 호출을 가로채서 스레드 풀에 넘긴다.**
+`@Async`는 AOP(Aspect-Oriented Programming, 반복되는 부가 기능을 분리하는 관점 지향 프로그래밍)로 동작한다. 그 메서드를 직접 부르는 것이 아니라 **스프링이 만든 프록시가 호출을 가로채서 스레드 풀에 넘긴다.**
 
 ```mermaid
 sequenceDiagram

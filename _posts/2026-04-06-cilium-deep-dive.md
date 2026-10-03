@@ -29,15 +29,15 @@ series_order: 5
 
 ## 배경
 
-Docker Compose로 돌던 서비스를 쿠버네티스로 옮기면서 CNI를 골라야 했다. 처음에는 "파드에 IP를 주는 것"이 CNI의 일이라고만 알고 있어서 무엇을 골라도 비슷할 거라고 생각했다.
+Docker Compose로 돌던 서비스를 쿠버네티스로 옮기면서 CNI(Container Network Interface, Pod 네트워크를 붙이는 플러그인 규격)를 골라야 했다. 처음에는 "파드에 IP를 주는 것"이 CNI의 일이라고만 알고 있어서 무엇을 골라도 비슷할 거라고 생각했다.
 
 그런데 CNI마다 네트워크 정책을 처리하는 방식이 다르고, 어떤 것은 서비스 부하 분산까지 대신하고, 어떤 것은 `kube-proxy` 자체를 없앤다. **고르는 순간 클러스터의 네트워크 동작이 통째로 달라진다.**
 
-Cilium을 놓고 공식문서를 처음부터 읽으면서 정리했다.
+Cilium(eBPF 기반 CNI)을 놓고 공식문서를 처음부터 읽으면서 정리했다.
 
 정리하면서 확인하고 싶었던 것들이다.
 
-- eBPF가 정확히 무엇이고, iptables로는 왜 안 되는가?
+- eBPF(extended Berkeley Packet Filter, 커널 안에서 작은 프로그램을 안전하게 실행하는 기술)가 정확히 무엇이고, iptables(리눅스 패킷 필터링과 주소 변환 규칙 도구)로는 왜 안 되는가?
 - IP가 계속 바뀌는 환경에서 네트워크 정책은 무엇을 기준으로 매칭하는가?
 - `kube-proxy`를 없앨 수 있다는데 그러면 서비스 통신은 누가 처리하는가?
 - 도입하면 무엇을 얻고 무엇을 감수해야 하는가?
@@ -50,7 +50,7 @@ Cilium을 놓고 공식문서를 처음부터 읽으면서 정리했다.
 
 Cilium은 Docker, Kubernetes 같은 Linux 컨테이너 관리 플랫폼에서 배포된 애플리케이션 서비스 간 네트워크 연결을 투명하게 보호하는 오픈소스 소프트웨어다. Cilium의 핵심에는 eBPF라는 새로운 Linux 커널 기술이 있으며, 이를 통해 Linux 자체 내부에 강력한 보안 가시성과 제어 로직을 동적으로 삽입할 수 있다.
 
-Cilium은 단순한 CNI 플러그인이 아니다. 네트워킹, 보안, 관측성을 하나의 데이터플레인에서 통합 처리하는 **eBPF 기반 Kubernetes 네트워킹 플랫폼**이다. 전통적인 iptables 기반 네트워크 스택을 우회하여 커널 레벨에서 패킷을 처리하므로, 규칙 수에 관계없이 일정한 성능을 보장한다.
+Cilium은 단순한 CNI 플러그인이 아니다. 네트워킹, 보안, 관측성(Observability, 외부 데이터로 내부 상태를 알아내는 정도)을 하나의 데이터플레인(Data Plane, 실제 요청과 패킷을 처리하는 계층)에서 통합 처리하는 **eBPF 기반 Kubernetes 네트워킹 플랫폼**이다. 전통적인 iptables 기반 네트워크 스택을 우회하여 커널 레벨에서 패킷을 처리하므로, 규칙 수에 관계없이 일정한 성능을 보장한다.
 
 ### 1.2 왜 eBPF인가
 
@@ -61,7 +61,7 @@ Cilium은 단순한 CNI 플러그인이 아니다. 네트워킹, 보안, 관측�
 **iptables의 한계:**
 - 규칙 수가 O(n)으로 증가하여 수천 개의 서비스가 있는 클러스터에서 성능이 선형적으로 저하된다
 - 규칙 업데이트 시 전체 테이블을 재작성해야 하므로 latency spike가 발생한다
-- L3/L4(IP, Port)까지만 판별 가능하여 HTTP path, gRPC method 같은 L7 수준의 정책을 적용할 수 없다
+- L3/L4(IP, Port)까지만 판별 가능하여 HTTP path, gRPC(gRPC Remote Procedure Calls, HTTP/2 기반 원격 함수 호출 프레임워크) method 같은 L7(Layer 7, HTTP 경로와 헤더 같은 요청 내용 수준) 수준의 정책을 적용할 수 없다
 - 규칙이 IP 기반이므로 Pod의 동적 생성/삭제에 대응하기 어렵다
 
 **eBPF의 장점:**
@@ -140,10 +140,10 @@ flowchart TB
 
 Cilium Agent(cilium-agent)는 클러스터의 각 노드에서 실행된다. Agent는 Kubernetes 또는 API를 통해 네트워킹, 서비스 로드 밸런싱, 네트워크 정책, 가시성 및 모니터링 요구사항을 기술하는 설정을 수신한다. Cilium Agent는 Kubernetes 같은 오케스트레이션 시스템의 이벤트를 수신하여 컨테이너나 워크로드가 시작되거나 중지되는 시점을 학습한다. Agent는 Linux 커널이 해당 컨테이너의 모든 네트워크 접근을 제어하는 데 사용하는 eBPF 프로그램을 관리한다.
 
-Cilium Agent는 각 노드에서 DaemonSet으로 실행되는 핵심 데몬이다.
+Cilium Agent는 각 노드에서 DaemonSet(노드마다 Pod를 하나씩 띄우는 워크로드)으로 실행되는 핵심 데몬이다.
 
 **주요 역할:**
-- Kubernetes API Server로부터 Pod, Service, NetworkPolicy, CiliumNetworkPolicy 등의 이벤트를 Watch하여 수신한다
+- Kubernetes API Server로부터 Pod, Service, NetworkPolicy(Pod 사이 통신을 라벨과 포트로 허용하거나 막는 리소스), CiliumNetworkPolicy(Cilium Network Policy, Cilium의 확장 네트워크 정책) 등의 이벤트를 Watch하여 수신한다
 - 수신된 정책과 서비스 정보를 기반으로 eBPF 프로그램을 컴파일하고 커널에 적재(attach)한다
 - 클러스터 내 모든 Endpoint에 대한 **Identity**를 관리한다. Identity는 Pod의 라벨 집합을 기반으로 부여되며, 동일한 라벨 조합을 가진 모든 Pod는 동일한 Identity를 공유한다
 - eBPF Map을 통해 정책, Identity, 서비스 엔드포인트 등의 상태를 커널 공간에서 관리한다
@@ -158,9 +158,9 @@ Cilium Operator는 클러스터 전체에서 논리적으로 한 번만 처리�
 Cilium Operator는 클러스터 범위의 작업을 담당하는 컴포넌트다. 모든 노드에서 동일한 작업을 중복 수행하는 것을 방지하기 위해 존재한다.
 
 **주요 역할:**
-- IPAM 관리: 클러스터 전체의 IP 주소 풀을 관리하고, 노드별 CIDR을 할당한다
+- IPAM 관리: 클러스터 전체의 IP 주소 풀을 관리하고, 노드별 CIDR(Classless Inter-Domain Routing, IP 대역을 주소와 비트 수로 표현하는 방식)을 할당한다
 - Identity Garbage Collection: 더 이상 사용되지 않는 Identity를 주기적으로 정리한다
-- CRD 관리: CiliumNetworkPolicy, CiliumEndpoint 등의 CRD 상태를 관리한다
+- CRD(CustomResourceDefinition, 쿠버네티스에 새 리소스 종류를 추가하는 정의) 관리: CiliumNetworkPolicy, CiliumEndpoint 등의 CRD 상태를 관리한다
 - 노드 검색(Node Discovery): 새로운 노드 합류 시 초기 설정을 수행한다
 - Heartbeat: 클러스터 상태를 주기적으로 확인한다
 
@@ -178,7 +178,7 @@ CNI(Container Network Interface) Plugin은 컨테이너 런타임(containerd, CR
 
 ### 2.5 Hubble
 
-Hubble 서버는 각 노드에서 실행되며 Cilium으로부터 eBPF 기반 가시성 데이터를 가져온다. 고성능과 낮은 오버헤드를 달성하기 위해 Cilium Agent에 내장되어 있다. flow 조회와 Prometheus 메트릭을 위한 gRPC 서비스를 제공한다.
+Hubble(Cilium의 네트워크 흐름 관측 도구) 서버는 각 노드에서 실행되며 Cilium으로부터 eBPF 기반 가시성 데이터를 가져온다. 고성능과 낮은 오버헤드를 달성하기 위해 Cilium Agent에 내장되어 있다. flow 조회와 Prometheus 메트릭을 위한 gRPC 서비스를 제공한다.
 
 Relay(hubble-relay)는 실행 중인 모든 Hubble 서버를 인지하는 독립형 컴포넌트다. 각 서버의 gRPC API에 연결하여 모든 서버를 대표하는 API를 제공함으로써 클러스터 전체 가시성을 제공한다.
 
@@ -308,19 +308,19 @@ flowchart TB
 - XDP_TX: 동일 인터페이스로 패킷 반환
 - XDP_REDIRECT: 다른 인터페이스로 리다이렉트
 - XDP_PASS: 정상적인 네트워크 스택으로 전달
-- Cilium에서는 NodePort 서비스의 DSR(Direct Server Return)과 DDoS 완화에 활용된다
+- Cilium에서는 NodePort(모든 노드의 같은 포트로 Service를 여는 방식) 서비스의 DSR(Direct Server Return)과 DDoS 완화에 활용된다
 
 **tc (Traffic Control) Hook:**
 - sk_buff가 할당된 후 실행되는 hook으로, XDP보다 풍부한 패킷 메타데이터에 접근할 수 있다
 - ingress와 egress 양방향에 각각 eBPF 프로그램을 부착할 수 있다
-- Cilium의 **주요 데이터플레인 hook**이다. 정책 집행, DNAT/SNAT, 터널 캡슐화 등 대부분의 처리가 tc hook에서 이루어진다
+- Cilium의 **주요 데이터플레인 hook**이다. 정책 집행, DNAT(Destination NAT, 목적지 주소 변환)/SNAT(Source NAT, 출발지 주소 변환), 터널 캡슐화(Encapsulation, 패킷을 다른 헤더로 한 번 더 감싸는 것) 등 대부분의 처리가 tc hook에서 이루어진다
 - `cilium_host`, `cilium_net`, `lxc*`(Pod veth) 등의 인터페이스에 부착된다
 
 **Socket-level Hooks:**
 - `connect()`, `bind()`, `sendmsg()`, `recvmsg()` 등의 소켓 시스템 콜에 부착된다
-- `kube-proxy` 대체(kubeProxyReplacement) 시 Service ClusterIP → Backend Pod IP 변환을 소켓 레벨에서 수행한다
+- `kube-proxy` 대체(kubeProxyReplacement) 시 Service ClusterIP(클러스터 안에서만 접근하는 Service 가상 IP) → Backend Pod IP 변환을 소켓 레벨에서 수행한다
 - 이로 인해 패킷이 netfilter/iptables를 거치지 않고 직접 목적지 Pod로 전달된다
-- East-West 트래픽의 latency를 크게 줄일 수 있다
+- East-West(East-West Traffic, 클러스터 내부 서비스끼리 오가는 트래픽) 트래픽의 latency를 크게 줄일 수 있다
 
 **cgroup Hooks:**
 - cgroup v2의 BPF 프로그램을 통해 Pod 그룹 단위의 네트워크 제어가 가능하다
@@ -350,7 +350,7 @@ sequenceDiagram
 
 ## 4. Network Policy (정책 언어)
 
-Cilium의 네트워크 정책은 Kubernetes 기본 NetworkPolicy를 완전히 호환하면서도, L7 정책, DNS 기반 FQDN 정책 등 훨씬 풍부한 정책 모델을 제공한다.
+Cilium의 네트워크 정책은 Kubernetes 기본 NetworkPolicy를 완전히 호환하면서도, L7 정책, DNS 기반 FQDN(Fully Qualified Domain Name, 호스트와 도메인을 모두 적은 완전한 이름) 정책 등 훨씬 풍부한 정책 모델을 제공한다.
 
 ### 4.1 정책 리소스 타입
 
@@ -406,7 +406,7 @@ spec:
 
 #### 4.2.2 Services Based
 
-Selector가 없는 Service는 다르게 처리된다. Service의 EndpointSlice에 있는 IP가 CIDR 셀렉터로 변환된다.
+Selector가 없는 Service는 다르게 처리된다. Service의 EndpointSlice(Service 뒤 Pod 주소 목록을 나눠 담는 오브젝트)에 있는 IP가 CIDR 셀렉터로 변환된다.
 
 Kubernetes Service를 직접 참조하여 정책을 정의한다.
 
@@ -636,7 +636,7 @@ spec:
 
 이 정책은 frontend Pod에서 api-server Pod로의 HTTP 요청 중 특정 method/path 조합만 허용한다. `GET /api/v1/users`는 허용되지만 `DELETE /api/v1/users`는 차단된다.
 
-L7 정책이 어떻게 도는지 짚어둔다. Cilium은 L7 정책이 적용된 트래픽을 userspace Envoy proxy로 리다이렉트한다. Envoy가 HTTP 요청을 파싱하고 정책을 적용한 후 허용된 요청만 백엔드로 전달한다. 따라서 L7 정책은 L3/L4 정책 대비 약간의 latency 오버헤드가 발생한다.
+L7 정책이 어떻게 도는지 짚어둔다. Cilium은 L7 정책이 적용된 트래픽을 userspace Envoy(고성능 L4/L7 프록시) proxy로 리다이렉트한다. Envoy가 HTTP 요청을 파싱하고 정책을 적용한 후 허용된 요청만 백엔드로 전달한다. 따라서 L7 정책은 L3/L4 정책 대비 약간의 latency 오버헤드가 발생한다.
 
 #### 4.4.2 Kafka
 
@@ -761,7 +761,7 @@ spec:
 
 ### 4.7 Host Policy
 
-Host Policy는 Endpoint Selector 대신 Node Selector를 사용하는 CiliumClusterwideNetworkPolicy 형태다. 지원되는 규칙 타입은 ingress/egress 모두에서 L3/L4 규칙이며, L7 DNS 규칙도 가능하지만 다른 종류의 L7 규칙은 지원하지 않는다. Host Policy를 사용하려면 Cilium 설치 시 `--set devices='{interface}'`와 `--set hostFirewall.enabled=true` Helm 플래그가 필요하다.
+Host Policy는 Endpoint Selector 대신 Node Selector를 사용하는 CiliumClusterwideNetworkPolicy 형태다. 지원되는 규칙 타입은 ingress/egress 모두에서 L3/L4 규칙이며, L7 DNS 규칙도 가능하지만 다른 종류의 L7 규칙은 지원하지 않는다. Host Policy를 사용하려면 Cilium 설치 시 `--set devices='{interface}'`와 `--set hostFirewall.enabled=true` Helm(매니페스트를 템플릿과 값으로 묶어 배포하는 도구) 플래그가 필요하다.
 
 Host Policy는 노드 자체의 트래픽을 제어한다. CiliumClusterwideNetworkPolicy에서 `nodeSelector`를 사용한다.
 
@@ -982,9 +982,9 @@ hubble status
 
 ### 6.1 개요
 
-LB IPAM은 Cilium이 LoadBalancer 타입의 Service에 IP 주소를 할당할 수 있게 해주는 기능이다.
+LB IPAM은 Cilium이 LoadBalancer(외부 로드밸런서를 붙이는 Service 타입) 타입의 Service에 IP 주소를 할당할 수 있게 해주는 기능이다.
 
-LB IPAM은 Cilium BGP Control Plane, L2 Announcements 등의 기능과 연동하여 동작한다.
+LB IPAM은 Cilium BGP(Border Gateway Protocol, 네트워크끼리 경로 정보를 주고받는 라우팅 프로토콜) Control Plane(클러스터 상태를 결정하고 설정을 내려보내는 관리 계층), L2 Announcements 등의 기능과 연동하여 동작한다.
 
 LB IPAM은 항상 활성화되어 있지만, IP Pool이 정의되기 전까지는 휴면 상태다.
 
@@ -1132,7 +1132,7 @@ spec:
 | IP Sharing | 지원 | 지원 |
 | 운영 복잡도 | 낮음 (통합) | 중간 (별도 컴포넌트) |
 
-이미 Cilium을 CNI로 사용하고 있다면 MetalLB를 별도로 설치하는 것보다 Cilium LB IPAM을 사용하는 것이 운영 복잡도 측면에서 유리하다. 반면 Calico나 Flannel 같은 다른 CNI를 사용 중이라면 MetalLB가 유일한 선택지다.
+이미 Cilium을 CNI로 사용하고 있다면 MetalLB(온프레미스에서 LoadBalancer IP를 붙여 주는 구현체)를 별도로 설치하는 것보다 Cilium LB IPAM을 사용하는 것이 운영 복잡도 측면에서 유리하다. 반면 Calico나 Flannel 같은 다른 CNI를 사용 중이라면 MetalLB가 유일한 선택지다.
 
 ---
 
@@ -1140,13 +1140,13 @@ spec:
 
 이 페이지는 Cilium이 활성화된 Kubernetes 클러스터에서 Istio를 사용하는 방법을 안내한다.
 
-Cilium 설정의 주요 목표는 Istio의 사이드카 프록시 또는 노드 프록시로 리다이렉트되는 트래픽이 방해받지 않도록 보장하는 것이다.
+Cilium 설정의 주요 목표는 Istio의 사이드카(Sidecar, 애플리케이션 옆에 붙는 보조 컨테이너) 프록시 또는 노드 프록시로 리다이렉트되는 트래픽이 방해받지 않도록 보장하는 것이다.
 
-Cilium과 Istio는 서로 다른 계층에서 네트워킹을 처리하므로 함께 사용할 수 있다. Cilium은 L3/L4 네트워킹과 정책을, Istio는 L7 서비스 메시 기능(mTLS, traffic management, L7 routing)을 담당한다.
+Cilium과 Istio는 서로 다른 계층에서 네트워킹을 처리하므로 함께 사용할 수 있다. Cilium은 L3/L4 네트워킹과 정책을, Istio는 L7 서비스 메시(Service Mesh, 서비스 사이 통신 기능을 프록시 계층이 맡는 구조) 기능(mTLS, traffic management, L7 routing)을 담당한다.
 
 ### 7.1 kube-proxy 존재 시 설정
 
-kube-proxy가 설치된 환경에서는 최소한의 설정만으로 연동이 가능하다.
+kube-proxy(Kubernetes Proxy, Service IP로 온 트래픽을 Pod로 보내는 노드 컴포넌트)가 설치된 환경에서는 최소한의 설정만으로 연동이 가능하다.
 
 ```bash
 helm upgrade --install cilium cilium/cilium \
@@ -1154,7 +1154,7 @@ helm upgrade --install cilium cilium/cilium \
   --set cni.exclusive=false
 ```
 
-Cilium이 노드의 다른 CNI 플러그인과 간섭하지 않도록 하려면, Cilium ConfigMap에서 `cni-exclusive` 파라미터를 `false`로 설정하는 것이 중요하다.
+Cilium이 노드의 다른 CNI 플러그인과 간섭하지 않도록 하려면, Cilium ConfigMap(설정 값을 Pod 밖에 저장해 주입하는 오브젝트)에서 `cni-exclusive` 파라미터를 `false`로 설정하는 것이 중요하다.
 
 `cni.exclusive=false`는 Cilium이 다른 CNI 설정 파일을 삭제하지 않도록 한다. Istio CNI 플러그인이 함께 설치될 수 있는 환경에서 필수다.
 
@@ -1305,7 +1305,7 @@ Identity 기반 보안은 불안정한 IP 주소에 대한 의존성을 제거�
 
 Cilium은 애플리케이션 컨테이너 간, 그리고 외부 서비스와의 트래픽에 대해 분산 로드 밸런싱을 구현한다. 로드 밸런싱은 효율적인 해시테이블을 사용하는 eBPF로 구현되어 대규모 환경에서도 높은 서비스 밀도와 낮은 지연시간을 가능하게 한다.
 
-East-west 로드 밸런싱은 소켓 레벨(`connect()`)에서 서비스 연결을 재작성하여 패킷별 NAT 오버헤드를 피하고 kube-proxy를 완전히 대체한다.
+East-west 로드 밸런싱은 소켓 레벨(`connect()`)에서 서비스 연결을 재작성하여 패킷별 NAT(Network Address Translation, 패킷 주소 변환) 오버헤드를 피하고 kube-proxy를 완전히 대체한다.
 
 Cilium의 `kubeProxyReplacement=true` 설정으로 kube-proxy를 완전히 대체할 수 있다.
 
@@ -1382,7 +1382,7 @@ kubectl exec -it debug-pod -- tcpdump -i eth0 -nn
 
 kube-proxy의 iptables 모드는 서비스 수에 비례하여 성능이 저하된다. 10,000개 이상의 서비스를 가진 대규모 클러스터에서는 iptables 규칙 업데이트에 수초가 소요되며, 이 동안 패킷 처리가 지연될 수 있다.
 
-IPVS 모드로 전환하면 개선되지만, Cilium의 eBPF 기반 서비스 라우팅은 IPVS보다도 낮은 latency와 높은 throughput을 제공한다.
+IPVS(IP Virtual Server, 리눅스 커널의 L4 로드밸런서) 모드로 전환하면 개선되지만, Cilium의 eBPF 기반 서비스 라우팅은 IPVS보다도 낮은 latency와 높은 throughput을 제공한다.
 
 ---
 
@@ -1483,7 +1483,7 @@ Cilium에 LB IPAM과 BGP를 활성화하면 네트워크 인프라 팀의 책임
 **사전 협의 사항:**
 - LB IPAM에 사용할 IP 대역을 네트워크 팀과 사전 협의하여 IP 충돌을 방지한다
 - BGP Peering 설정은 네트워크 팀과 공동으로 진행한다
-- Gateway API를 사용하면 기존 Ingress Controller(Nginx, HAProxy)와의 역할이 중복될 수 있으므로 마이그레이션 계획을 수립한다
+- Gateway API(Ingress를 대체하는 쿠버네티스 표준 라우팅 API)를 사용하면 기존 Ingress(외부 HTTP 요청을 Service로 보내는 옛 표준 리소스) Controller(Nginx, HAProxy)와의 역할이 중복될 수 있으므로 마이그레이션 계획을 수립한다
 
 ---
 
@@ -1662,7 +1662,7 @@ helm upgrade --install cilium cilium/cilium \
 
 ### 12.6 WireGuard 암호화
 
-Cilium은 WireGuard를 통한 노드 간 투명한 암호화(Transparent Encryption)를 지원한다.
+Cilium은 WireGuard(리눅스 커널의 경량 VPN 프로토콜)를 통한 노드 간 투명한 암호화(Transparent Encryption)를 지원한다.
 
 ```bash
 helm upgrade --install cilium cilium/cilium \
@@ -1675,7 +1675,7 @@ helm upgrade --install cilium cilium/cilium \
 - 각 노드에 WireGuard 인터페이스(`cilium_wg0`)가 생성된다
 - 노드 간 터널 트래픽이 WireGuard로 자동 암호화된다
 - 애플리케이션 코드 수정이 필요 없다 (transparent)
-- IPsec보다 설정이 간단하고 성능이 우수하다
+- IPsec(IP Security, IP 계층 암호화 프로토콜 묶음)보다 설정이 간단하고 성능이 우수하다
 
 **IPsec vs WireGuard:**
 

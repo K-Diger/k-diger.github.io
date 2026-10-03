@@ -439,7 +439,7 @@ public Step chunkStep(JobRepository jobRepository, PlatformTransactionManager tx
 
 **쓰기는 모아서 한다.** 한 건씩 쓰면 왕복이 천만 번이지만, 1000건씩 모아 쓰면 만 번이다.
 
-**트랜잭션도 청크 단위다.** 전체를 한 트랜잭션으로 묶으면 언두 로그가 감당이 안 되고 롤백도 오래 걸린다. 이 부분은 [벌크 삽입에 관한 글](/posts/ConnectionLeak-OOM/)에 정리한 내용과 같다.
+**트랜잭션도 청크 단위다.** 전체를 한 트랜잭션으로 묶으면 언두 로그(Undo Log, 변경 전 데이터 기록)가 감당이 안 되고 롤백도 오래 걸린다. 이 부분은 [벌크 삽입에 관한 글](/posts/ConnectionLeak-OOM/)에 정리한 내용과 같다.
 
 ### 6.3 청크 크기 정하기
 

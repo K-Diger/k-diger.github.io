@@ -29,7 +29,7 @@ series_order: 3
 
 ## 배경
 
-Helm을 처음 쓸 때는 `helm install`만 하면 되니까 편했다. 문제는 차트를 직접 만들기 시작하면서였다.
+Helm(매니페스트를 템플릿과 값으로 묶어 배포하는 도구)을 처음 쓸 때는 `helm install`만 하면 되니까 편했다. 문제는 차트를 직접 만들기 시작하면서였다.
 
 - `{{ }}` 안에 들어가는 `.Values`, `.Release`, `.Chart`는 어디서 오는 것인가?
 - `nindent`와 `indent`는 왜 둘 다 있는가? 왜 자꾸 들여쓰기가 깨지는가?
@@ -317,7 +317,7 @@ metadata:
 
 서비스마다 차트를 따로 만들었다고 하자. 백엔드 여섯 개, 프론트엔드 두 개, 배치 하나면 차트가 아홉 개다.
 
-공통 라벨 정의를 아홉 번 복사하면 어떻게 되는가. **하나를 고칠 때 아홉 개를 다 고쳐야 하고, 한 개를 빠뜨리면 그 서비스만 라벨이 달라진다.** 라벨이 다르면 Service selector, NetworkPolicy, 모니터링 쿼리가 전부 어긋난다.
+공통 라벨 정의를 아홉 번 복사하면 어떻게 되는가. **하나를 고칠 때 아홉 개를 다 고쳐야 하고, 한 개를 빠뜨리면 그 서비스만 라벨이 달라진다.** 라벨이 다르면 Service selector, NetworkPolicy(Pod 사이 통신을 라벨과 포트로 허용하거나 막는 리소스), 모니터링 쿼리가 전부 어긋난다.
 
 ### 3.2 라이브러리 차트가 무엇인가
 
@@ -381,7 +381,7 @@ team: {{ .Values.global.team | default "mis" }}
 
 `trunc 63`이 반복해서 나오는 이유가 있다. **쿠버네티스 라벨 값과 대부분의 이름 필드가 63자 제한이다.** 릴리스 이름이 길면 잘려야 하고, 자른 뒤 끝에 `-`가 남으면 유효하지 않은 이름이 되므로 `trimSuffix "-"`가 뒤따른다.
 
-네 번째는 게이트웨이 정책에 쓰는 CORS 설정 블록이다. 이건 4장에서 다룬다.
+네 번째는 게이트웨이 정책에 쓰는 CORS(Cross-Origin Resource Sharing, 다른 출처 API 호출 허용 규칙) 설정 블록이다. 이건 4장에서 다룬다.
 
 ### 3.4 라이브러리 차트를 쓸 때 걸린 것
 
@@ -446,7 +446,7 @@ image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Va
 
 ### 4.2 standalone 차트에도 global stub을 둔다
 
-차트를 각각 독립된 ArgoCD Application으로 배포하면 부모 차트가 없다. 그러면 `.Values.global`이 존재하지 않아서 `helm lint` 단계에서 nil 참조로 실패한다.
+차트를 각각 독립된 ArgoCD(Git과 클러스터 상태를 맞춰 주는 GitOps 도구) Application으로 배포하면 부모 차트가 없다. 그러면 `.Values.global`이 존재하지 않아서 `helm lint` 단계에서 nil 참조로 실패한다.
 
 그래서 각 차트의 `values.yaml`에 **비어 있는 global 블록**을 둔다.
 
@@ -471,7 +471,7 @@ global:
     endpoint: ""
 ```
 
-여기에 보안 기본값을 함께 넣어둔 이유가 있다. **부모가 주입을 빠뜨려도 안전한 쪽으로 렌더링된다.** 관측성 설정은 반대로 `enabled: false`와 빈 endpoint를 기본으로 둔다. 새 환경에서 override를 빠뜨렸을 때 `localhost`로 데이터를 보내 조용히 유실되는 것을 막기 위해서다.
+여기에 보안 기본값을 함께 넣어둔 이유가 있다. **부모가 주입을 빠뜨려도 안전한 쪽으로 렌더링된다.** 관측성(Observability, 외부 데이터로 내부 상태를 알아내는 정도) 설정은 반대로 `enabled: false`와 빈 endpoint를 기본으로 둔다. 새 환경에서 override를 빠뜨렸을 때 `localhost`로 데이터를 보내 조용히 유실되는 것을 막기 위해서다.
 
 기본값을 정할 때의 기준을 하나로 정리하면 이렇다. **빠뜨렸을 때 조용히 잘못되는 쪽이 아니라, 눈에 띄게 안 되는 쪽을 기본값으로 둔다.**
 
@@ -588,13 +588,13 @@ helm template "$chart" -f "$chart/values-$env.yaml" \
       -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 ```
 
-`-schema-location`을 두 개 준 이유가 있다. 첫 번째는 쿠버네티스 기본 리소스용이고, 두 번째는 **CRD로 추가된 리소스용**이다. Gateway API의 `HTTPRoute`나 ArgoCD의 `Application`은 쿠버네티스 기본 스키마에 없으므로 별도 저장소에서 가져와야 한다.
+`-schema-location`을 두 개 준 이유가 있다. 첫 번째는 쿠버네티스 기본 리소스용이고, 두 번째는 **CRD(CustomResourceDefinition, 쿠버네티스에 새 리소스 종류를 추가하는 정의)로 추가된 리소스용**이다. Gateway API(Ingress를 대체하는 쿠버네티스 표준 라우팅 API)의 `HTTPRoute`나 ArgoCD의 `Application`은 쿠버네티스 기본 스키마에 없으므로 별도 저장소에서 가져와야 한다.
 
 `-strict`는 스키마에 없는 필드를 에러로 만든다. 이게 없으면 필드명 오타가 그냥 통과한다.
 
 ### 6.3 정책 엔진으로 미리 재현하기
 
-여기까지 통과해도 클러스터의 admission 정책에서 막힐 수 있다. 그러면 배포가 중간에 멈춘다.
+여기까지 통과해도 클러스터의 admission(저장 직전에 요청을 검사하거나 바꾸는 단계) 정책에서 막힐 수 있다. 그러면 배포가 중간에 멈춘다.
 
 그래서 렌더링 결과를 **정책 엔진으로 로컬에서 먼저 검사**한다.
 
@@ -608,7 +608,7 @@ admission에서 막히는 상황을 커밋 단계로 당겨오는 것이다. 배
 
 ### 6.4 차트 사이의 참조 정합성
 
-차트를 서비스별로 쪼개면 새 문제가 생긴다. **A 차트가 만드는 Service를 B 차트의 HTTPRoute가 참조하는데, 그 이름이 어긋나도 각 차트는 따로 렌더링해서 통과한다.**
+차트를 서비스별로 쪼개면 새 문제가 생긴다. **A 차트가 만드는 Service를 B 차트의 HTTPRoute(HTTP Route, 요청을 어느 Service로 보낼지 정하는 Gateway API 리소스)가 참조하는데, 그 이름이 어긋나도 각 차트는 따로 렌더링해서 통과한다.**
 
 ```bash
 # HTTPRoute의 backendRefs가 실제 Service 이름과 맞는지
@@ -691,7 +691,7 @@ metadata:
   annotations: {}
 ```
 
-**API 서버는 빈 map을 저장하지 않는다.** 그래서 적용한 뒤 다시 읽으면 `annotations` 필드 자체가 없다. GitOps 도구는 "git에는 있는데 클러스터에는 없다"고 판단하고 계속 동기화를 시도한다.
+**API 서버는 빈 map을 저장하지 않는다.** 그래서 적용한 뒤 다시 읽으면 `annotations` 필드 자체가 없다. GitOps(Git에 선언한 상태를 클러스터가 따라가게 하는 운영 방식) 도구는 "git에는 있는데 클러스터에는 없다"고 판단하고 계속 동기화를 시도한다.
 
 증상은 이렇다. 동기화가 끝났다고 나왔다가 잠시 뒤 다시 `OutOfSync`가 된다. 무한 반복한다.
 

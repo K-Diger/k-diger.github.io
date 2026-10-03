@@ -37,7 +37,7 @@ series_order: 10
 
 CKS 커리큘럼을 훑고 나서도 정리가 안 되는 부분이 있었다. 배우는 항목은 많은데 그것들이 서로 어떤 관계인지가 안 보였다.
 
-`securityContext`를 쓰면 Pod Security Admission은 왜 또 필요한가? PSA가 있는데 Kyverno는 왜 또 붙이는가? Kyverno가 막아주는데 Falco는 무엇을 더 보는가? kube-bench는 그것들과 어디가 다른가?
+`securityContext`를 쓰면 Pod Security Admission(네임스페이스 라벨로 Pod 보안 기준을 강제하는 기능)은 왜 또 필요한가? PSA가 있는데 Kyverno(YAML로 쓰는 쿠버네티스 정책 엔진)는 왜 또 붙이는가? Kyverno가 막아주는데 Falco(시스템 콜을 감시하는 런타임 보안 도구)는 무엇을 더 보는가? kube-bench(CIS 기준 쿠버네티스 보안 점검 도구)는 그것들과 어디가 다른가?
 
 각 도구의 문서를 따로 읽으면 답이 안 나온다. **각 도구가 시간축의 어느 지점에서 동작하는지**를 놓고 봐야 정리가 됐다. 그 관점으로 다시 정리하고, 실제 클러스터에 적용하면서 겪은 것들을 덧붙였다.
 
@@ -66,9 +66,9 @@ flowchart LR
 
 이 표에서 앞의 질문 몇 개가 바로 풀린다.
 
-**Kyverno가 있는데 Falco는 왜 필요한가.** Kyverno는 요청 시점만 본다. `privileged: false`로 통과한 컨테이너가 실행 중에 `/etc/shadow`를 읽는 것은 admission이 알 수 없다. 그 시점의 시스템 콜을 보는 것이 Falco다.
+**Kyverno가 있는데 Falco는 왜 필요한가.** Kyverno는 요청 시점만 본다. `privileged: false`로 통과한 컨테이너가 실행 중에 `/etc/shadow`를 읽는 것은 admission(저장 직전에 요청을 검사하거나 바꾸는 단계)이 알 수 없다. 그 시점의 시스템 콜을 보는 것이 Falco다.
 
-**Kyverno가 있는데 kube-bench는 왜 필요한가.** Kyverno는 API 서버를 통과하는 요청만 본다. `kube-apiserver`가 `--anonymous-auth=true`로 떠 있거나 kubelet 설정 파일 권한이 `0777`인 것은 요청이 아니라 **호스트의 설정 상태**다. admission 웹훅에는 애초에 보이지 않는다.
+**Kyverno가 있는데 kube-bench는 왜 필요한가.** Kyverno는 API 서버를 통과하는 요청만 본다. `kube-apiserver`가 `--anonymous-auth=true`로 떠 있거나 kubelet(각 노드에서 컨테이너를 실행하고 상태를 보고하는 에이전트) 설정 파일 권한이 `0777`인 것은 요청이 아니라 **호스트의 설정 상태**다. admission 웹훅에는 애초에 보이지 않는다.
 
 **securityContext와 PSA는 무엇이 다른가.** `securityContext`는 내가 쓰는 것이고 PSA는 내가 쓴 것을 검사하는 것이다. `securityContext`를 안 써도 Pod는 뜬다. PSA는 그것을 안 쓴 Pod를 거부한다.
 
@@ -92,13 +92,13 @@ flowchart LR
     VA --> ETCD["etcd 저장"]
 ```
 
-Mutating이 Validating보다 먼저다. 사이드카를 주입하거나 기본값을 채워 넣는 웹훅이 앞에서 동작하고, 그 결과물을 검사하는 웹훅이 뒤에서 동작한다. 순서가 반대였다면 주입된 사이드카를 검사할 방법이 없다.
+Mutating이 Validating보다 먼저다. 사이드카(Sidecar, 애플리케이션 옆에 붙는 보조 컨테이너)를 주입하거나 기본값을 채워 넣는 웹훅이 앞에서 동작하고, 그 결과물을 검사하는 웹훅이 뒤에서 동작한다. 순서가 반대였다면 주입된 사이드카를 검사할 방법이 없다.
 
-RBAC이 admission보다 앞에 있다는 점도 중요하다. **권한이 없으면 admission까지 오지도 않는다.** 정책 엔진으로 막는 것보다 애초에 권한을 주지 않는 편이 언제나 더 강하다.
+RBAC(Role-Based Access Control, 역할 기반 접근 제어)이 admission보다 앞에 있다는 점도 중요하다. **권한이 없으면 admission까지 오지도 않는다.** 정책 엔진으로 막는 것보다 애초에 권한을 주지 않는 편이 언제나 더 강하다.
 
 ### 2.2 첫 겹: Pod Security Admission
 
-Kubernetes 1.25에서 PodSecurityPolicy가 제거되고 그 자리를 대신한 것이 PSA다. 내장 admission 컨트롤러라 별도 설치가 없다.
+Kubernetes 1.25에서 PodSecurityPolicy(1.25에서 제거된 옛 Pod 보안 정책)가 제거되고 그 자리를 대신한 것이 PSA다. 내장 admission 컨트롤러라 별도 설치가 없다.
 
 세 가지 표준이 있다.
 
@@ -191,7 +191,7 @@ capabilities:
 
 PSA로 안 되는 것이 있다. PSA는 **Pod 보안 표준이라는 고정된 규칙 집합**만 검사한다. 조직이 정한 규칙, 예를 들어 "이미지는 사내 레지스트리에서만", "라벨 세 개는 필수"는 PSA의 대상이 아니다.
 
-그 자리를 채우는 것이 정책 엔진이다. Kyverno를 쓰고 있고, 예전에는 OPA Gatekeeper였다. 바꾼 이유는 정책을 Rego라는 별도 언어로 쓰지 않고 YAML로 쓴다는 점이 컸다. 팀원이 읽고 고칠 수 있어야 정책이 유지된다.
+그 자리를 채우는 것이 정책 엔진이다. Kyverno를 쓰고 있고, 예전에는 OPA(Open Policy Agent, Rego로 정책을 쓰는 범용 정책 엔진) Gatekeeper였다. 바꾼 이유는 정책을 Rego라는 별도 언어로 쓰지 않고 YAML로 쓴다는 점이 컸다. 팀원이 읽고 고칠 수 있어야 정책이 유지된다.
 
 운영 중인 정책을 역할별로 나누면 이렇다.
 
@@ -318,7 +318,7 @@ spec:
 
 **기존 Pod는 통과하고 새 Pod만 막힌다.** admission은 요청 시점에만 동작하므로, 정책을 `Enforce`로 올려도 이미 떠 있는 Pod는 그대로 산다. 문제는 그다음 롤아웃이다. 노드를 재부팅하거나 이미지를 올리는 순간 새 Pod가 admission에서 막히고, 그때는 이미 기존 Pod가 종료된 뒤다.
 
-그래서 `Enforce` 전환 PR은 머지 전에 **현재 실행 중인 워크로드가 그 정책을 통과하는지** 확인해야 한다. 인프라 DaemonSet이 특히 위험하다. 노드마다 하나씩 떠 있는데 전부 동시에 막힌다.
+그래서 `Enforce` 전환 PR은 머지 전에 **현재 실행 중인 워크로드가 그 정책을 통과하는지** 확인해야 한다. 인프라 DaemonSet(노드마다 Pod를 하나씩 띄우는 워크로드)이 특히 위험하다. 노드마다 하나씩 떠 있는데 전부 동시에 막힌다.
 
 ```bash
 # 정책을 로컬에서 렌더된 매니페스트에 적용해본다
@@ -335,7 +335,7 @@ kubectl get policyreport -A -o json \
 
 여기서 `resourceFilters`를 푸는 선택은 하지 않았다. 풀면 모든 정책이 시스템 namespace의 admission까지 처리하게 되어 위험과 오버헤드가 함께 올라간다. 대상 리소스를 부트스트랩 쪽으로 옮기는 편이 맞다.
 
-**Server-Side Apply와 정책 rule 제거가 충돌한다.** ArgoCD가 `ServerSideApply=true`로 동기화하는 환경에서, 정책의 `spec.rules` 리스트에서 rule 하나를 지우고 머지했는데 클러스터에는 그 rule이 남아 있었다. SSA가 리스트를 병합하면서 제거된 항목을 남긴 것이다.
+**Server-Side Apply와 정책 rule 제거가 충돌한다.** ArgoCD(Git과 클러스터 상태를 맞춰 주는 GitOps 도구)가 `ServerSideApply=true`로 동기화하는 환경에서, 정책의 `spec.rules` 리스트에서 rule 하나를 지우고 머지했는데 클러스터에는 그 rule이 남아 있었다. SSA가 리스트를 병합하면서 제거된 항목을 남긴 것이다.
 
 증상이 특이하다. **git에 없는 내용을 참조하는 에러가 난다.** 이럴 때는 `Replace=true` 동기화 옵션으로 전체 PUT을 강제하거나 Application을 재생성한다.
 
@@ -345,7 +345,7 @@ kubectl get policyreport -A -o json \
 
 ### 2.7 Kyverno 없이 되는 것도 있다
 
-Kubernetes 1.30부터 `ValidatingAdmissionPolicy`가 정식(GA) 기능이 됐다. CEL 표현식으로 정책을 쓰고, 별도 웹훅 파드 없이 API 서버 안에서 평가한다.
+Kubernetes 1.30부터 `ValidatingAdmissionPolicy`가 정식(GA) 기능이 됐다. CEL(Common Expression Language, 정책을 짧은 식으로 쓰는 표현 언어) 표현식으로 정책을 쓰고, 별도 웹훅 파드 없이 API 서버 안에서 평가한다.
 
 ```yaml
 apiVersion: admissionregistration.k8s.io/v1
@@ -377,7 +377,7 @@ spec:
 
 admission을 통과한 컨테이너 안에서 무슨 일이 벌어지는지는 admission이 알 수 없다. 그 자리를 보는 것이 런타임 탐지다.
 
-Falco는 커널에서 시스템 콜을 관찰한다. eBPF 프로브나 커널 모듈을 통해 `open`, `execve`, `connect` 같은 호출을 실시간으로 받아 규칙과 대조한다.
+Falco는 커널에서 시스템 콜을 관찰한다. eBPF(extended Berkeley Packet Filter, 커널 안에서 작은 프로그램을 안전하게 실행하는 기술) 프로브나 커널 모듈을 통해 `open`, `execve`, `connect` 같은 호출을 실시간으로 받아 규칙과 대조한다.
 
 ```yaml
 - rule: Read sensitive file untrusted
@@ -423,7 +423,7 @@ CIS Kubernetes Benchmark는 클러스터 구성 요소의 설정을 항목별로
 
 kube-bench는 이 점검을 자동화한 도구다. 노드에 접속해서 파일과 프로세스를 직접 읽어야 하므로 실행 방식에 제약이 붙는다.
 
-Control Plane 노드를 점검하는 CronJob을 이렇게 구성했다.
+Control Plane(클러스터 상태를 결정하고 설정을 내려보내는 관리 계층) 노드를 점검하는 CronJob을 이렇게 구성했다.
 
 ```yaml
 apiVersion: batch/v1
@@ -479,7 +479,7 @@ spec:
 
 **`automountServiceAccountToken: false`를 명시한다.** kube-bench의 노드 점검은 API 서버 호출이 필요 없다. 토큰을 마운트하지 않으면 컨테이너가 장악되어도 API 서버로 갈 자격 증명이 없다.
 
-**`policies` 타겟은 뺐다.** 이 타겟은 API 조회가 필요해서 읽기 전용 ServiceAccount와 토큰 마운트가 함께 와야 한다. 대부분 `[MANUAL]` 판정 항목이라 자동화 가치가 낮아서, 필요한 권한을 붙이는 대신 제외했다.
+**`policies` 타겟은 뺐다.** 이 타겟은 API 조회가 필요해서 읽기 전용 ServiceAccount(Pod가 자신을 증명할 때 쓰는 계정)와 토큰 마운트가 함께 와야 한다. 대부분 `[MANUAL]` 판정 항목이라 자동화 가치가 낮아서, 필요한 권한을 붙이는 대신 제외했다.
 
 **결과는 표준 출력으로 남기고 로그 수집기가 가져간다.** 별도 저장소나 API를 만들지 않고 기존 로그 파이프라인을 재사용한다. 점검 도구 하나 때문에 새 컴포넌트를 늘리지 않는다.
 
@@ -506,7 +506,7 @@ kube-bench 결과는 `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]`로 나온다. 처음
 
 가장 효과가 확실한 조치는 이미지에 들어 있는 것을 줄이는 것이다.
 
-베이스 이미지를 `openjdk:17-jdk`(약 340MB)에서 `eclipse-temurin:17-jre-alpine`(약 80MB)으로 바꾸면서 크기가 76% 줄었다. 줄어든 것은 크기만이 아니다. **이미지에 들어 있는 패키지 수가 줄면 그 패키지들의 CVE도 함께 사라진다.** JDK 대신 JRE를 쓰면 컴파일러와 개발 도구가 통째로 빠지고, alpine 기반이면 배포판 패키지 수가 크게 준다.
+베이스 이미지를 `openjdk:17-jdk`(약 340MB)에서 `eclipse-temurin:17-jre-alpine`(약 80MB)으로 바꾸면서 크기가 76% 줄었다. 줄어든 것은 크기만이 아니다. **이미지에 들어 있는 패키지 수가 줄면 그 패키지들의 CVE(Common Vulnerabilities and Exposures, 공개 취약점 식별 번호)도 함께 사라진다.** JDK 대신 JRE를 쓰면 컴파일러와 개발 도구가 통째로 빠지고, alpine 기반이면 배포판 패키지 수가 크게 준다.
 
 부수 효과도 있다. 노드 디스크 사용량과 이미지 pull 전송량이 줄어 롤아웃이 빨라진다.
 
@@ -544,11 +544,11 @@ kube-bench 결과는 `[PASS]`, `[FAIL]`, `[WARN]`, `[INFO]`로 나온다. 처음
 
 **첫째, 무엇이 돌고 있는지 알 수 없다.** 운영 중인 이미지가 어느 커밋에서 나온 것인지 추적할 방법이 없으면 장애 시 되돌릴 지점을 특정하지 못한다.
 
-**둘째, GitOps에서 drift 추적이 안 된다.** git의 선언과 클러스터의 실제 상태를 비교하는 것이 GitOps인데, 태그가 `latest`면 양쪽 문자열이 같아도 실제 이미지가 다를 수 있다. 비교가 무의미해진다.
+**둘째, GitOps(Git에 선언한 상태를 클러스터가 따라가게 하는 운영 방식)에서 drift 추적이 안 된다.** git의 선언과 클러스터의 실제 상태를 비교하는 것이 GitOps인데, 태그가 `latest`면 양쪽 문자열이 같아도 실제 이미지가 다를 수 있다. 비교가 무의미해진다.
 
 ### 5.4 취약점 통보 경로 만들기
 
-Trivy Operator를 클러스터에 두면 실행 중인 워크로드의 이미지를 주기적으로 스캔해 `VulnerabilityReport` 커스텀 리소스로 남긴다.
+Trivy(이미지 취약점 스캐너) Operator를 클러스터에 두면 실행 중인 워크로드의 이미지를 주기적으로 스캔해 `VulnerabilityReport` 커스텀 리소스로 남긴다.
 
 ```bash
 # 워크로드별 취약점 요약
@@ -601,7 +601,7 @@ API를 호출해야 하는 워크로드만 전용 ServiceAccount를 만들고 �
 
 ### 6.3 NetworkPolicy는 default-deny부터
 
-NetworkPolicy가 없는 namespace는 모든 Pod가 모든 Pod와 통신할 수 있다. 하나가 뚫리면 거기서 다른 모든 것으로 갈 수 있다.
+NetworkPolicy(Pod 사이 통신을 라벨과 포트로 허용하거나 막는 리소스)가 없는 namespace는 모든 Pod가 모든 Pod와 통신할 수 있다. 하나가 뚫리면 거기서 다른 모든 것으로 갈 수 있다.
 
 기본을 막고 필요한 것만 여는 순서로 간다.
 
@@ -642,7 +642,7 @@ spec:
           port: 53
 ```
 
-**NetworkPolicy는 CNI가 구현해야 동작한다.** 이 리소스를 만들어도 CNI가 지원하지 않으면 아무 일도 일어나지 않는다. 에러도 나지 않는다. 적용했다고 믿고 넘어가는 것이 가장 위험하므로, 실제로 막히는지 확인해야 한다.
+**NetworkPolicy는 CNI(Container Network Interface, Pod 네트워크를 붙이는 플러그인 규격)가 구현해야 동작한다.** 이 리소스를 만들어도 CNI가 지원하지 않으면 아무 일도 일어나지 않는다. 에러도 나지 않는다. 적용했다고 믿고 넘어가는 것이 가장 위험하므로, 실제로 막히는지 확인해야 한다.
 
 ```bash
 # 임시 Pod에서 차단 대상으로 접속을 시도해본다
@@ -654,7 +654,7 @@ kubectl run netcheck --rm -it --image=busybox --restart=Never -n app-namespace -
 
 Kubernetes Secret은 기본적으로 base64 인코딩일 뿐 암호화가 아니다. 공식 문서가 명시한다.
 
-[공식 문서](https://kubernetes.io/docs/concepts/configuration/secret/)가 명시하는 그대로다. Secret은 기본 설정에서 API 서버의 데이터 저장소인 etcd에 **암호화되지 않은 상태로** 저장된다.
+[공식 문서](https://kubernetes.io/docs/concepts/configuration/secret/)가 명시하는 그대로다. Secret은 기본 설정에서 API 서버의 데이터 저장소인 etcd(쿠버네티스 상태를 저장하는 분산 키-값 저장소)에 **암호화되지 않은 상태로** 저장된다.
 
 그래서 세 가지가 함께 필요하다.
 

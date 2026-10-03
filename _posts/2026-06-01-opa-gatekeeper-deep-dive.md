@@ -12,7 +12,7 @@ series_order: 9
 
 ## 참고자료
 
-- OPA
+- OPA(Open Policy Agent, Rego로 정책을 쓰는 범용 정책 엔진)
   - [OPA Introduction](https://www.openpolicyagent.org/docs/latest/)
   - [Rego Policy Language](https://www.openpolicyagent.org/docs/latest/policy-language/)
   - [OPA Playground](https://play.openpolicyagent.org/)
@@ -65,7 +65,7 @@ OPA(오-파)는 오픈소스 범용 정책 엔진으로, 스택 전반에 걸쳐
 
 OPA는 정책을 코드로 명세할 수 있는 고수준 선언형 언어와, 소프트웨어에서 정책 결정을 분리할 수 있는 간단한 API를 제공한다.
 
-OPA는 CNCF Graduated 프로젝트다. Kubernetes뿐 아니라 Terraform, Envoy, CI/CD 파이프라인, 마이크로서비스 인가 등 다양한 계층에서 동일한 정책 엔진을 사용할 수 있다는 점이 핵심 가치다.
+OPA는 CNCF Graduated 프로젝트다. Kubernetes뿐 아니라 Terraform, Envoy(고성능 L4/L7 프록시), CI/CD 파이프라인, 마이크로서비스 인가 등 다양한 계층에서 동일한 정책 엔진을 사용할 수 있다는 점이 핵심 가치다.
 
 ### 1.2 OPA 동작 구조
 
@@ -353,9 +353,9 @@ package k8srequiredlabels
 
 ### 3.1 Gatekeeper란 무엇인가
 
-Gatekeeper는 OPA로 실행되는 CRD 기반 정책을 적용하는 validating 및 mutating webhook이다.
+Gatekeeper는 OPA로 실행되는 CRD(CustomResourceDefinition, 쿠버네티스에 새 리소스 종류를 추가하는 정의) 기반 정책을 적용하는 validating 및 mutating webhook이다.
 
-Gatekeeper는 OPA를 Kubernetes에 네이티브하게 통합하는 프로젝트다. 단순히 OPA를 사이드카로 배포하는 것과 비교하면 다음과 같은 차이가 있다.
+Gatekeeper는 OPA를 Kubernetes에 네이티브하게 통합하는 프로젝트다. 단순히 OPA를 사이드카(Sidecar, 애플리케이션 옆에 붙는 보조 컨테이너)로 배포하는 것과 비교하면 다음과 같은 차이가 있다.
 
 ### 3.2 Gatekeeper vs OPA Sidecar
 
@@ -571,7 +571,7 @@ Rego에서 input.review, input.parameters에 접근할 수 있다.
 | `input.parameters` | Constraint에서 전달된 파라미터 | `input.parameters.labels` |
 | `data.inventory` | Config로 동기화된 클러스터 리소스 | `data.inventory.namespace[ns][apiVersion][kind][name]` |
 
-`data.inventory`는 클러스터의 기존 리소스를 정책 평가 시 참조할 수 있게 해준다. 예를 들어 "같은 이름의 Ingress가 이미 존재하는가?"를 검사할 수 있다. 이를 사용하려면 Config 리소스로 동기화할 리소스 종류를 먼저 지정해야 한다.
+`data.inventory`는 클러스터의 기존 리소스를 정책 평가 시 참조할 수 있게 해준다. 예를 들어 "같은 이름의 Ingress(외부 HTTP 요청을 Service로 보내는 옛 표준 리소스)가 이미 존재하는가?"를 검사할 수 있다. 이를 사용하려면 Config 리소스로 동기화할 리소스 종류를 먼저 지정해야 한다.
 
 ```yaml
 apiVersion: config.gatekeeper.sh/v1alpha1
@@ -661,7 +661,7 @@ Rego v1에서 달라진 주요 문법:
 
 ### 5.3 CEL 엔진 지원
 
-CEL 엔진 지원(K8sNativeValidation).
+CEL(Common Expression Language, 정책을 짧은 식으로 쓰는 표현 언어) 엔진 지원(K8sNativeValidation).
 
 Gatekeeper는 Rego 외에도 K8s 네이티브 CEL(Common Expression Language)을 ConstraintTemplate의 엔진으로 사용할 수 있다. 이를 통해 간단한 정책은 Rego 없이도 작성할 수 있다.
 
@@ -1063,7 +1063,7 @@ status:
 
 **대규모 클러스터 운영 시 주의점:**
 
-- `--constraint-violations-limit`의 기본값은 20이지만, 프로덕션에서는 **최대 500까지 설정 가능**하다. 이 값은 etcd의 1.5MB 오브젝트 크기 제한에 직결된다. 위반 수가 많으면 Constraint 리소스 자체가 etcd 제한에 걸릴 수 있다.
+- `--constraint-violations-limit`의 기본값은 20이지만, 프로덕션에서는 **최대 500까지 설정 가능**하다. 이 값은 etcd(쿠버네티스 상태를 저장하는 분산 키-값 저장소)의 1.5MB 오브젝트 크기 제한에 직결된다. 위반 수가 많으면 Constraint 리소스 자체가 etcd 제한에 걸릴 수 있다.
 - `--audit-from-cache`를 true로 설정하면 API Server 부하를 크게 줄일 수 있지만, Config 리소스에서 sync를 설정한 리소스만 검사 대상이 된다.
 - `--audit-chunk-size`를 줄이면 메모리 사용량이 감소하지만 API 호출 횟수가 늘어난다.
 
@@ -1155,7 +1155,7 @@ kubectl delete mutatingwebhookconfiguration gatekeeper-mutating-webhook-configur
 
 ### 8.5 데드락 완화 전략
 
-모든 REST 서버는 SLO를 충족하기에 충분한 고가용성 인프라를 필요로 한다. 완화 방법: 네임스페이스 면제, 여러 장애 도메인에 걸친 다중 Pod, QPS 용량 확보.
+모든 REST 서버는 SLO(Service Level Objective, 서비스 신뢰성 목표치)를 충족하기에 충분한 고가용성 인프라를 필요로 한다. 완화 방법: 네임스페이스 면제, 여러 장애 도메인에 걸친 다중 Pod, QPS 용량 확보.
 
 | 전략 | 설명 |
 |------|------|
@@ -1175,7 +1175,7 @@ kubectl delete mutatingwebhookconfiguration gatekeeper-mutating-webhook-configur
 
 External Data는 정책 평가 중 Gatekeeper가 외부 데이터 소스와 연동할 수 있게 한다.
 
-클러스터 내부 데이터만으로는 충분하지 않은 경우가 있다. 예를 들어 이미지 취약점 스캔 결과, 외부 CMDB의 서버 정보, CVE 데이터베이스 등을 정책 평가 시 참조해야 할 수 있다.
+클러스터 내부 데이터만으로는 충분하지 않은 경우가 있다. 예를 들어 이미지 취약점 스캔 결과, 외부 CMDB의 서버 정보, CVE(Common Vulnerabilities and Exposures, 공개 취약점 식별 번호) 데이터베이스 등을 정책 평가 시 참조해야 할 수 있다.
 
 ### 9.2 Provider 리소스
 
@@ -1273,7 +1273,7 @@ Provider 서버는 다음 형식의 요청을 받고 응답해야 한다.
 
 Gatekeeper v3.11부터 외부 데이터 제공자에 대해 HTTPS 연결만 지원된다.
 
-보안상 Provider 서버는 반드시 TLS를 사용해야 한다. mTLS를 구성하려면 Gatekeeper의 클라이언트 인증서도 함께 설정해야 한다.
+보안상 Provider 서버는 반드시 TLS를 사용해야 한다. mTLS(mutual TLS, 양쪽이 서로 인증서를 확인하는 TLS)를 구성하려면 Gatekeeper의 클라이언트 인증서도 함께 설정해야 한다.
 
 ### 9.6 응답 캐싱 (v3.13+)
 
@@ -1289,7 +1289,7 @@ Gatekeeper v3.13부터 외부 데이터 응답을 캐싱할 수 있다. Provider
 
 Expansion은 워크로드 리소스가 생성할 리소스에 대해 constraint를 평가할 수 있게 한다.
 
-Deployment를 생성하면 실제로는 ReplicaSet을 거쳐 Pod가 생성된다. 하지만 admission webhook은 Deployment 생성 시점에만 호출되고, Pod 생성 시점에는 ReplicaSet 컨트롤러가 생성하므로 webhook이 다르게 동작할 수 있다. Expansion은 Deployment의 `spec.template`을 기반으로 "생성될 Pod"를 가상으로 만들어 미리 검증한다.
+Deployment를 생성하면 실제로는 ReplicaSet(Pod 복제본 개수를 유지하는 오브젝트)을 거쳐 Pod가 생성된다. 하지만 admission(저장 직전에 요청을 검사하거나 바꾸는 단계) webhook은 Deployment 생성 시점에만 호출되고, Pod 생성 시점에는 ReplicaSet 컨트롤러가 생성하므로 webhook이 다르게 동작할 수 있다. Expansion은 Deployment의 `spec.template`을 기반으로 "생성될 Pod"를 가상으로 만들어 미리 검증한다.
 
 ```mermaid
 flowchart LR
@@ -1447,12 +1447,12 @@ OPA(오-파)는 오픈소스 범용 정책 엔진으로, 스택 전반에 걸쳐
 - External Data Provider 연동이 필요한 경우
 - CNCF Graduated 프로젝트의 성숙도가 필요한 경우
 
-**Kyverno를 선택해야 하는 경우:**
+**Kyverno(YAML로 쓰는 쿠버네티스 정책 엔진)를 선택해야 하는 경우:**
 - Rego 학습 비용을 줄이고 싶은 경우
 - 리소스 자동 생성(Generate) 기능이 필요한 경우
 - YAML 중심 워크플로우를 선호하는 경우
 
-**ValidatingAdmissionPolicy를 선택해야 하는 경우:**
+**ValidatingAdmissionPolicy(Validating Admission Policy, CEL 식으로 요청을 검사하는 내장 정책)를 선택해야 하는 경우:**
 - 외부 컴포넌트 설치 없이 K8s 내장 기능만 사용하고 싶은 경우
 - 단순한 검증 정책만 필요한 경우
 - Mutation이나 Audit이 불필요한 경우
@@ -1693,12 +1693,12 @@ Gatekeeper는 OPA Constraint Framework 위에 구축되어 있다. Constraint Fr
 
 ### 16.1 설치 및 초기 설정
 
-- [ ] Gatekeeper Helm Chart 설치 (`helm install gatekeeper/gatekeeper`)
+- [ ] Gatekeeper Helm(매니페스트를 템플릿과 값으로 묶어 배포하는 도구) Chart 설치 (`helm install gatekeeper/gatekeeper`)
 - [ ] 네임스페이스 제외 설정 (`kube-system`, `gatekeeper-system` 등)
 - [ ] `failurePolicy` 결정 (기본 Ignore 권장)
 - [ ] replicas 수 설정 (프로덕션: 최소 3)
 - [ ] resource requests/limits 설정
-- [ ] PodDisruptionBudget 설정
+- [ ] PodDisruptionBudget(중단 중에도 유지할 최소 Pod 수) 설정
 
 ### 16.2 정책 개발
 
@@ -1735,7 +1735,7 @@ Gatekeeper는 OPA Constraint Framework 위에 구축되어 있다. Constraint Fr
 - [ ] gator CLI를 CI 파이프라인에 통합
 - [ ] PR 시점에 정책 위반 탐지
 - [ ] ConstraintTemplate 변경 시 자동 테스트
-- [ ] ArgoCD/Flux로 정책 GitOps 관리
+- [ ] ArgoCD(Git과 클러스터 상태를 맞춰 주는 GitOps 도구)/Flux로 정책 GitOps(Git에 선언한 상태를 클러스터가 따라가게 하는 운영 방식) 관리
 
 ### 16.7 정책 라이브러리
 

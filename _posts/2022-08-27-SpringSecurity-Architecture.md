@@ -68,7 +68,7 @@ Spring Security를 설정 파일 몇 줄로 붙여 쓰긴 했는데, 커스텀 �
 
 ## 2. 어느 지점에서 동작하는가
 
-첫 번째 질문이다. **Spring Security는 서블릿 필터다.** 그래서 디스패처 서블릿보다 앞에서 동작한다.
+첫 번째 질문이다. **Spring Security는 서블릿(Servlet, 웹 요청을 처리하는 Java 표준 컴포넌트) 필터다.** 그래서 디스패처 서블릿보다 앞에서 동작한다.
 
 ```mermaid
 flowchart LR
