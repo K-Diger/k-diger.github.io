@@ -5,7 +5,7 @@ permalink: /glossary/
 ---
 {%- comment -%} 글 본문의 점선 용어가 가리키는 사전. 분류별로 묶고 분류 안에서는 가나다/알파벳 순. {%- endcomment -%}
 {%- assign cats = "쿠버네티스,네트워크,서비스 메시,보안,관측성,데이터,JVM,AI" | split: "," -%}
-<p class="lede-text">글 본문에서 점선 밑줄이 그어진 용어를 누르면 이 사전의 정의가 뜬다. 일반 개발 용어(API, HTTP, JSON 등)는 넣지 않았다.</p>
+<p class="lede-text">글 본문에서 점선 밑줄이 그어진 용어를 누르면 이 사전의 정의가 뜬다. 약어는 풀네임과 이름이 붙은 이유를 함께 적었다. 일반 개발 용어(API, HTTP, JSON 등)는 넣지 않았다.</p>
 <nav class="glossary-jump" aria-label="분류 바로가기">
   {%- for c in cats %}<a href="#cat-{{ c | slugify: 'raw' }}">{{ c }}</a>{% endfor -%}
 </nav>
@@ -16,8 +16,8 @@ permalink: /glossary/
   <dl class="glossary-list">
     {%- for g in items %}
     <div id="{{ g.term | slugify: 'raw' | prepend: 'g-' }}">
-      <dt>{{ g.term }}{% if g.aka %} <span class="aka">{{ g.aka | join: ', ' }}</span>{% endif %}</dt>
-      <dd>{{ g.def }}</dd>
+      <dt>{{ g.term }}{% if g.full and g.full != g.term %} <span class="full">{{ g.full }}</span>{% endif %}</dt>
+      <dd>{{ g.def }}{% if g.why %}<span class="why">이름의 뜻. {{ g.why }}</span>{% endif %}{% if g.aka %}<span class="aka-line">다른 표기 {{ g.aka | join: ', ' }}</span>{% endif %}</dd>
     </div>
     {%- endfor %}
   </dl>

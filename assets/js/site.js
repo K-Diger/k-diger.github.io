@@ -754,8 +754,11 @@ async function initGlossary(article, body) {
     clearTimeout(hideTimer);
     if (current && current !== btn) current.setAttribute('aria-expanded', 'false');
     const g = data[+btn.dataset.idx];
+    // 풀네임 → 정의 → 이름의 뜻 순서. 이름이 왜 그렇게 붙었는지 알면 개념이 더 쉽게 붙는다.
     pop.innerHTML = `<p class="term-pop__head"><strong>${escapeHtml(g.t)}</strong><span>${escapeHtml(g.c)}</span></p>` +
+      (g.f && g.f !== g.t ? `<p class="term-pop__full">${escapeHtml(g.f)}</p>` : '') +
       `<p class="term-pop__def">${escapeHtml(g.d)}</p>` +
+      (g.w ? `<p class="term-pop__why"><span>이름의 뜻</span>${escapeHtml(g.w)}</p>` : '') +
       (page ? `<a class="term-pop__more" href="${page}#${encodeURIComponent(g.i)}">용어 사전에서 보기</a>` : '');
     pop.hidden = false;
     place(btn);
@@ -799,7 +802,8 @@ async function initGlossary(article, body) {
     used.forEach((id, idx) => {
       const g = data[idx];
       const div = document.createElement('div');
-      div.innerHTML = `<dt><a href="#${id}">${escapeHtml(g.t)}</a></dt><dd>${escapeHtml(g.d)}</dd>`;
+      div.innerHTML = `<dt><a href="#${id}">${escapeHtml(g.t)}</a>${g.f && g.f !== g.t ? ` <span class="full">${escapeHtml(g.f)}</span>` : ''}</dt>` +
+        `<dd>${escapeHtml(g.d)}${g.w ? `<span class="why">이름의 뜻. ${escapeHtml(g.w)}</span>` : ''}</dd>`;
       dl.append(div);
     });
     box.hidden = false;

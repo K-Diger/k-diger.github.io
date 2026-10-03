@@ -5,6 +5,6 @@ sitemap: false
 {%- comment -%} 본문 용어 표시용 데이터. 글을 처음 열 때 한 번 받아온다. i = 사전 페이지 앵커 {%- endcomment -%}
 [
 {%- for g in site.data.glossary %}
-  {"t": {{ g.term | jsonify }}, "a": {{ g.aka | default: empty | jsonify }}, "c": {{ g.cat | jsonify }}, "d": {{ g.def | jsonify }}, "i": {{ g.term | slugify: 'raw' | prepend: 'g-' | jsonify }}, "s": {{ g.scope | default: empty | jsonify }}}{% unless forloop.last %},{% endunless %}
+  {"t": {{ g.term | jsonify }}, "a": {{ g.aka | default: empty | jsonify }}, "c": {{ g.cat | jsonify }}, "d": {{ g.def | jsonify }}, "i": {{ g.term | slugify: 'raw' | prepend: 'g-' | jsonify }}, "s": {{ g.scope | default: empty | jsonify }}, "f": {{ g.full | default: "" | jsonify }}, "w": {{ g.why | default: "" | jsonify }}}{% unless forloop.last %},{% endunless %}
 {%- endfor %}
 ]

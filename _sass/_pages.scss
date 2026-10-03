@@ -620,7 +620,24 @@
   span { flex: none; font-size: 0.75rem; color: var(--ink-3); }
 }
 
+.term-pop__full {
+  margin: -2px 0 6px !important;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
 .term-pop__def { color: var(--ink); }
+
+// 이름의 뜻: 정의와 구분되게 위에 가는 선과 작은 라벨
+.term-pop__why {
+  margin-top: 8px !important;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+
+  span { display: block; margin-bottom: 2px; font-size: 0.6875rem; color: var(--ink-3); }
+}
 
 .term-pop__more {
   display: inline-block;
@@ -671,6 +688,8 @@
   dt { font-weight: 600; }
   dt a { color: var(--ink); text-decoration: none; }
   dd { margin: 2px 0 0; color: var(--ink-2); word-break: keep-all; }
+  .full { margin-left: 4px; font-weight: 400; font-size: 0.75rem; color: var(--ink-3); }
+  .why { display: block; margin-top: 3px; font-size: 0.75rem; color: var(--ink-3); }
 }
 
 // 시리즈 상자: 몇 편째인지, 전체 목차, 이전/다음 편
@@ -748,8 +767,10 @@
   > div { padding: 12px 0; border-bottom: 1px solid var(--rule); scroll-margin-top: 24px; }
   > div:target { background: var(--bg-2); }
   dt { font-weight: 600; }
-  .aka { margin-left: 6px; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 400; color: var(--ink-3); }
+  .full { margin-left: 6px; font-family: var(--font-sans); font-size: 0.8125rem; font-weight: 400; color: var(--ink-2); }
   dd { margin: 4px 0 0; color: var(--ink-2); word-break: keep-all; }
+  .why { display: block; margin-top: 6px; font-size: 0.9375rem; color: var(--ink-2); }
+  .aka-line { display: block; margin-top: 4px; font-family: var(--font-sans); font-size: 0.75rem; color: var(--ink-3); }
 }
 
 .series-index {
