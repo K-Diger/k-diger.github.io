@@ -1,5 +1,5 @@
 ---
-title: "인프라 역할별 Claude Code 플러그인 운영 (패키지 배포, 위험 명령 차단 훅, 지침 검증)"
+title: "[AI 11편] 인프라 역할별 Claude Code 플러그인 운영 (패키지 배포, 위험 명령 차단 훅, 지침 검증)"
 date: 2026-08-28
 categories: [AI]
 tags: [AI, Claude Code, Plugin, DevOps]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: false
 mermaid: true
+series: ai
+series_order: 11
 ---
 
 ## 참고자료

@@ -1,5 +1,5 @@
 ---
-title: "Claude Code 도구 호출 구조와 Hooks, 서브에이전트, 스킬 정리"
+title: "[AI 6편] Claude Code 도구 호출 구조와 Hooks, 서브에이전트, 스킬 정리"
 date: 2026-05-18
 categories: [AI]
 tags: [AI, ClaudeCode, Hooks, Agent]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: false
 mermaid: true
+series: ai
+series_order: 6
 ---
 
 ## 참고자료

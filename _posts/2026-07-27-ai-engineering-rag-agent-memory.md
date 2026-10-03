@@ -1,5 +1,5 @@
 ---
-title: "AI Engineering 6장 정리 (RAG 파이프라인, 에이전트, 메모리)"
+title: "[AI 3편] AI Engineering 6장 정리 (RAG 파이프라인, 에이전트, 메모리)"
 date: 2026-07-27
 categories: [AI]
 tags: [AI, RAG, Agent, LLM]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
+series: ai
+series_order: 3
 ---
 
 ## 참고자료

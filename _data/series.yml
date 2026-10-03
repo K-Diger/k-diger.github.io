@@ -1,0 +1,10 @@
+# 읽는 순서가 있는 글 묶음. 글 front matter에 series(키)와 series_order(순서)를 넣고, 제목 앞에 "[표시명 N편]"을 붙인다.
+kubernetes:
+  name: 쿠버네티스
+  desc: 오브젝트 개념에서 시작해 배포(Helm, ArgoCD), 네트워킹(Cilium, Istio), 보안, 운영 전환 순서로 읽는다.
+ai:
+  name: AI
+  desc: 신경망 원리와 프롬프트, RAG를 먼저 보고, Claude API와 MCP, Claude Code를 거쳐 실무 에이전트 구축 순서로 읽는다.
+observability:
+  name: 관측성
+  desc: 관측 가능성 개념과 OpenTelemetry 시그널, 자동 계측 원리를 보고 LGTM 스택 구축으로 넘어간다.

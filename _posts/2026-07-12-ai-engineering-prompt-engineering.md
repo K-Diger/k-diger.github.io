@@ -1,5 +1,5 @@
 ---
-title: "AI Engineering 1장, 5장 정리 (자기 지도 학습, 프롬프트 엔지니어링, 프롬프트 공격 방어)"
+title: "[AI 2편] AI Engineering 1장, 5장 정리 (자기 지도 학습, 프롬프트 엔지니어링, 프롬프트 공격 방어)"
 date: 2026-07-12
 categories: [AI]
 tags: [AI, LLM, PromptEngineering, Security]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: false
 mermaid: true
+series: ai
+series_order: 2
 ---
 
 ## 참고자료

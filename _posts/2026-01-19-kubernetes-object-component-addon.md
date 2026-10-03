@@ -1,6 +1,6 @@
 ---
 
-title: "쿠버네티스 오브젝트, 컴포넌트, 애드온 개념 정리"
+title: "[쿠버네티스 1편] 오브젝트, 컴포넌트, 애드온 개념 정리"
 date: 2026-01-19
 categories: [Kubernetes]
 tags: [Kubernetes, Controller, CRD]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: kubernetes
+series_order: 1
 ---
 
 ## 참고자료

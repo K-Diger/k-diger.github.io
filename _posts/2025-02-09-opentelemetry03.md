@@ -1,6 +1,6 @@
 ---
 
-title: "OpenTelemetry Java 자동 계측 동작 원리 (Java Agent, ByteBuddy)"
+title: "[관측성 3편] OpenTelemetry Java 자동 계측 동작 원리 (Java Agent, ByteBuddy)"
 date: 2025-02-09
 categories: [Observability]
 tags: [Observability, OpenTelemetry, JavaAgent, Bytecode]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: observability
+series_order: 3
 ---
 
 ## 참고자료

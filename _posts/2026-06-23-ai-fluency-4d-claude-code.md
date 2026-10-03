@@ -1,5 +1,5 @@
 ---
-title: "AI Fluency 4D 프레임워크와 LLM 오류 유형별 검증 방법"
+title: "[AI 8편] AI Fluency 4D 프레임워크와 LLM 오류 유형별 검증 방법"
 date: 2026-06-23
 categories: [AI]
 tags: [AI, ClaudeCode, LLM, Agent]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: false
 mermaid: true
+series: ai
+series_order: 8
 ---
 
 ## 참고자료

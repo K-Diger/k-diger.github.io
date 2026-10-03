@@ -1,0 +1,763 @@
+# 용어 사전. 글 본문에서 각 용어가 처음 나오는 곳에 점선 밑줄을 달고, 누르면(또는 마우스를 올리면) 정의를 보여 준다.
+# term: 화면에 보이는 대표 표기 / aka: 본문에서 같은 용어로 찾을 다른 표기 / cat: 분류 / def: 한두 문장 정의(다/이다 체)
+# scope: 이 분류(글 categories) 중 하나에 속한 글에서만 표시. 뜻이 겹치는 말(토큰: AI 토큰 vs 인증 토큰)에 쓴다. 없으면 모든 글
+# 일반 개발 용어(API, HTTP, JSON 등)는 넣지 않고, 각 글이 다루는 분야의 전문 용어만 넣는다.
+
+# ── 쿠버네티스 ──
+- term: 컨트롤 플레인
+  aka: [Control Plane, control plane]
+  cat: 쿠버네티스
+  def: "클러스터의 상태를 결정하고 관리하는 구성 요소 묶음이다. API 서버, etcd, 스케줄러, 컨트롤러 매니저가 여기에 속한다. 서비스 메시에서는 프록시에 설정을 내려보내는 쪽(예: istiod)을 가리킨다."
+- term: 데이터 플레인
+  aka: [Data Plane, data plane, 데이터플레인]
+  cat: 쿠버네티스
+  def: "실제 요청과 패킷을 처리하는 쪽이다. 컨트롤 플레인이 정한 설정대로 트래픽을 받아 전달한다. 서비스 메시에서는 Envoy나 ztunnel 같은 프록시가 데이터 플레인이다."
+- term: etcd
+  cat: 쿠버네티스
+  def: "쿠버네티스가 모든 오브젝트의 상태를 저장하는 분산 키-값 저장소다. Raft 합의 알고리즘으로 여러 노드에 같은 데이터를 유지한다."
+- term: kubelet
+  cat: 쿠버네티스
+  def: "각 노드에서 실행되는 에이전트다. API 서버에서 이 노드에 배정된 Pod 명세를 받아 컨테이너 런타임으로 컨테이너를 실행하고 상태를 보고한다."
+- term: kube-proxy
+  cat: 쿠버네티스
+  def: "Service의 가상 IP로 온 트래픽을 실제 Pod로 보내도록 노드의 iptables나 IPVS 규칙을 관리하는 컴포넌트다. Cilium 같은 eBPF 기반 CNI는 이 역할을 대체할 수 있다."
+- term: CRD
+  aka: [CustomResourceDefinition]
+  cat: 쿠버네티스
+  def: "쿠버네티스 API에 새로운 오브젝트 종류를 추가하는 정의다. 예를 들어 Istio의 VirtualService, ArgoCD의 Application이 CRD로 추가된 오브젝트다."
+- term: CRI
+  cat: 쿠버네티스
+  def: "kubelet이 컨테이너 런타임(containerd, CRI-O 등)과 통신하는 표준 인터페이스(Container Runtime Interface)다."
+- term: CNI
+  cat: 쿠버네티스
+  def: "Pod에 네트워크 인터페이스와 IP를 붙이고 Pod 사이 통신 경로를 만드는 플러그인 규격(Container Network Interface)이다. Cilium, Calico, Flannel이 CNI 구현체다."
+- term: DaemonSet
+  cat: 쿠버네티스
+  def: "클러스터의 모든 노드(또는 선택한 노드)마다 Pod를 하나씩 띄우는 워크로드다. 로그 수집기, CNI 에이전트, ztunnel처럼 노드마다 하나씩 필요한 것에 쓴다."
+- term: ReplicaSet
+  cat: 쿠버네티스
+  def: "지정한 개수의 Pod 복제본이 항상 떠 있도록 유지하는 오브젝트다. 보통 Deployment가 ReplicaSet을 만들고 관리한다."
+- term: ConfigMap
+  cat: 쿠버네티스
+  def: "설정 값을 Pod 밖에 저장해 두고 환경 변수나 파일로 주입하는 오브젝트다. 비밀 값은 Secret에 둔다."
+- term: ServiceAccount
+  cat: 쿠버네티스
+  def: "Pod 안의 프로세스가 쿠버네티스 API나 다른 서비스에 자신을 증명할 때 쓰는 계정이다. 사람 계정과 달리 네임스페이스에 속한다."
+- term: RBAC
+  cat: 쿠버네티스
+  def: "역할 기반 접근 제어(Role-Based Access Control)다. 어떤 주체가 어떤 리소스에 어떤 동작(get, create 등)을 할 수 있는지 Role과 RoleBinding으로 정한다."
+- term: ClusterIP
+  cat: 쿠버네티스
+  def: "클러스터 안에서만 접근할 수 있는 Service의 기본 타입이다. 고정된 가상 IP 하나로 여러 Pod에 트래픽을 나눠 보낸다."
+- term: NodePort
+  cat: 쿠버네티스
+  def: "모든 노드의 같은 포트(기본 30000~32767)로 들어온 트래픽을 Service로 보내는 타입이다. 클라우드 로드밸런서가 없는 온프레미스에서 외부 장비가 이 포트로 트래픽을 넘긴다."
+- term: LoadBalancer
+  cat: 쿠버네티스
+  def: "외부 로드밸런서를 자동으로 만들어 Service 앞에 붙이는 타입이다. 클라우드에서는 컨트롤러가 처리하지만 온프레미스에서는 MetalLB 같은 구현이 따로 필요하다."
+- term: EndpointSlice
+  cat: 쿠버네티스
+  def: "Service 뒤에 있는 실제 Pod IP와 포트 목록을 나눠 담는 오브젝트다. Endpoints를 대체해 대규모 클러스터에서 갱신 부하를 줄인다."
+- term: HPA
+  aka: [HorizontalPodAutoscaler]
+  cat: 쿠버네티스
+  def: "CPU 사용률 같은 지표를 보고 Pod 개수를 자동으로 늘리거나 줄이는 오브젝트(Horizontal Pod Autoscaler)다."
+- term: PDB
+  aka: [PodDisruptionBudget]
+  cat: 쿠버네티스
+  def: "노드 drain 같은 자발적 중단 중에도 최소 몇 개의 Pod가 살아 있어야 하는지 정하는 오브젝트(PodDisruptionBudget)다."
+- term: LimitRange
+  cat: 쿠버네티스
+  def: "네임스페이스 안 컨테이너의 CPU와 메모리 요청량, 제한량의 기본값과 범위를 정하는 오브젝트다."
+- term: ResourceQuota
+  cat: 쿠버네티스
+  def: "네임스페이스 전체가 쓸 수 있는 CPU, 메모리, 오브젝트 개수의 총량을 제한하는 오브젝트다."
+- term: Admission Controller
+  aka: [어드미션 컨트롤러, admission]
+  cat: 쿠버네티스
+  def: "API 서버가 요청을 저장하기 직전에 검사하거나 수정하는 단계다. Kyverno, OPA Gatekeeper가 이 단계에 웹훅으로 끼어들어 정책을 강제한다."
+- term: MutatingAdmissionWebhook
+  cat: 쿠버네티스
+  def: "오브젝트가 저장되기 전에 내용을 바꿀 수 있는 어드미션 웹훅이다. Istio 사이드카 주입이 이 방식으로 Pod에 컨테이너를 추가한다."
+- term: ValidatingAdmissionPolicy
+  cat: 쿠버네티스
+  def: "웹훅 서버 없이 CEL 표현식으로 요청을 검사하는 쿠버네티스 내장 정책 기능이다."
+- term: CEL
+  cat: 쿠버네티스
+  def: "Common Expression Language. 쿠버네티스 정책이나 검증 규칙을 짧은 식으로 쓰는 표현 언어다."
+- term: PSA
+  aka: [Pod Security Admission]
+  cat: 쿠버네티스
+  def: "Pod Security Admission. 네임스페이스 라벨로 privileged, baseline, restricted 세 단계 보안 기준을 강제하는 내장 기능이다. PodSecurityPolicy를 대체했다."
+- term: PodSecurityPolicy
+  cat: 쿠버네티스
+  def: "Pod 보안 설정을 제한하던 옛 기능이다. 쿠버네티스 1.25에서 제거되고 PSA로 대체됐다."
+- term: Helm
+  cat: 쿠버네티스
+  def: "쿠버네티스 매니페스트를 템플릿과 값(values)으로 묶어 패키지(차트)로 배포하는 도구다."
+- term: GitOps
+  cat: 쿠버네티스
+  def: "원하는 인프라 상태를 Git 저장소에 선언해 두고, 클러스터가 그 상태를 자동으로 따라가게 하는 운영 방식이다. ArgoCD가 대표 도구다."
+- term: ArgoCD
+  cat: 쿠버네티스
+  def: "Git 저장소의 매니페스트와 클러스터 상태를 계속 비교해 차이가 있으면 맞춰 주는 GitOps 도구다."
+- term: ApplicationSet
+  cat: 쿠버네티스
+  def: "ArgoCD에서 템플릿 하나로 여러 Application을 자동 생성하는 리소스다. 환경이나 클러스터마다 같은 구조의 앱을 반복 선언할 때 쓴다."
+- term: Finalizer
+  aka: [finalizer]
+  cat: 쿠버네티스
+  scope: [Kubernetes]
+  def: "오브젝트를 지울 때 컨트롤러가 정리 작업을 마칠 때까지 삭제를 멈춰 두는 표시다. 정리 담당 컨트롤러가 없어지면 오브젝트가 지워지지 않고 남는다."
+- term: Gateway API
+  cat: 쿠버네티스
+  def: "Ingress를 대체하는 쿠버네티스 표준 라우팅 API다. GatewayClass(인프라), Gateway(운영자), HTTPRoute(앱 개발자)로 역할을 나눠 설정한다."
+- term: HTTPRoute
+  cat: 쿠버네티스
+  def: "Gateway API에서 호스트와 경로 조건에 따라 요청을 어느 Service로 보낼지 정하는 리소스다."
+- term: Ingress
+  cat: 쿠버네티스
+  def: "클러스터 밖에서 들어오는 HTTP 요청을 경로나 호스트에 따라 Service로 보내는 옛 표준 리소스다. 세부 기능이 애노테이션에 섞여 Gateway API로 넘어가는 추세다."
+- term: DRA
+  aka: [Dynamic Resource Allocation]
+  cat: 쿠버네티스
+  def: "GPU 같은 특수 장치를 Pod에 할당하는 방식을 드라이버가 정할 수 있게 한 쿠버네티스 기능(Dynamic Resource Allocation)이다."
+- term: kind
+  cat: 쿠버네티스
+  scope: [Kubernetes]
+  def: "Docker 컨테이너를 노드처럼 써서 로컬에 쿠버네티스 클러스터를 띄우는 도구(Kubernetes IN Docker)다. 실험과 테스트에 쓴다."
+- term: IRSA
+  cat: 쿠버네티스
+  def: "IAM Roles for Service Accounts. EKS에서 쿠버네티스 ServiceAccount에 AWS IAM 역할을 연결해 Pod가 키 없이 AWS API를 호출하게 하는 방식이다."
+- term: EKS
+  cat: 쿠버네티스
+  def: "AWS가 컨트롤 플레인을 관리해 주는 쿠버네티스 서비스(Elastic Kubernetes Service)다."
+- term: MetalLB
+  cat: 쿠버네티스
+  def: "온프레미스 클러스터에서 LoadBalancer 타입 Service에 외부 IP를 붙여 주는 구현체다. ARP나 BGP로 IP를 광고한다."
+- term: Kyverno
+  cat: 쿠버네티스
+  def: "YAML로 정책을 작성해 어드미션 단계에서 쿠버네티스 리소스를 검사, 수정, 생성하는 정책 엔진이다."
+- term: OPA
+  aka: [Open Policy Agent]
+  cat: 쿠버네티스
+  def: "Open Policy Agent. Rego라는 언어로 정책을 쓰는 범용 정책 엔진이다. 쿠버네티스에서는 Gatekeeper를 통해 어드미션 정책으로 쓴다."
+
+# ── 네트워크 ──
+- term: eBPF
+  cat: 네트워크
+  def: "리눅스 커널 안에서 검증된 작은 프로그램을 안전하게 실행하는 기술이다. 커널을 고치거나 모듈을 넣지 않고도 패킷 처리, 관측, 보안 기능을 커널 수준에서 구현할 수 있다."
+- term: BPF
+  cat: 네트워크
+  def: "원래 패킷 필터링용으로 만든 커널 내 가상 머신(Berkeley Packet Filter)이다. 지금은 확장판인 eBPF를 가리키는 말로도 쓴다."
+- term: XDP
+  cat: 네트워크
+  def: "eXpress Data Path. 네트워크 카드 드라이버가 패킷을 받자마자 eBPF 프로그램으로 처리해 커널 네트워크 스택을 거치지 않고 버리거나 전달하는 기능이다."
+- term: iptables
+  cat: 네트워크
+  def: "리눅스 커널의 패킷 필터링과 주소 변환 규칙을 관리하는 도구다. 규칙이 많아지면 순차 비교 때문에 느려진다."
+- term: IPVS
+  cat: 네트워크
+  def: "리눅스 커널의 L4 로드밸런서(IP Virtual Server)다. 해시 테이블을 써서 규칙이 많아도 iptables보다 빠르다."
+- term: NAT
+  cat: 네트워크
+  def: "패킷의 출발지나 목적지 IP를 바꿔 쓰는 주소 변환이다. 출발지를 바꾸면 SNAT, 목적지를 바꾸면 DNAT다."
+- term: SNAT
+  cat: 네트워크
+  def: "패킷의 출발지 주소를 바꾸는 NAT다. Pod가 클러스터 밖으로 나갈 때 노드 IP로 바꾸는 masquerade가 여기에 속한다."
+- term: DNAT
+  cat: 네트워크
+  def: "패킷의 목적지 주소를 바꾸는 NAT다. Service IP로 온 요청을 실제 Pod IP로 바꾸는 것이 대표적이다."
+- term: Masquerade
+  aka: [masquerade, masquerading, 매스커레이드]
+  cat: 네트워크
+  def: "내부 주소에서 나가는 패킷의 출발지를 노드의 IP로 바꾸는 SNAT 방식이다. 응답이 같은 노드로 돌아오게 한다."
+- term: 오버레이 네트워크
+  aka: [오버레이, overlay]
+  cat: 네트워크
+  scope: [Kubernetes, Networking, ServiceMesh]
+  def: "실제 물리 네트워크 위에 패킷을 한 번 더 감싸(캡슐화) 가상의 네트워크를 만드는 방식이다. VXLAN, Geneve가 대표적이다."
+- term: 캡슐화
+  aka: [encapsulation]
+  cat: 네트워크
+  def: "원래 패킷을 다른 프로토콜 헤더로 한 번 더 감싸 보내는 것이다. 받는 쪽에서 바깥 헤더를 벗겨 원래 패킷을 꺼낸다."
+- term: VXLAN
+  cat: 네트워크
+  def: "L2 이더넷 프레임을 UDP 패킷 안에 감싸 L3 네트워크 너머로 보내는 오버레이 프로토콜이다."
+- term: Geneve
+  cat: 네트워크
+  def: "VXLAN과 비슷한 오버레이 캡슐화 프로토콜이다. 헤더에 확장 필드를 붙일 수 있어 메타데이터를 함께 실어 보낸다."
+- term: MTU
+  cat: 네트워크
+  def: "한 번에 보낼 수 있는 패킷의 최대 크기다. 캡슐화나 암호화 헤더가 붙으면 그만큼 MTU를 줄여야 패킷이 쪼개지지 않는다."
+- term: BGP
+  cat: 네트워크
+  def: "네트워크 사이에 \"어떤 IP 대역으로 가려면 나를 거쳐라\"는 경로 정보를 주고받는 라우팅 프로토콜이다."
+- term: ARP
+  cat: 네트워크
+  def: "같은 네트워크 안에서 IP 주소에 해당하는 MAC 주소를 알아내는 프로토콜이다."
+- term: CIDR
+  cat: 네트워크
+  def: "IP 대역을 \"10.244.0.0/16\"처럼 주소와 앞쪽 고정 비트 수로 표현하는 방식이다."
+- term: IPAM
+  cat: 네트워크
+  def: "IP Address Management. 어떤 Pod에 어떤 IP를 줄지 대역을 나누고 할당하는 기능이다."
+- term: FQDN
+  cat: 네트워크
+  def: "호스트 이름과 도메인을 모두 포함한 완전한 도메인 이름이다. 예를 들어 api.example.com이다."
+- term: SNI
+  cat: 네트워크
+  def: "TLS 연결을 시작할 때 클라이언트가 접속하려는 호스트 이름을 평문으로 알려 주는 확장(Server Name Indication)이다. 하나의 IP에서 여러 도메인의 인증서를 고를 수 있게 한다."
+- term: L4
+  aka: [4계층]
+  cat: 네트워크
+  def: "OSI 모델의 전송 계층이다. TCP, UDP와 포트 번호 수준에서 트래픽을 다룬다. L4 프록시는 요청 내용(경로, 헤더)은 보지 않는다."
+- term: L7
+  aka: [7계층]
+  cat: 네트워크
+  def: "OSI 모델의 애플리케이션 계층이다. HTTP 경로, 헤더, 메서드처럼 요청 내용을 보고 판단한다."
+- term: DSR
+  cat: 네트워크
+  def: "Direct Server Return. 로드밸런서를 거쳐 들어온 요청의 응답을 로드밸런서를 거치지 않고 서버가 클라이언트에게 직접 보내는 방식이다."
+- term: Hubble
+  cat: 네트워크
+  def: "Cilium의 관측 도구다. eBPF로 수집한 흐름 정보를 바탕으로 어떤 Pod가 어디와 통신했고 어떤 정책에 막혔는지 보여 준다."
+- term: Cilium
+  cat: 네트워크
+  def: "eBPF로 Pod 네트워킹, 네트워크 정책, 로드밸런싱, 암호화를 구현하는 CNI다. kube-proxy를 대체할 수 있다."
+- term: NetworkPolicy
+  cat: 네트워크
+  def: "Pod 사이 통신을 라벨과 포트 기준으로 허용하거나 막는 쿠버네티스 표준 리소스다. 실제 적용은 CNI가 맡는다."
+- term: CiliumNetworkPolicy
+  aka: [CNP]
+  cat: 네트워크
+  def: "Cilium이 제공하는 확장 네트워크 정책이다. 표준 NetworkPolicy에 더해 FQDN, L7 HTTP 조건 등을 쓸 수 있다."
+- term: CiliumClusterwideNetworkPolicy
+  aka: [CCNP]
+  cat: 네트워크
+  def: "네임스페이스에 묶이지 않고 클러스터 전체에 적용되는 Cilium 네트워크 정책이다."
+- term: link-local
+  aka: [링크 로컬]
+  cat: 네트워크
+  def: "같은 링크 안에서만 쓰는 주소 대역(169.254.0.0/16)이다. 라우팅되지 않으며, Istio ambient는 kubelet 헬스 체크를 구분하는 데 이 대역을 쓴다."
+- term: QUIC
+  cat: 네트워크
+  def: "UDP 위에서 동작하는 전송 프로토콜이다. 연결 수립이 빠르고 패킷 하나가 늦어도 다른 스트림이 막히지 않는다. HTTP/3가 이 위에서 동작한다."
+
+# ── 서비스 메시 ──
+- term: 서비스 메시
+  aka: [Service Mesh, service mesh]
+  cat: 서비스 메시
+  def: "서비스 사이 통신에서 암호화(mTLS), 재시도, 트래픽 분배, 관측 같은 기능을 애플리케이션 코드 대신 프록시 계층이 맡는 구조다."
+- term: 사이드카
+  aka: [sidecar, Sidecar]
+  cat: 서비스 메시
+  scope: [Kubernetes, ServiceMesh, Networking]
+  def: "애플리케이션 컨테이너 옆에 같은 Pod로 붙어 함께 실행되는 보조 컨테이너다. Istio 사이드카 모드는 Pod마다 Envoy를 붙여 모든 트래픽을 가로챈다."
+- term: Envoy
+  cat: 서비스 메시
+  def: "C++로 만든 고성능 L4/L7 프록시다. Istio, Envoy Gateway 등 여러 서비스 메시와 게이트웨이가 데이터 플레인으로 쓴다."
+- term: istiod
+  cat: 서비스 메시
+  def: "Istio의 컨트롤 플레인이다. 라우팅 규칙을 프록시 설정으로 바꿔 xDS로 내려보내고, 워크로드 인증서를 발급한다."
+- term: xDS
+  cat: 서비스 메시
+  def: "Envoy 같은 프록시가 컨트롤 플레인에서 설정을 실시간으로 받아 오는 API 묶음이다. 리스너(LDS), 라우트(RDS), 클러스터(CDS), 엔드포인트(EDS), 인증서(SDS)를 각각 받는 하위 API를 통틀어 xDS라고 부른다."
+- term: LDS
+  cat: 서비스 메시
+  scope: [Kubernetes, ServiceMesh]
+  def: "Listener Discovery Service. 프록시가 어느 포트에서 어떤 연결을 받을지(리스너) 설정을 받는 xDS 하위 API다."
+- term: RDS
+  cat: 서비스 메시
+  scope: [Kubernetes, ServiceMesh]
+  def: "Route Discovery Service. 요청을 어느 클러스터로 보낼지 라우팅 규칙을 받는 xDS 하위 API다. 문맥에 따라 AWS의 관계형 DB 서비스를 가리키기도 한다."
+- term: CDS
+  cat: 서비스 메시
+  scope: [Kubernetes, ServiceMesh]
+  def: "Cluster Discovery Service. 요청을 받을 업스트림 서비스 묶음(Envoy의 클러스터) 설정을 받는 xDS 하위 API다."
+- term: EDS
+  cat: 서비스 메시
+  scope: [Kubernetes, ServiceMesh]
+  def: "Endpoint Discovery Service. 각 클러스터에 속한 실제 Pod IP와 포트 목록을 받는 xDS 하위 API다."
+- term: SDS
+  cat: 서비스 메시
+  scope: [Kubernetes, ServiceMesh]
+  def: "Secret Discovery Service. 프록시가 쓸 TLS 인증서와 키를 받는 xDS 하위 API다. 인증서를 파일로 두지 않고 메모리로 교체할 수 있다."
+- term: Ambient
+  aka: [ambient, Ambient 모드, ambient mode, 앰비언트]
+  cat: 서비스 메시
+  scope: [Kubernetes, ServiceMesh, Networking]
+  def: "사이드카 없이 노드마다 하나씩 뜨는 ztunnel이 L4 mTLS를 처리하고, L7 기능이 필요한 곳에만 waypoint 프록시를 붙이는 Istio의 데이터 플레인 방식이다."
+- term: ztunnel
+  cat: 서비스 메시
+  def: "Istio ambient 모드에서 노드마다 하나씩 실행되는 L4 프록시(zero-trust tunnel)다. 그 노드 Pod들의 트래픽을 가로채 mTLS로 암호화하고 신원을 확인한다."
+- term: Waypoint
+  aka: [waypoint, waypoint proxy, Waypoint Proxy]
+  cat: 서비스 메시
+  scope: [Kubernetes, ServiceMesh, Networking]
+  def: "Istio ambient 모드에서 L7 기능(HTTP 라우팅, 재시도, 경로 단위 인가)이 필요한 서비스 앞에만 따로 띄우는 Envoy 프록시다."
+- term: HBONE
+  cat: 서비스 메시
+  def: "HTTP-Based Overlay Network Environment. Istio ambient의 ztunnel끼리 통신할 때 쓰는 터널 방식이다. 원래 TCP 연결을 mTLS로 보호된 HTTP/2 CONNECT 터널(포트 15008) 안에 실어 보낸다."
+- term: istio-cni
+  cat: 서비스 메시
+  def: "Pod가 뜰 때 그 Pod의 트래픽을 ztunnel이나 사이드카로 돌리는 네트워크 규칙을 설치하는 Istio 노드 에이전트다. 기존 CNI 뒤에 체인으로 붙는다."
+- term: VirtualService
+  cat: 서비스 메시
+  def: "Istio에서 요청을 어느 서비스, 어느 버전으로 보낼지(경로 매칭, 가중치 분배, 재시도) 정하는 리소스다."
+- term: DestinationRule
+  cat: 서비스 메시
+  def: "Istio에서 목적지 서비스로 보낸 뒤의 정책(로드밸런싱 방식, 커넥션 풀, 서브셋, TLS 설정)을 정하는 리소스다."
+- term: ServiceEntry
+  cat: 서비스 메시
+  def: "메시 밖의 외부 서비스를 Istio 서비스 목록에 등록하는 리소스다. 외부 호출에도 라우팅과 정책을 걸 수 있게 한다."
+- term: PeerAuthentication
+  cat: 서비스 메시
+  def: "Istio에서 워크로드가 받는 연결에 mTLS를 요구할지 정하는 리소스다. STRICT면 mTLS 연결만 받고, PERMISSIVE면 평문도 받는다."
+- term: RequestAuthentication
+  cat: 서비스 메시
+  def: "Istio에서 요청에 붙은 JWT의 서명과 발급자를 검증하는 리소스다. 토큰이 없을 때 막는 것은 AuthorizationPolicy가 한다."
+- term: AuthorizationPolicy
+  cat: 서비스 메시
+  def: "Istio에서 누가(신원, 네임스페이스) 무엇을(경로, 메서드) 할 수 있는지 허용하거나 거부하는 접근 제어 리소스다."
+- term: SPIFFE
+  cat: 서비스 메시
+  def: "워크로드 신원을 \"spiffe://도메인/ns/네임스페이스/sa/서비스어카운트\" 같은 URI로 표현하는 표준이다. Istio mTLS 인증서에 이 신원이 들어간다."
+- term: SPIRE
+  cat: 서비스 메시
+  def: "SPIFFE 표준을 구현해 워크로드에 신원 인증서를 발급하는 오픈소스 런타임이다."
+- term: Envoy Gateway
+  cat: 서비스 메시
+  def: "Envoy를 데이터 플레인으로 쓰는 Gateway API 구현체다. 서비스 메시 없이 클러스터 입구 게이트웨이만 필요할 때 쓴다."
+- term: east-west
+  aka: [동서 트래픽, East-West]
+  cat: 서비스 메시
+  def: "클러스터 안 서비스끼리 오가는 내부 트래픽이다. 외부에서 들어오는 트래픽은 north-south라고 한다."
+- term: north-south
+  aka: [남북 트래픽, North-South]
+  cat: 서비스 메시
+  def: "클러스터 밖에서 안으로 들어오거나 밖으로 나가는 트래픽이다."
+
+# ── 보안 ──
+- term: mTLS
+  cat: 보안
+  def: "상호 TLS(mutual TLS)다. 일반 TLS는 서버만 인증서로 신원을 증명하지만 mTLS는 클라이언트도 인증서를 내서 양쪽이 서로를 확인하고 통신을 암호화한다."
+- term: WireGuard
+  cat: 보안
+  def: "리눅스 커널에 들어 있는 경량 VPN 프로토콜이다. 노드 사이 터널을 만들어 그 사이를 지나는 모든 패킷을 암호화한다. Cilium이 노드 간 암호화에 쓴다."
+- term: IPsec
+  cat: 보안
+  def: "IP 계층에서 패킷을 암호화하고 인증하는 표준 프로토콜 묶음이다. WireGuard보다 설정 항목이 많다."
+- term: CA
+  aka: [인증 기관]
+  cat: 보안
+  def: "Certificate Authority. 공개 키가 특정 주체의 것임을 보증하는 인증서를 발급하고 서명하는 기관이나 시스템이다."
+- term: CSR
+  cat: 보안
+  def: "Certificate Signing Request. 인증서를 발급받기 위해 공개 키와 신원 정보를 담아 CA에 보내는 요청이다."
+- term: 중간자 공격
+  aka: [MITM]
+  cat: 보안
+  def: "통신하는 두 사람 사이에 몰래 끼어들어 내용을 엿보거나 바꾸는 공격이다. 인증서로 상대 신원을 확인하면 막을 수 있다."
+- term: HMAC
+  cat: 보안
+  def: "비밀 키와 해시 함수를 함께 써서 만드는 메시지 인증 코드다. 키를 아는 쪽만 같은 값을 만들 수 있어 위조 여부를 확인한다."
+- term: ECDH
+  cat: 보안
+  def: "타원 곡선 기반 Diffie-Hellman 키 교환이다. 양쪽이 공개 값만 주고받고도 같은 비밀 키를 계산해 낸다."
+- term: 제로 트러스트
+  aka: [zero-trust, Zero Trust, 제로트러스트]
+  cat: 보안
+  def: "내부 네트워크라도 믿지 않고 모든 요청마다 신원과 권한을 확인하는 보안 원칙이다."
+- term: OIDC
+  aka: [OpenID Connect]
+  cat: 보안
+  def: "OAuth 2.0 위에 사용자 신원 정보(ID 토큰)를 표준화해 얹은 인증 프로토콜이다."
+- term: PKCE
+  cat: 보안
+  def: "Proof Key for Code Exchange. 인가 코드가 중간에 탈취돼도 쓸 수 없도록, 클라이언트가 만든 임의 값으로 코드 교환 요청을 증명하는 OAuth 확장이다."
+- term: CORS
+  cat: 보안
+  def: "브라우저가 다른 출처(도메인)의 API를 호출할 때 서버가 허용한 출처인지 확인하는 규칙이다."
+- term: Falco
+  cat: 보안
+  def: "커널 시스템 콜을 감시해 컨테이너 안의 수상한 동작(셸 실행, 민감 파일 접근)을 실시간으로 탐지하는 런타임 보안 도구다."
+- term: Trivy
+  cat: 보안
+  def: "컨테이너 이미지와 설정 파일의 알려진 취약점(CVE)과 잘못된 설정을 찾아 주는 스캐너다."
+- term: kube-bench
+  cat: 보안
+  def: "노드와 컨트롤 플레인 설정이 CIS 쿠버네티스 벤치마크 보안 기준을 지키는지 점검하는 도구다."
+- term: CVE
+  cat: 보안
+  def: "공개된 보안 취약점에 붙는 고유 식별 번호다. 예를 들어 CVE-2024-3094다."
+- term: OWASP
+  cat: 보안
+  def: "웹 애플리케이션 보안 취약점과 대응 방법을 정리해 공개하는 비영리 단체다. 대표 자료가 OWASP Top 10이다."
+
+# ── 관측성 ──
+- term: 관측 가능성
+  aka: [관측성, Observability, observability]
+  cat: 관측성
+  def: "시스템이 밖으로 내보내는 데이터(메트릭, 로그, 트레이스)만 보고 내부에서 무슨 일이 일어나는지 알아낼 수 있는 정도다."
+- term: OpenTelemetry
+  aka: [OTel]
+  cat: 관측성
+  def: "트레이스, 메트릭, 로그를 수집하고 전송하는 방식을 표준화한 CNCF 프로젝트다. SDK, 자동 계측 에이전트, Collector로 구성된다."
+- term: OTLP
+  cat: 관측성
+  def: "OpenTelemetry Protocol. 트레이스, 메트릭, 로그를 Collector나 백엔드로 보내는 표준 전송 프로토콜이다."
+- term: Collector
+  aka: [OTel Collector, otelcol]
+  cat: 관측성
+  scope: [Observability, Kubernetes, AI]
+  def: "여러 곳에서 텔레메트리 데이터를 받아 가공하고 백엔드로 내보내는 OpenTelemetry 중계 프로그램이다."
+- term: 트레이스
+  aka: [Trace, trace, 트레이싱]
+  cat: 관측성
+  scope: [Observability, AI, Kubernetes]
+  def: "요청 하나가 여러 서비스를 거치는 전체 경로와 각 구간의 소요 시간을 기록한 것이다. 구간 하나하나를 span이라고 한다."
+- term: Span
+  aka: [span, 스팬]
+  cat: 관측성
+  scope: [Observability, AI]
+  def: "트레이스를 이루는 작업 단위 하나다. 시작 시각, 걸린 시간, 부모 span 정보를 담는다."
+- term: LGTM
+  cat: 관측성
+  def: "Grafana Labs의 오픈소스 관측 스택이다. Loki(로그), Grafana(시각화), Tempo(트레이스), Mimir(메트릭)의 머리글자다."
+- term: Loki
+  cat: 관측성
+  def: "로그 내용 전체가 아니라 라벨만 색인해 저장 비용을 줄인 로그 저장소다. LogQL로 조회한다."
+- term: Mimir
+  cat: 관측성
+  def: "Prometheus 메트릭을 장기간 대량으로 저장하고 조회하는 분산 저장소다."
+- term: Tempo
+  cat: 관측성
+  def: "분산 트레이스를 저장하고 조회하는 Grafana Labs의 트레이스 백엔드다."
+- term: PromQL
+  cat: 관측성
+  def: "Prometheus 메트릭을 조회하고 계산하는 쿼리 언어다."
+- term: LogQL
+  cat: 관측성
+  def: "Loki에서 로그를 라벨로 고르고 내용을 걸러 집계하는 쿼리 언어다."
+- term: 카디널리티
+  aka: [cardinality]
+  cat: 관측성
+  def: "메트릭 라벨 조합이 만들어 내는 서로 다른 시계열의 개수다. 라벨 값 종류가 많을수록 저장소 부담이 커진다."
+- term: SLO
+  cat: 관측성
+  def: "Service Level Objective. \"요청의 99.9%가 300ms 안에 성공한다\"처럼 서비스가 지켜야 할 신뢰성 목표치다."
+- term: SLI
+  cat: 관측성
+  def: "Service Level Indicator. SLO를 판단하는 데 쓰는 실제 측정 지표(성공률, 응답 시간 등)다."
+- term: 에러 버짓
+  aka: [Error Budget, error budget]
+  cat: 관측성
+  def: "SLO가 허용하는 실패의 양이다. 99.9% 목표라면 0.1%만큼 실패해도 된다는 뜻이고, 이를 다 쓰면 배포를 멈추고 안정화에 집중한다."
+- term: Alertmanager
+  cat: 관측성
+  def: "Prometheus 규칙이 발생시킨 알림을 묶고, 중복을 줄이고, Slack이나 메일로 보내는 컴포넌트다."
+- term: APM
+  cat: 관측성
+  def: "Application Performance Monitoring. 애플리케이션의 응답 시간, 오류, 호출 경로를 추적하는 모니터링 도구다."
+- term: RUM
+  cat: 관측성
+  def: "Real User Monitoring. 실제 사용자 브라우저에서 페이지 로딩 시간과 오류를 수집하는 모니터링이다."
+
+# ── 데이터와 미들웨어 ──
+- term: MVCC
+  cat: 데이터
+  def: "Multi-Version Concurrency Control. 데이터를 바꿀 때 이전 버전을 남겨 두어, 읽는 쪽은 잠금 없이 일관된 시점의 데이터를 보게 하는 방식이다."
+- term: 격리 수준
+  aka: [Isolation Level, isolation level]
+  cat: 데이터
+  def: "동시에 실행되는 트랜잭션이 서로의 변경을 얼마나 볼 수 있는지 정하는 단계다. READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE 순으로 엄격해진다."
+- term: 갭 락
+  aka: [Gap Lock, gap lock]
+  cat: 데이터
+  def: "InnoDB가 인덱스 레코드 사이의 빈 공간을 잠가 그 범위에 새 행이 끼어드는 것을 막는 잠금이다."
+- term: 넥스트 키 락
+  aka: [Next-Key Lock, next-key lock]
+  cat: 데이터
+  def: "레코드 잠금과 그 앞 갭 락을 합친 InnoDB의 잠금이다. REPEATABLE READ에서 팬텀 읽기를 막는다."
+- term: 팬텀 리드
+  aka: [Phantom Read, phantom read, 팬텀 읽기]
+  cat: 데이터
+  def: "같은 조건으로 두 번 조회했을 때 그사이 다른 트랜잭션이 넣은 행이 새로 보이는 현상이다."
+- term: 언두 로그
+  aka: [Undo Log, undo log]
+  cat: 데이터
+  def: "변경 전 데이터를 기록한 로그다. 롤백과 MVCC의 이전 버전 조회에 쓴다."
+- term: 리두 로그
+  aka: [Redo Log, redo log]
+  cat: 데이터
+  def: "변경 내용을 디스크 데이터 파일보다 먼저 기록하는 로그다. 장애 후 재시작할 때 이 로그로 커밋된 변경을 복구한다."
+- term: WAL
+  cat: 데이터
+  def: "Write-Ahead Logging. 데이터를 실제로 바꾸기 전에 변경 내용을 먼저 로그에 쓰는 방식이다. 장애가 나도 로그로 복구할 수 있다."
+- term: 버퍼 풀
+  aka: [Buffer Pool, buffer pool]
+  cat: 데이터
+  scope: [Database]
+  def: "InnoDB가 디스크의 데이터와 인덱스 페이지를 메모리에 캐시해 두는 영역이다."
+- term: 클러스터드 인덱스
+  aka: [Clustered Index, clustered index]
+  cat: 데이터
+  def: "테이블 데이터 자체가 기본 키 순서로 정렬되어 저장되는 인덱스다. InnoDB 테이블은 기본 키가 클러스터드 인덱스다."
+- term: 커버링 인덱스
+  aka: [Covering Index, covering index]
+  cat: 데이터
+  def: "쿼리에 필요한 컬럼이 모두 인덱스에 들어 있어 테이블 본문을 읽지 않고 인덱스만으로 결과를 내는 경우다."
+- term: 실행 계획
+  aka: [EXPLAIN]
+  cat: 데이터
+  def: "DB가 쿼리를 어떤 인덱스와 순서로 처리할지 정한 계획이다. EXPLAIN으로 확인한다."
+- term: CDC
+  cat: 데이터
+  def: "Change Data Capture. DB의 변경(삽입, 수정, 삭제)을 로그에서 읽어 다른 시스템으로 실시간 전달하는 방식이다."
+- term: Debezium
+  cat: 데이터
+  def: "MySQL binlog 같은 DB 변경 로그를 읽어 Kafka 이벤트로 바꿔 주는 CDC 커넥터다."
+- term: binlog
+  aka: [바이너리 로그]
+  cat: 데이터
+  def: "MySQL이 데이터 변경 내용을 순서대로 기록하는 로그다. 복제와 CDC의 원천이 된다."
+- term: KRaft
+  cat: 데이터
+  def: "Kafka가 ZooKeeper 없이 자체 Raft 합의로 메타데이터를 관리하는 모드다."
+- term: ZooKeeper
+  cat: 데이터
+  def: "분산 시스템의 설정과 리더 선출 같은 조정 작업을 맡는 코디네이션 서비스다. Kafka는 KRaft로 이 의존을 없앴다."
+- term: Raft
+  cat: 데이터
+  def: "여러 노드가 같은 로그 순서에 합의하도록 리더를 뽑고 복제하는 합의 알고리즘이다. etcd와 KRaft가 쓴다."
+- term: 파티션
+  aka: [Partition]
+  cat: 데이터
+  scope: [Middleware, Kafka]
+  def: "Kafka 토픽을 나눈 단위다. 파티션 안에서는 메시지 순서가 보장되고, 파티션 수만큼 컨슈머가 병렬로 읽을 수 있다."
+- term: 컨슈머 그룹
+  aka: [Consumer Group, consumer group]
+  cat: 데이터
+  scope: [Middleware, Kafka]
+  def: "같은 토픽을 나눠 읽는 컨슈머 묶음이다. 그룹 안에서 파티션 하나는 컨슈머 하나에게만 배정된다."
+- term: 리밸런싱
+  aka: [Rebalance, rebalance, 리밸런스]
+  cat: 데이터
+  scope: [Middleware, Kafka]
+  def: "컨슈머가 그룹에 들어오거나 나갈 때 파티션 배정을 다시 나누는 과정이다. 이 동안 소비가 멈출 수 있다."
+- term: ISR
+  cat: 데이터
+  scope: [Middleware, Kafka]
+  def: "In-Sync Replicas. 리더 파티션과 데이터가 충분히 따라붙은 복제본 목록이다. 이 목록 안에서만 새 리더를 뽑는다."
+- term: 멱등성
+  aka: [Idempotence, idempotence, 멱등, idempotent]
+  cat: 데이터
+  def: "같은 요청을 여러 번 보내도 결과가 한 번 보낸 것과 같은 성질이다. Kafka 멱등 프로듀서는 재전송으로 인한 중복 저장을 막는다."
+- term: Exactly-Once
+  aka: [exactly-once, EOS]
+  cat: 데이터
+  def: "메시지가 유실되지도 중복되지도 않고 정확히 한 번만 처리되는 전송 보장 수준이다."
+- term: 해시 슬롯
+  aka: [Hash Slot, hash slot]
+  cat: 데이터
+  scope: [Middleware, Redis]
+  def: "Redis Cluster가 키를 나누는 16384개 구간이다. 키의 해시 값으로 슬롯을 정하고, 슬롯을 노드에 나눠 배치한다."
+- term: 샤드
+  aka: [Shard, shard, 샤딩]
+  cat: 데이터
+  scope: [Middleware, Database]
+  def: "큰 데이터를 여러 노드에 나눠 저장한 조각이다. Elasticsearch 인덱스는 여러 샤드로 나뉜다."
+- term: 레플리카
+  aka: [Replica, replica]
+  cat: 데이터
+  scope: [Middleware, Database]
+  def: "장애 대비와 읽기 분산을 위해 원본 데이터를 복제해 둔 사본이다."
+- term: 형태소 분석기
+  aka: [형태소 분석]
+  cat: 데이터
+  def: "문장을 의미를 가진 가장 작은 단위(형태소)로 나누고 품사를 붙이는 도구다. 한국어 검색과 키워드 추출에 필요하다."
+
+# ── JVM과 백엔드 ──
+- term: JIT
+  aka: [JIT 컴파일러]
+  cat: JVM
+  def: "Just-In-Time 컴파일러. 자주 실행되는 바이트코드를 실행 중에 기계어로 바꿔 이후 실행을 빠르게 한다."
+- term: GC
+  aka: [Garbage Collector, 가비지 컬렉터, 가비지 컬렉션]
+  cat: JVM
+  scope: [Backend, JVM, Java, Observability]
+  def: "더 이상 참조되지 않는 객체를 찾아 메모리를 자동으로 회수하는 JVM 기능이다."
+- term: STW
+  aka: [Stop-The-World, stop-the-world]
+  cat: JVM
+  def: "GC가 작업하는 동안 애플리케이션 스레드를 모두 멈추는 구간이다. 이 시간이 길면 응답 지연이 생긴다."
+- term: G1 GC
+  aka: [G1]
+  cat: JVM
+  def: "힙을 같은 크기의 영역(region)으로 나눠 쓰레기가 많은 영역부터 회수하는 GC다. Java 9부터 기본 GC다."
+- term: ZGC
+  cat: JVM
+  def: "힙 크기와 관계없이 멈춤 시간을 밀리초 수준으로 유지하도록 설계된 저지연 GC다."
+- term: 클래스 로더
+  aka: [ClassLoader, 클래스로더]
+  cat: JVM
+  def: ".class 파일을 찾아 JVM 메모리에 올리는 구성 요소다. 부모 로더에게 먼저 위임하는 계층 구조로 동작한다."
+- term: 리플렉션
+  aka: [Reflection, reflection]
+  cat: JVM
+  def: "실행 중에 클래스의 필드, 메서드, 애노테이션 정보를 읽고 호출하는 Java 기능이다. 프레임워크가 애노테이션을 처리할 때 쓴다."
+- term: 동적 프록시
+  aka: [Dynamic Proxy, JDK 동적 프록시]
+  cat: JVM
+  def: "실행 중에 인터페이스를 구현한 프록시 객체를 만들어 메서드 호출을 가로채는 방식이다. Spring AOP가 이 방식이나 CGLIB을 쓴다."
+- term: CGLIB
+  cat: JVM
+  def: "클래스를 상속한 프록시를 바이트코드로 생성하는 라이브러리다. 인터페이스가 없는 클래스에도 프록시를 만들 수 있다."
+- term: AOP
+  cat: JVM
+  def: "관점 지향 프로그래밍(Aspect-Oriented Programming). 로깅, 트랜잭션처럼 여러 곳에 반복되는 부가 기능을 핵심 로직과 분리해 한곳에서 적용한다."
+- term: ThreadLocal
+  cat: JVM
+  def: "스레드마다 따로 값을 저장하는 변수다. 같은 요청을 처리하는 스레드 안에서 인증 정보를 전달할 때 쓰며, 스레드 풀에서는 사용 후 지워야 한다."
+- term: ByteBuddy
+  cat: JVM
+  def: "실행 중에 Java 클래스를 생성하거나 수정하는 바이트코드 조작 라이브러리다. OpenTelemetry Java Agent가 자동 계측에 쓴다."
+- term: Java Agent
+  aka: [javaagent, 자바 에이전트]
+  cat: JVM
+  def: "JVM 시작 옵션으로 붙여 클래스가 로딩될 때 바이트코드를 바꿀 수 있는 프로그램이다. 코드 수정 없이 계측 기능을 넣는다."
+- term: HikariCP
+  cat: JVM
+  def: "Spring Boot의 기본 DB 커넥션 풀이다. 커넥션을 미리 만들어 두고 빌려주고 돌려받는다."
+- term: 커넥션 풀
+  aka: [Connection Pool, connection pool]
+  cat: JVM
+  def: "DB 연결을 미리 여러 개 만들어 두고 재사용하는 저장소다. 연결 생성 비용을 줄이지만, 반납되지 않으면 풀이 고갈되어 요청이 대기한다."
+- term: DispatcherServlet
+  cat: JVM
+  def: "Spring MVC에서 모든 요청을 먼저 받아 알맞은 컨트롤러로 보내는 프런트 컨트롤러 서블릿이다."
+- term: 서블릿
+  aka: [Servlet]
+  cat: JVM
+  def: "웹 요청을 받아 응답을 만드는 Java 표준 컴포넌트다. 서블릿 컨테이너(Tomcat 등)가 생명주기를 관리한다."
+- term: CQRS
+  cat: JVM
+  def: "Command Query Responsibility Segregation. 데이터를 바꾸는 쪽(명령)과 읽는 쪽(조회)의 모델과 저장소를 분리하는 설계 방식이다."
+- term: gRPC
+  cat: JVM
+  def: "Protocol Buffers로 메시지를 정의하고 HTTP/2 위에서 원격 함수를 호출하는 RPC 프레임워크다."
+- term: Protocol Buffers
+  aka: [protobuf, ProtoBuf]
+  cat: JVM
+  def: "메시지 구조를 .proto 파일로 정의하고 작고 빠른 바이너리 형식으로 직렬화하는 구글의 데이터 형식이다."
+- term: W-TinyLFU
+  cat: JVM
+  def: "최근 사용 빈도를 적은 메모리로 추정해 캐시에 남길 항목을 고르는 교체 정책이다. Caffeine 캐시가 쓴다."
+
+# ── AI ──
+- term: LLM
+  cat: AI
+  def: "대규모 언어 모델(Large Language Model). 많은 텍스트로 학습해 다음에 올 토큰을 예측하는 방식으로 글을 이해하고 생성하는 모델이다."
+- term: 토큰
+  aka: [Token, token]
+  cat: AI
+  scope: [AI]
+  def: "언어 모델이 텍스트를 처리하는 단위다. 단어 하나가 여러 토큰으로 나뉘기도 하며, 비용과 길이 제한이 토큰 수로 계산된다."
+- term: 컨텍스트 윈도우
+  aka: [Context Window, context window, 컨텍스트 창]
+  cat: AI
+  def: "모델이 한 번에 입력으로 볼 수 있는 최대 토큰 수다. 대화 기록, 문서, 지시가 모두 이 안에 들어가야 한다."
+- term: 프롬프트 캐싱
+  aka: [Prompt Caching, prompt caching]
+  cat: AI
+  def: "반복해서 보내는 프롬프트 앞부분의 처리 결과를 저장해 두고 재사용해 비용과 응답 시간을 줄이는 기능이다."
+- term: RAG
+  cat: AI
+  def: "Retrieval-Augmented Generation. 질문과 관련된 문서를 먼저 검색해 프롬프트에 넣고, 모델이 그 내용을 근거로 답하게 하는 방식이다."
+- term: 임베딩
+  aka: [Embedding, embedding]
+  cat: AI
+  scope: [AI]
+  def: "텍스트의 의미를 숫자 벡터로 바꾼 것이다. 의미가 비슷한 문장은 벡터 공간에서 가까이 놓인다."
+- term: 벡터 DB
+  aka: [벡터 데이터베이스, Vector DB]
+  cat: AI
+  def: "임베딩 벡터를 저장하고 주어진 벡터와 가까운 항목을 빠르게 찾아 주는 데이터베이스다."
+- term: 에이전트
+  aka: [Agent, AI 에이전트]
+  cat: AI
+  scope: [AI, Observability]
+  def: "모델이 목표를 받아 스스로 도구를 고르고 호출하며 결과를 보고 다음 행동을 정하는 반복 구조다."
+- term: Tool Use
+  aka: [도구 사용, tool use, function calling, Function Calling]
+  cat: AI
+  scope: [AI]
+  def: "모델이 직접 실행할 수 없는 일(검색, 계산, API 호출)을 위해 정해진 형식으로 도구 호출을 요청하고, 애플리케이션이 실행한 결과를 다시 받는 방식이다."
+- term: MCP
+  aka: [Model Context Protocol]
+  cat: AI
+  def: "Model Context Protocol. AI 애플리케이션이 외부 도구와 데이터 소스를 같은 방식으로 연결하도록 표준화한 프로토콜이다. 서버가 도구, 리소스, 프롬프트를 제공한다."
+- term: 서브에이전트
+  aka: [Subagent, subagent, 서브 에이전트]
+  cat: AI
+  scope: [AI]
+  def: "메인 에이전트가 일을 맡기는 보조 에이전트다. 별도 컨텍스트에서 실행되어 결과만 돌려주므로 메인 대화의 컨텍스트를 아낀다."
+- term: 스킬
+  aka: [Skill, Skills]
+  cat: AI
+  scope: [AI]
+  def: "Claude Code에서 특정 작업의 절차와 참고 자료를 폴더로 묶은 것이다. 작업 내용이 설명과 맞으면 모델이 불러와 따른다."
+- term: 훅
+  aka: [Hook, Hooks, hooks]
+  cat: AI
+  scope: [AI]
+  def: "Claude Code에서 도구 실행 전후 같은 정해진 시점에 자동으로 실행되는 셸 명령이다. 위험한 명령 차단이나 검사에 쓴다."
+- term: 프롬프트 인젝션
+  aka: [Prompt Injection, prompt injection]
+  cat: AI
+  def: "입력 데이터 안에 숨긴 지시문으로 모델이 원래 지시를 무시하고 공격자의 지시를 따르게 만드는 공격이다."
+- term: 할루시네이션
+  aka: [환각, Hallucination, hallucination]
+  cat: AI
+  def: "모델이 사실이 아닌 내용을 그럴듯하게 만들어 내는 현상이다."
+- term: Transformer
+  aka: [트랜스포머]
+  cat: AI
+  scope: [AI]
+  def: "어텐션으로 문장 안 모든 토큰 사이의 관계를 한꺼번에 계산하는 신경망 구조다. 현재 LLM 대부분의 기반이다."
+- term: 어텐션
+  aka: [Attention, attention, 셀프 어텐션]
+  cat: AI
+  scope: [AI]
+  def: "각 토큰이 다른 토큰들 중 어디에 얼마나 주목할지 가중치를 계산해 문맥을 반영하는 연산이다."
+- term: 퍼셉트론
+  aka: [Perceptron]
+  cat: AI
+  def: "입력에 가중치를 곱해 더한 값이 기준을 넘으면 1, 아니면 0을 내는 가장 단순한 인공 신경 단위다."
+- term: 활성화 함수
+  aka: [Activation Function]
+  cat: AI
+  def: "신경망 층의 출력에 비선형성을 더하는 함수다. ReLU, 시그모이드가 대표적이다. 이것이 없으면 층을 여러 개 쌓아도 직선 하나와 같은 표현력만 가진다."
+- term: 역전파
+  aka: [Backpropagation, backpropagation]
+  cat: AI
+  def: "출력의 오차를 뒤에서 앞으로 전달하며 각 가중치가 오차에 얼마나 기여했는지(기울기)를 계산하는 알고리즘이다."
+- term: 경사 하강법
+  aka: [Gradient Descent, gradient descent, 경사하강법]
+  cat: AI
+  def: "오차가 줄어드는 방향(기울기의 반대)으로 가중치를 조금씩 바꿔 가며 최적값을 찾는 학습 방법이다."
+- term: 파인튜닝
+  aka: [Fine-tuning, fine-tuning, 미세 조정]
+  cat: AI
+  scope: [AI]
+  def: "이미 학습된 모델을 특정 작업이나 도메인 데이터로 추가 학습시켜 맞춤화하는 것이다."
+- term: 자기 지도 학습
+  aka: [Self-supervised Learning, self-supervision]
+  cat: AI
+  def: "사람이 붙인 정답 없이 데이터 자체에서 정답을 만들어 학습하는 방식이다. 문장의 다음 단어 맞히기가 대표적이다."
+- term: Temperature
+  aka: [temperature, 온도]
+  cat: AI
+  scope: [AI]
+  def: "모델이 다음 토큰을 고를 때 무작위성을 조절하는 값이다. 낮으면 가장 확률 높은 답을, 높으면 다양한 답을 낸다."

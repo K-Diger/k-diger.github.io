@@ -1,0 +1,20 @@
+---
+layout: page
+title: 시리즈
+permalink: /series/
+---
+{%- comment -%} 읽는 순서가 있는 글 묶음. _data/series.yml의 키 순서대로, 각 시리즈 안은 series_order 순. {%- endcomment -%}
+<p class="lede-text">순서대로 읽으면 앞 편의 개념을 다음 편이 이어받는다. 각 글 위쪽의 시리즈 상자에서도 이전 편과 다음 편으로 옮겨 갈 수 있다.</p>
+{%- for s in site.data.series %}
+{%- assign key = s[0] %}{%- assign meta = s[1] %}
+{%- assign parts = site.posts | where: 'series', key | sort: 'series_order' %}
+<section class="series-index" id="{{ key }}">
+  <h2>{{ meta.name }} <small>{{ parts.size }}편</small></h2>
+  <p class="series-desc">{{ meta.desc }}</p>
+  <ol>
+    {%- for p in parts %}
+    <li><a href="{{ p.url | relative_url }}">{{ p.title | split: '] ' | last }}</a><time datetime="{{ p.date | date: '%Y-%m-%d' }}">{{ p.date | date: '%Y.%m.%d' }}</time></li>
+    {%- endfor %}
+  </ol>
+</section>
+{%- endfor %}

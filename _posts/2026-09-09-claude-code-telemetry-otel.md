@@ -1,5 +1,5 @@
 ---
-title: "Claude Code 사용량 OpenTelemetry 수집 구축과 비용 지표 오류 수정"
+title: "[AI 13편] Claude Code 사용량 OpenTelemetry 수집 구축과 비용 지표 오류 수정"
 date: 2026-09-09
 categories: [Observability]
 tags: [Observability, OpenTelemetry, ClaudeCode, AI, LGTM]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: false
 mermaid: true
+series: ai
+series_order: 13
 ---
 
 ## 참고자료

@@ -1,5 +1,5 @@
 ---
-title: "Claude API 정리 (멀티턴 대화, 프롬프트 평가, Tool Use, 프롬프트 캐싱)"
+title: "[AI 4편] Claude API 정리 (멀티턴 대화, 프롬프트 평가, Tool Use, 프롬프트 캐싱)"
 date: 2026-05-31
 categories: [AI]
 tags: [AI, ClaudeAPI, PromptEngineering, ToolUse]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: false
 mermaid: true
+series: ai
+series_order: 4
 ---
 
 ## 참고자료

@@ -1,7 +1,7 @@
 ---
 render_with_liquid: false # Helm/Go 템플릿의 {{ }} 를 Liquid 가 지우지 않도록
 
-title: "Helm 템플릿 문법과 차트 설계, 운영 중 겪은 문제"
+title: "[쿠버네티스 3편] Helm 템플릿 문법과 차트 설계, 운영 중 겪은 문제"
 date: 2026-03-02
 categories: [Kubernetes, Helm]
 tags: [Kubernetes, Helm, GitOps]
@@ -9,7 +9,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: kubernetes
+series_order: 3
 ---
 
 ## 참고자료

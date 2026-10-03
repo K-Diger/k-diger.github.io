@@ -1,6 +1,6 @@
 ---
 
-title: "관측 가능성 개념과 OpenTelemetry 등장 배경"
+title: "[관측성 1편] 관측 가능성 개념과 OpenTelemetry 등장 배경"
 date: 2025-01-19
 categories: [Observability]
 tags: [Observability, OpenTelemetry]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: observability
+series_order: 1
 ---
 
 ## 참고자료

@@ -1,5 +1,5 @@
 ---
-title: "MCP 서버와 클라이언트 구현, 프리미티브와 전송 방식 정리"
+title: "[AI 5편] MCP 서버와 클라이언트 구현, 프리미티브와 전송 방식 정리"
 date: 2026-06-13
 categories: [AI]
 tags: [AI, MCP, Agent, ClaudeCode]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: false
 mermaid: true
+series: ai
+series_order: 5
 ---
 
 ## 참고자료

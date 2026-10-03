@@ -1,6 +1,6 @@
 ---
 
-title: "퍼셉트론부터 LLM까지 신경망 동작 원리 정리"
+title: "[AI 1편] 퍼셉트론부터 LLM까지 신경망 동작 원리 정리"
 date: 2026-09-02
 categories: [AI]
 tags: [AI, DeepLearning, LLM, Transformer, RAG]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: ai
+series_order: 1
 ---
 
 ## 참고자료

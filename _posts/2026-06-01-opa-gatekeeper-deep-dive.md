@@ -1,11 +1,13 @@
 ---
-title: "OPA Gatekeeper 공식 문서 정리 (ConstraintTemplate, Mutation, Audit)"
+title: "[쿠버네티스 9편] OPA Gatekeeper 공식 문서 정리 (ConstraintTemplate, Mutation, Audit)"
 date: 2026-06-01
 categories: [Kubernetes, Security]
 tags: [Kubernetes, Security, OPA, PolicyAsCode]
 layout: post
 toc: true
 mermaid: true
+series: kubernetes
+series_order: 9
 ---
 
 ## 참고자료

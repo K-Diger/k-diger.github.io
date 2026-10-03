@@ -1,5 +1,5 @@
 ---
-title: "Alertmanager 알림 기반 ChatOps 구현 (AI 진단, Slack 승인 조치, 자동 조치 범위 제한)"
+title: "[AI 10편] Alertmanager 알림 기반 ChatOps 구현 (AI 진단, Slack 승인 조치, 자동 조치 범위 제한)"
 date: 2026-08-18
 categories: [Observability]
 tags: [Observability, ChatOps, AI, Alerting, Slack]
@@ -8,6 +8,8 @@ toc: true
 math: false
 mermaid: true
 render_with_liquid: false
+series: ai
+series_order: 10
 ---
 
 ## 참고자료

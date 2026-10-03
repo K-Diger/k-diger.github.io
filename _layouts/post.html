@@ -7,7 +7,10 @@ layout: default
 {%- assign updated = page.last_modified_at | date: '%Y-%m-%d' -%}
 
 <div class="wrap">
-  <article class="post-layout" data-math="{{ page.math | default: false }}">
+  <article class="post-layout" data-math="{{ page.math | default: false }}"
+    data-categories="{{ page.categories | join: '|' }}"
+    data-glossary="{{ '/assets/js/data/glossary.json' | relative_url }}"
+    data-glossary-page="{{ '/glossary/' | relative_url }}">
     <header class="post-head">
       <h1 style="view-transition-name: vt-{{ page.slug | slugify }}">{{ page.title }}</h1>
       <p class="post-meta">
@@ -28,6 +31,47 @@ layout: default
         {%- endif %}
       </p>
     </header>
+
+    {%- if page.series %}
+    {%- assign sr = site.data.series[page.series] %}
+    {%- assign parts = site.posts | where: 'series', page.series | sort: 'series_order' %}
+    {%- assign prev_part = nil %}{%- assign next_part = nil %}
+    {%- for p in parts %}
+      {%- if p.url == page.url %}
+        {%- assign i0 = forloop.index0 | minus: 1 %}{%- assign i1 = forloop.index0 | plus: 1 %}
+        {%- if forloop.first == false %}{%- assign prev_part = parts[i0] %}{%- endif %}
+        {%- if forloop.last == false %}{%- assign next_part = parts[i1] %}{%- endif %}
+      {%- endif %}
+    {%- endfor %}
+    <nav class="series-box" aria-label="{{ sr.name }} 시리즈">
+      <details>
+        <summary>
+          <span class="series-box__name"><a href="{{ '/series/' | relative_url }}#{{ page.series }}">{{ sr.name }} 시리즈</a></span>
+          <span class="series-box__pos">{{ page.series_order }}편 / 전체 {{ parts.size }}편</span>
+        </summary>
+        <ol class="series-box__list">
+          {%- for p in parts %}
+          <li{% if p.url == page.url %} aria-current="page"{% endif %}><a href="{{ p.url | relative_url }}">{{ p.title | split: '] ' | last }}</a></li>
+          {%- endfor %}
+        </ol>
+      </details>
+      {%- if prev_part or next_part %}
+      <div class="series-box__step">
+        {%- if prev_part %}
+        <a class="prev" href="{{ prev_part.url | relative_url }}"><span class="lbl">← 이전 편 {{ prev_part.series_order }}</span><span class="ttl">{{ prev_part.title | split: '] ' | last }}</span></a>
+        {%- endif %}
+        {%- if next_part %}
+        <a class="next" href="{{ next_part.url | relative_url }}"><span class="lbl">다음 편 {{ next_part.series_order }} →</span><span class="ttl">{{ next_part.title | split: '] ' | last }}</span></a>
+        {%- endif %}
+      </div>
+      {%- endif %}
+    </nav>
+    {%- endif %}
+
+    <details class="terms-inline" hidden>
+      <summary><span>이 글에 나오는 용어 <span class="terms-inline__count"></span>개</span></summary>
+      <dl></dl>
+    </details>
 
     {%- if page.toc != false %}
     <details class="toc-inline" hidden>

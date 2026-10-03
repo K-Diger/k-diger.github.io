@@ -175,7 +175,7 @@
 
   .post-layout > .toc-rail {
     grid-column: 3;
-    grid-row: 1 / span 4;
+    grid-row: 1 / span 8; // 머리, 시리즈, 용어 목록, 목차, 본문, 꼬리
   }
 }
 
@@ -563,4 +563,204 @@
       background: var(--bg-2);
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// 용어 사전: 본문 점선 용어, 정의 팝오버, 글 위 용어 목록, 사전 페이지
+// ---------------------------------------------------------------------------
+
+// 본문 글자처럼 보이되 점선 밑줄로 "누를 수 있음"을 알린다. 링크(실선)와 구분된다.
+.prose .term {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentcolor 45%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.24em;
+  cursor: help;
+  border-radius: 2px;
+
+  &:hover,
+  &[aria-expanded="true"] {
+    text-decoration-color: currentcolor;
+    background: var(--bg-2);
+  }
+}
+
+.term-pop {
+  position: absolute;
+  z-index: 60;
+  padding: 12px 14px 13px;
+  border: 1px solid var(--rule-2);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: 0 6px 24px var(--shadow);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ink);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+
+  p { margin: 0; }
+}
+
+.term-pop__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px !important;
+
+  strong { font-weight: 600; }
+  span { flex: none; font-size: 0.75rem; color: var(--ink-3); }
+}
+
+.term-pop__def { color: var(--ink); }
+
+.term-pop__more {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+// 글 위 접힌 목록. 목차 상자와 같은 모양으로 맞춘다.
+.terms-inline,
+.series-box {
+  margin: 0 0 16px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+
+  > summary,
+  > details > summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker { display: none; }
+  }
+}
+
+.terms-inline {
+  > summary::after { content: "+"; color: var(--ink-3); }
+  &[open] > summary { border-bottom: 1px solid var(--rule); }
+  &[open] > summary::after { content: "\2212"; }
+
+  dl {
+    max-height: 50dvh;
+    overflow-y: auto;
+    margin: 0;
+    padding: 6px 14px 12px;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  dl > div { padding: 7px 0; border-bottom: 1px solid var(--rule); }
+  dl > div:last-child { border-bottom: 0; }
+  dt { font-weight: 600; }
+  dt a { color: var(--ink); text-decoration: none; }
+  dd { margin: 2px 0 0; color: var(--ink-2); word-break: keep-all; }
+}
+
+// 시리즈 상자: 몇 편째인지, 전체 목차, 이전/다음 편
+.series-box {
+  margin-bottom: 16px;
+
+  summary { color: var(--ink) !important; }
+  .series-box__name a { color: inherit; font-weight: 600; text-decoration: none; }
+  .series-box__pos { flex: none; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  details[open] > summary { border-bottom: 1px solid var(--rule); }
+}
+
+.series-box__list {
+  margin: 0;
+  padding: 8px 14px 10px 38px;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+
+  li { padding: 3px 0; color: var(--ink-3); }
+  a { color: var(--ink-2); text-decoration: none; }
+  a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 0.2em; }
+  li[aria-current="page"] a { color: var(--ink); font-weight: 600; }
+}
+
+.series-box__step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px 24px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+
+  a { display: block; color: inherit; text-decoration: none; }
+  .lbl { display: block; font-size: 0.75rem; color: var(--ink-3); }
+  .ttl { display: block; margin-top: 2px; color: var(--ink-2); text-wrap: balance; }
+  a:hover .ttl { color: var(--ink); text-decoration: underline; text-underline-offset: 0.2em; }
+  .next { grid-column: 2; text-align: right; }
+}
+
+@media (max-width: 559px) {
+  .series-box__step {
+    grid-template-columns: 1fr;
+
+    .next { grid-column: 1; text-align: left; }
+  }
+}
+
+// 용어 사전, 시리즈 목록 페이지
+.lede-text { color: var(--ink-2); }
+
+.glossary-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 20px 0 8px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+
+  a { color: var(--ink-2); }
+}
+
+.glossary-cat {
+  margin-top: 40px;
+
+  h2 {
+    font-size: 1.25rem;
+    small { margin-left: 6px; font-family: var(--font-sans); font-size: 0.8125rem; font-weight: 400; color: var(--ink-3); }
+  }
+}
+
+.glossary-list {
+  margin: 0;
+
+  > div { padding: 12px 0; border-bottom: 1px solid var(--rule); scroll-margin-top: 24px; }
+  > div:target { background: var(--bg-2); }
+  dt { font-weight: 600; }
+  .aka { margin-left: 6px; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 400; color: var(--ink-3); }
+  dd { margin: 4px 0 0; color: var(--ink-2); word-break: keep-all; }
+}
+
+.series-index {
+  margin-top: 40px;
+
+  h2 { font-size: 1.25rem; }
+  .series-desc { margin: 0 0 12px; font-family: var(--font-sans); font-size: 0.875rem; color: var(--ink-2); }
+  ol { margin: 0; padding-left: 1.6em; }
+  li { padding: 5px 0; }
+  li::marker { color: var(--ink-3); font-family: var(--font-sans); font-size: 0.8125rem; }
+  a { color: var(--ink); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 0.22em; }
+  time { margin-left: 8px; font-family: var(--font-sans); font-size: 0.75rem; color: var(--ink-3); }
 }

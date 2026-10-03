@@ -1,6 +1,6 @@
 ---
 
-title: "인프라 운영 AI 에이전트 구축 (MCP, PR 리뷰, 알림 자동 진단)"
+title: "[AI 9편] 인프라 운영 AI 에이전트 구축 (MCP, PR 리뷰, 알림 자동 진단)"
 date: 2026-08-03
 categories: [AI]
 tags: [AI, Agent, LLM, MCP, ChatOps]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: ai
+series_order: 9
 ---
 
 ## 참고자료

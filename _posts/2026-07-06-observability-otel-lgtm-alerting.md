@@ -1,6 +1,6 @@
 ---
 
-title: "OpenTelemetry와 LGTM 스택 구축, 알림 설계"
+title: "[관측성 4편] OpenTelemetry와 LGTM 스택 구축, 알림 설계"
 date: 2026-07-06
 categories: [Observability]
 tags: [Observability, OpenTelemetry, LGTM, Alerting, SLO]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: observability
+series_order: 4
 ---
 
 ## 참고자료

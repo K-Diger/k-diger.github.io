@@ -1,11 +1,13 @@
 ---
-title: "Cilium 공식 문서 정리 (eBPF 네트워킹, 네트워크 정책, Hubble)"
+title: "[쿠버네티스 5편] Cilium 공식 문서 정리 (eBPF 네트워킹, 네트워크 정책, Hubble)"
 date: 2026-04-06
 categories: [Kubernetes, Networking]
 tags: [Kubernetes, Cilium, eBPF, CNI, Network]
 layout: post
 toc: true
 mermaid: true
+series: kubernetes
+series_order: 5
 ---
 
 ## 참고자료

@@ -1,12 +1,14 @@
 ---
 render_with_liquid: false # Helm/Go 템플릿의 {{ }} 를 Liquid 가 지우지 않도록
-title: "Helm 공식 문서 정리 (차트 구조, 템플릿, Hooks, 서명 검증)"
+title: "[쿠버네티스 2편] Helm 공식 문서 정리 (차트 구조, 템플릿, Hooks, 서명 검증)"
 date: 2026-02-16
 categories: [Kubernetes, Helm]
 tags: [Kubernetes, Helm]
 layout: post
 toc: true
 mermaid: true
+series: kubernetes
+series_order: 2
 ---
 
 ## 참고자료

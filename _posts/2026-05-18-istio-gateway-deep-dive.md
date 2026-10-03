@@ -1,11 +1,13 @@
 ---
-title: "Istio Gateway와 Kubernetes Gateway API 비교"
+title: "[쿠버네티스 8편] Istio Gateway와 Kubernetes Gateway API 비교"
 date: 2026-05-18
 categories: [Kubernetes, ServiceMesh]
 tags: [Kubernetes, Istio, GatewayAPI]
 layout: post
 toc: true
 mermaid: true
+series: kubernetes
+series_order: 8
 ---
 
 ## 참고자료

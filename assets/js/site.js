@@ -670,6 +670,142 @@ function initMath(article, body) {
   document.head.append(s);
 }
 
+// ---------------------------------------------------------------------------
+// 용어 사전: 본문에서 각 용어가 "처음" 나오는 곳에 점선 밑줄 버튼을 단다.
+// 마우스를 올리거나(정밀 포인터) 누르면(터치) 정의 팝오버가 뜬다. 같은 용어는 글당 한 번만 표시해 본문이 어지럽지 않게 한다.
+// 코드, 링크, 제목, 다이어그램 안은 건드리지 않는다. 글 위에는 "이 글에 나오는 용어" 목록을 접어 둔다.
+// ---------------------------------------------------------------------------
+
+const TERM_SKIP = 'pre, code, kbd, a, h1, h2, h3, h4, h5, h6, .mermaid, .mermaid-wrap, mjx-container, .term, button, summary, script, style, .katex';
+
+async function initGlossary(article, body) {
+  const url = article.dataset.glossary;
+  if (!url) return;
+  let data;
+  try { data = await (await fetch(url)).json(); } catch { return; }
+
+  // 표기 → 항목. 긴 표기부터 시도해야 "Waypoint Proxy"가 "Waypoint"보다 먼저 잡힌다.
+  // scope가 있는 용어는 글 분류가 겹칠 때만 쓴다(같은 "토큰"이라도 AI 글과 인증 글의 뜻이 다르다)
+  const cats = (article.dataset.categories || '').split('|').filter(Boolean);
+  const forms = [];
+  data.forEach((g, idx) => {
+    if (g.s && g.s.length && !g.s.some((c) => cats.includes(c))) return;
+    [g.t, ...(g.a || [])].forEach((f) => f && forms.push({ f, idx }));
+  });
+  forms.sort((x, y) => y.f.length - x.f.length);
+  const byForm = new Map(forms.map((x) => [x.f, x.idx]));
+  // 영문 표기는 앞뒤가 영문자나 숫자가 아니어야 한다(GC가 GCP 안에서 잡히지 않게). 한글 표기는 앞이 한글이 아니면 된다(뒤 조사는 허용).
+  const alt = forms.map(({ f }) => /^[\x00-\x7F]+$/.test(f)
+    ? `(?<![A-Za-z0-9_-])${escapeRegExp(f)}(?![A-Za-z0-9_])`
+    : `(?<![가-힣])${escapeRegExp(f)}`).join('|');
+  const re = new RegExp(alt, 'g');
+
+  const used = new Map();   // idx → 버튼 id
+  const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => (n.nodeValue.trim() && !n.parentElement.closest(TERM_SKIP) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT)
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach((node) => {
+    const text = node.nodeValue;
+    re.lastIndex = 0;
+    let m, last = 0;
+    const frag = document.createDocumentFragment();
+    while ((m = re.exec(text))) {
+      const idx = byForm.get(m[0]);
+      if (idx == null || used.has(idx)) continue;
+      const id = `term-${used.size + 1}`;
+      used.set(idx, id);
+      frag.append(text.slice(last, m.index));
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'term';
+      btn.id = id;
+      btn.dataset.idx = idx;
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', 'term-pop');
+      btn.textContent = m[0];
+      frag.append(btn);
+      last = m.index + m[0].length;
+    }
+    if (last > 0) { frag.append(text.slice(last)); node.replaceWith(frag); }
+  });
+  if (!used.size) return;
+
+  // 공용 팝오버 하나를 위치만 바꿔 쓴다
+  const page = article.dataset.glossaryPage;
+  const pop = document.createElement('div');
+  pop.className = 'term-pop';
+  pop.id = 'term-pop';
+  pop.setAttribute('role', 'tooltip');
+  pop.hidden = true;
+  document.body.append(pop);
+  let current = null, hideTimer = 0, shownAt = 0;
+  const place = (btn) => {
+    const r = btn.getBoundingClientRect(), w = Math.min(340, innerWidth - 32);
+    pop.style.width = w + 'px';
+    const left = Math.max(16, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 16));
+    pop.style.left = left + scrollX + 'px';
+    const below = r.bottom + 8, h = pop.offsetHeight;
+    const top = below + h > innerHeight - 8 && r.top - h - 8 > 8 ? r.top - h - 8 : below;
+    pop.style.top = top + scrollY + 'px';
+  };
+  const show = (btn) => {
+    clearTimeout(hideTimer);
+    if (current && current !== btn) current.setAttribute('aria-expanded', 'false');
+    const g = data[+btn.dataset.idx];
+    pop.innerHTML = `<p class="term-pop__head"><strong>${escapeHtml(g.t)}</strong><span>${escapeHtml(g.c)}</span></p>` +
+      `<p class="term-pop__def">${escapeHtml(g.d)}</p>` +
+      (page ? `<a class="term-pop__more" href="${page}#${encodeURIComponent(g.i)}">용어 사전에서 보기</a>` : '');
+    pop.hidden = false;
+    place(btn);
+    btn.setAttribute('aria-expanded', 'true');
+    btn.setAttribute('aria-describedby', 'term-pop');
+    if (current !== btn) shownAt = Date.now();
+    current = btn;
+  };
+  const hide = () => {
+    pop.hidden = true;
+    if (current) { current.setAttribute('aria-expanded', 'false'); current.removeAttribute('aria-describedby'); }
+    current = null;
+  };
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  // 탭하면 focusin이 먼저 팝오버를 열고 곧바로 click이 온다. 열린 지 350ms 안의 click은 같은 동작으로 보고 닫지 않는다.
+  // 마우스 환경은 이미 hover로 열려 있으므로 click으로 닫지 않는다(바깥 클릭이나 Esc로 닫힘).
+  body.addEventListener('click', (e) => {
+    const btn = e.target.closest('.term');
+    if (!btn) return;
+    e.preventDefault();
+    if (current === btn && !pop.hidden && !fine && Date.now() - shownAt > 350) hide();
+    else show(btn);
+  });
+  if (fine) {
+    body.addEventListener('mouseover', (e) => { const b = e.target.closest('.term'); if (b) show(b); });
+    body.addEventListener('mouseout', (e) => { if (e.target.closest('.term')) hideTimer = setTimeout(hide, 180); });
+    pop.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+    pop.addEventListener('mouseleave', () => { hideTimer = setTimeout(hide, 180); });
+  }
+  body.addEventListener('focusin', (e) => { const b = e.target.closest('.term'); if (b) show(b); });
+  body.addEventListener('focusout', (e) => { if (e.target.closest('.term') && !pop.contains(e.relatedTarget)) hideTimer = setTimeout(hide, 120); });
+  document.addEventListener('click', (e) => { if (current && !e.target.closest('.term') && !pop.contains(e.target)) hide(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && current) { const b = current; hide(); b.focus(); } });
+  addEventListener('resize', () => current && place(current));
+
+  // 글 위 "이 글에 나오는 용어" 목록 (등장 순서)
+  const box = $('.terms-inline', article);
+  if (box) {
+    $('.terms-inline__count', box).textContent = used.size;
+    const dl = $('dl', box);
+    used.forEach((id, idx) => {
+      const g = data[idx];
+      const div = document.createElement('div');
+      div.innerHTML = `<dt><a href="#${id}">${escapeHtml(g.t)}</a></dt><dd>${escapeHtml(g.d)}</dd>`;
+      dl.append(div);
+    });
+    box.hidden = false;
+  }
+}
+
 function initPost() {
   const article = $('.post-layout');
   const body = $('#post-body');
@@ -683,6 +819,7 @@ function initPost() {
   initFrames(body);
   initMermaid(body);
   initMath(article, body);
+  initGlossary(article, body);
 }
 
 // ---------------------------------------------------------------------------

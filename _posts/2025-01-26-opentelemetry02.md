@@ -1,6 +1,6 @@
 ---
 
-title: "OpenTelemetry 시그널 정리 (트레이스, 메트릭, 로그)"
+title: "[관측성 2편] OpenTelemetry 시그널 정리 (트레이스, 메트릭, 로그)"
 date: 2025-01-26
 categories: [Observability]
 tags: [Observability, OpenTelemetry, Tracing]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: observability
+series_order: 2
 ---
 
 ## 참고자료

@@ -1,6 +1,6 @@
 ---
 
-title: "온프레미스 쿠버네티스와 EKS 비교 (네트워킹, IRSA, 로드밸런서)"
+title: "[쿠버네티스 11편] 온프레미스 쿠버네티스와 EKS 비교 (네트워킹, IRSA, 로드밸런서)"
 date: 2026-08-17
 categories: [Kubernetes, Cloud]
 tags: [Kubernetes, AWS, EKS, Terraform]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: kubernetes
+series_order: 11
 ---
 
 ## 참고자료

@@ -1,5 +1,5 @@
 ---
-title: "AI 코딩 에이전트 사용 가이드 (토큰 관리, 스펙 기반 개발)"
+title: "[AI 7편] AI 코딩 에이전트 사용 가이드 (토큰 관리, 스펙 기반 개발)"
 date: 2026-07-20
 categories: [AI]
 tags: [AI, ClaudeCode, MCP, Agent]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
+series: ai
+series_order: 7
 ---
 
 ## 목차

@@ -1,6 +1,6 @@
 ---
 
-title: "Docker Compose에서 Kubernetes로 전환하며 겪은 문제 (게이트웨이, 네트워크, 배포)"
+title: "[쿠버네티스 12편] Docker Compose에서 Kubernetes로 전환하며 겪은 문제 (게이트웨이, 네트워크, 배포)"
 date: 2026-08-28
 categories: [Kubernetes]
 tags: [Kubernetes, DockerCompose, Migration, GatewayAPI, Cilium, GitOps]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: kubernetes
+series_order: 12
 ---
 
 ## 참고자료

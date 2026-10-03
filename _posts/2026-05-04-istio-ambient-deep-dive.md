@@ -1,11 +1,13 @@
 ---
-title: "Istio Ambient 모드 구조 (ztunnel, waypoint)와 사이드카 모드 비교"
+title: "[쿠버네티스 7편] Istio Ambient 모드 구조 (ztunnel, waypoint)와 사이드카 모드 비교"
 date: 2026-05-04
 categories: [Kubernetes, ServiceMesh]
 tags: [Kubernetes, Istio, ServiceMesh]
 layout: post
 toc: true
 mermaid: true
+series: kubernetes
+series_order: 7
 ---
 
 ## 참고자료

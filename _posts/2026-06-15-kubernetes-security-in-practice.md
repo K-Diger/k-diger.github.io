@@ -1,6 +1,6 @@
 ---
 
-title: "Kubernetes 보안 구성 (PSA, Kyverno, kube-bench, Falco, Trivy)"
+title: "[쿠버네티스 10편] Kubernetes 보안 구성 (PSA, Kyverno, kube-bench, Falco, Trivy)"
 date: 2026-06-15
 categories: [Kubernetes, Security]
 tags: [Kubernetes, Security, Kyverno, CKS]
@@ -8,7 +8,8 @@ layout: post
 toc: true
 math: true
 mermaid: true
-
+series: kubernetes
+series_order: 10
 ---
 
 ## 참고자료

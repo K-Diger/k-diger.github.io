@@ -7,6 +7,7 @@
     {%- endif %}
     <nav class="site-nav" aria-label="사이트">
       <a href="{{ '/' | relative_url }}#posts">글</a>
+      <a href="{{ '/series/' | relative_url }}" {% if page.url == '/series/' %}aria-current="page"{% endif %}>시리즈</a>
       <a href="{{ '/categories/' | relative_url }}" {% if page.url == '/categories/' %}aria-current="page"{% endif %}>분류</a>
       <a href="{{ '/tags/' | relative_url }}" {% if page.url == '/tags/' %}aria-current="page"{% endif %}>태그</a>
       <button type="button" id="search-open" aria-haspopup="dialog">검색 <kbd>⌘K</kbd></button>

@@ -1,11 +1,13 @@
 ---
-title: "Istio 사이드카 모드 공식 문서 정리"
+title: "[쿠버네티스 6편] Istio 사이드카 모드 공식 문서 정리"
 date: 2026-04-20
 categories: [Kubernetes, ServiceMesh]
 tags: [Kubernetes, Istio, ServiceMesh, Envoy, mTLS]
 layout: post
 toc: true
 mermaid: true
+series: kubernetes
+series_order: 6
 ---
 
 ## 참고자료

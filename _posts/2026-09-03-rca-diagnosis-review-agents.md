@@ -1,5 +1,5 @@
 ---
-title: "장애 원인 분석 에이전트와 검토 에이전트 분리 구성 (확증 편향 점검, 해결 사례 기록)"
+title: "[AI 12편] 장애 원인 분석 에이전트와 검토 에이전트 분리 구성 (확증 편향 점검, 해결 사례 기록)"
 date: 2026-09-03
 categories: [AI]
 tags: [AI, Claude Code, SRE, Troubleshooting, Subagent]
@@ -7,6 +7,8 @@ layout: post
 toc: true
 math: false
 mermaid: true
+series: ai
+series_order: 12
 ---
 
 ## 참고자료
