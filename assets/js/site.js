@@ -832,3 +832,5 @@ theme.init();
 const openSearch = initSearch();
 initKeys(openSearch);
 initPost();
+// 비밀번호로 잠긴 글(_layouts/lock.html)은 복호화한 뒤에 본문이 채워지므로 그때 글 보강을 한 번 더 돌린다
+document.addEventListener('lock:decrypted', initPost);

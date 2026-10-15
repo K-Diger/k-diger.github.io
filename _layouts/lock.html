@@ -1,0 +1,153 @@
+---
+layout: default
+---
+{%- comment -%}
+비밀번호로 잠긴 글의 공통 틀. 본문은 page.lock_data가 가리키는 JSON에 AES-256-GCM 암호문으로만 있고,
+비밀번호를 입력하면 브라우저에서 PBKDF2(SHA-256, 600,000회)로 키를 만들어 복호화한다.
+복호화한 HTML을 #post-body에 넣은 뒤 lock:decrypted 이벤트를 보내면 site.js가 코드, 표, 다이어그램, 목차를 다듬는다.
+평문 원고와 비밀번호는 이 저장소에 없다. 원고 쪽 tools로 재암호화한다.
+{%- endcomment -%}
+<div class="wrap">
+  <article class="post-layout lock-wide" data-math="false" data-categories=""
+    data-glossary="{{ '/assets/js/data/glossary.json' | relative_url }}"
+    data-glossary-page="{{ '/glossary/' | relative_url }}">
+    <header class="post-head">
+      <h1>{{ page.title | remove: '\' }}</h1>
+      <p class="lede" id="lock-lede">비밀번호를 입력하면 이 브라우저 안에서만 내용을 복호화한다.</p>
+    </header>
+    <form class="lock-form" id="lock-form" autocomplete="off">
+      <label for="lock-pw">비밀번호</label>
+      <div class="lock-row">
+        <input id="lock-pw" type="password" required autocomplete="current-password">
+        <button type="submit">열기</button>
+      </div>
+      <p class="lock-msg" id="lock-msg" role="status" aria-live="polite"></p>
+    </form>
+
+    <details class="terms-inline" hidden>
+      <summary><span>이 글에 나오는 용어 <span class="terms-inline__count"></span>개</span></summary>
+      <dl></dl>
+    </details>
+    <details class="toc-inline" hidden>
+      <summary>목차</summary>
+      <nav class="toc" aria-label="목차"></nav>
+    </details>
+
+    <div class="prose" id="post-body" hidden></div>
+
+    <aside class="toc-rail" hidden>
+      <nav class="toc" aria-label="목차">
+        <p class="toc__title">목차</p>
+      </nav>
+    </aside>
+  </article>
+</div>
+<style>
+  /* 시험 풀이는 코드 주석과 표가 길어서 일반 글보다 넓게 쓴다. 맥북에서는 본문을 넓히고, 폰에서는 기본 여백을 따른다 */
+  :root:has(.lock-wide) { --frame: 80rem; --measure: 54rem; }
+  .lock-wide .terms-inline { display: none !important; }
+  .lock-wide .prose { font-size: 1.0625rem; }
+  .lock-wide .prose h4 { margin-top: 1.8em; }
+  .lock-wide .prose pre, .lock-wide .prose .highlight { font-size: 0.875rem; }
+  @media (max-width: 640px) {
+    .lock-wide .prose { font-size: 1rem; }
+    .lock-wide .prose pre, .lock-wide .prose .highlight { font-size: 0.8125rem; }
+  }
+  .lock-form { max-width: 26rem; margin: 8px 0 48px; font-family: var(--font-sans); }
+  .lock-form label { display: block; margin-bottom: 8px; font-size: 0.875rem; color: var(--ink-2); }
+  .lock-row { display: flex; gap: 8px; }
+  .lock-row input { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid var(--rule-2); border-radius: 6px;
+    background: var(--bg); color: var(--ink); font: inherit; }
+  .lock-row button { padding: 9px 16px; border: 1px solid var(--rule-2); border-radius: 6px; background: var(--bg-2);
+    color: var(--ink); font: inherit; cursor: pointer; }
+  .quiz-btn { flex: 1 1 8rem; min-height: 44px; padding: 10px 14px; border: 1px solid var(--rule-2); border-radius: 8px; background: var(--bg-2);
+    color: var(--ink); font: 0.9375rem var(--font-sans); cursor: pointer; }
+  .quiz-btn:hover { border-color: var(--ink-2); }
+  .quiz-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 1.4em 0 0; }
+  @media (max-width: 640px) { .quiz-actions .quiz-btn:first-child { flex-basis: 100%; } .quiz-actions .quiz-btn { flex-basis: calc(50% - 4px); } }
+  .lock-msg { min-height: 1.5em; margin: 10px 0 0; font-size: 0.8125rem; color: var(--ink-2); }
+</style>
+<script type="module">
+  const form = document.getElementById('lock-form');
+  const msg = document.getElementById('lock-msg');
+  const body = document.getElementById('post-body');
+  const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  let data = null;
+  {%- if page.quiz %}
+  // 문제마다 풀이와 정답을 가리고 버튼으로 열고 닫는다. 무작위 문제로 이동하는 버튼도 둔다.
+  function setupQuiz() {
+    const qs = [...body.querySelectorAll('h2')];
+    const answers = [];
+    const mk = (label, fn, parent) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'quiz-btn'; b.textContent = label; b.addEventListener('click', fn);
+      parent.appendChild(b);
+      return b;
+    };
+    qs.forEach((h, i) => {
+      const nodes = [];
+      let n = h.nextElementSibling, start = null;
+      while (n && n.tagName !== 'H2') {
+        if (!start && n.tagName === 'H4' && n.textContent.trim() === '풀이') start = n;
+        if (start) nodes.push(n);
+        n = n.nextElementSibling;
+      }
+      if (!start) return;
+      const box = document.createElement('div');
+      box.hidden = true;
+      start.before(box);
+      nodes.forEach((x) => box.appendChild(x));
+      const wrap = document.createElement('div');
+      wrap.className = 'quiz-actions';
+      const btn = mk('정답 보기', () => set(box, btn, box.hidden), wrap);
+      btn.setAttribute('aria-expanded', 'false');
+      box.before(wrap);
+      answers.push({ box, btn, h });
+    });
+    const set = (box, btn, show) => {
+      box.hidden = !show;
+      btn.textContent = show ? '정답 숨기기' : '정답 보기';
+      btn.setAttribute('aria-expanded', String(show));
+    };
+    let last = -1;
+    answers.forEach((a) => {
+      const wrap = a.btn.parentElement;
+      mk('랜덤 문제', () => {
+        let i;
+        do { i = Math.floor(Math.random() * answers.length); } while (answers.length > 1 && i === last);
+        last = i;
+        answers.forEach((x) => set(x.box, x.btn, false));
+        answers[i].h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, wrap);
+      mk('정답 모두 숨기기', () => answers.forEach((x) => set(x.box, x.btn, false)), wrap);
+    });
+  }
+  {%- endif %}
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '복호화 중...';
+    try {
+      if (!data) {
+        const res = await fetch('{{ page.lock_data | relative_url }}', { cache: 'no-store' });
+        if (!res.ok) throw new Error('데이터를 불러오지 못했다 (HTTP ' + res.status + ')');
+        data = await res.json();
+      }
+      const pw = new TextEncoder().encode(document.getElementById('lock-pw').value);
+      const base = await crypto.subtle.importKey('raw', pw, 'PBKDF2', false, ['deriveKey']);
+      const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(data.salt), iterations: data.iter, hash: 'SHA-256' },
+        base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(data.iv) }, key, b64(data.ct));
+      body.innerHTML = new TextDecoder().decode(plain);
+      body.hidden = false;
+      form.hidden = true;
+      document.getElementById('lock-lede').hidden = true;
+      {%- if page.quiz %}
+      setupQuiz();
+      {%- endif %}
+      document.dispatchEvent(new Event('lock:decrypted'));
+    } catch (err) {
+      // AES-GCM은 비밀번호가 틀리면 인증 태그 검증에서 실패한다
+      msg.textContent = (err && err.name === 'OperationError') ? '비밀번호가 맞지 않는다.' : String(err.message || err);
+    }
+  });
+</script>
