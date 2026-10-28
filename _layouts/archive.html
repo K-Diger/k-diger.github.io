@@ -22,13 +22,6 @@ layout: default
   </header>
 
   <ul class="post-list">
-    {%- for post in matched %}
-    <li class="post-row">
-      <a href="{{ post.url | relative_url }}">
-        <span class="post-row__title">{{ post.title }}</span>
-        <time class="post-row__date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y년 %-m월' }}</time>
-      </a>
-    </li>
-    {%- endfor %}
+    {%- include post-rows.html posts=matched -%}
   </ul>
 </div>

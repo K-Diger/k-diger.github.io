@@ -5,9 +5,9 @@ kubernetes:
 ai:
   name: AI
   desc: 신경망 원리와 프롬프트, RAG를 먼저 보고, Claude API와 MCP, Claude Code를 거쳐 실무 에이전트 구축 순서로 읽는다.
-observability:
-  name: 관측성
-  desc: 관측 가능성 개념과 OpenTelemetry 시그널, 자동 계측 원리를 보고 LGTM 스택 구축으로 넘어간다.
 claude-academy:
   name: Claude Academy
   desc: 모델 동작 원리에서 시작해 플랫폼, Claude Code, Skills, Cowork, 조직 도입을 거쳐 엔지니어링 사용 사례까지 Claude Academy 내용을 순서대로 정리한다.
+observability:
+  name: 관측성
+  desc: 관측 가능성 개념과 OpenTelemetry 시그널, 자동 계측 원리를 보고 LGTM 스택 구축으로 넘어간다.

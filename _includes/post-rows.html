@@ -1,0 +1,23 @@
+{%- comment -%}
+  글 목록 행. 날짜 내림차순으로 훑되, 시리즈 글은 그 시리즈에서 가장 최근 글의 자리에
+  series_order 순으로 한 덩어리로 묶어 보인다. 사용: {% include post-rows.html posts=site.posts %}
+{%- endcomment -%}
+{%- assign seen = '|' -%}
+{%- for post in include.posts -%}
+  {%- if post.series -%}
+    {%- assign marker = '|' | append: post.series | append: '|' -%}
+    {%- if seen contains marker -%}{%- continue -%}{%- endif -%}
+    {%- assign seen = seen | append: post.series | append: '|' -%}
+    {%- assign group = include.posts | where: 'series', post.series | sort: 'series_order' -%}
+  {%- else -%}
+    {%- assign group = '' | split: '' | push: post -%}
+  {%- endif -%}
+  {%- for p in group %}
+<li class="post-row">
+  <a href="{{ p.url | relative_url }}">
+    <span class="post-row__title" style="view-transition-name: vt-{{ p.slug | slugify }}">{{ p.title }}</span>
+    <time class="post-row__date" datetime="{{ p.date | date_to_xmlschema }}">{{ p.date | date: '%Y년 %-m월' }}</time>
+  </a>
+</li>
+  {%- endfor -%}
+{%- endfor -%}
