@@ -35,6 +35,7 @@ Bedrock과 Vertex AI 강좌는 직접 호출 API의 본 강좌와 레슨 구성�
 - Managed Agents는 무엇을 대신 해 주는가?
 - Bedrock과 Vertex AI에서는 무엇이 달라지는가?
 - RAG 파이프라인은 어떤 단계로 만들고 무엇을 보강하는가?
+- 호출 기초와 Claude Code 연동에서 더 챙길 것은 무엇인가?
 
 ---
 
@@ -55,7 +56,7 @@ flowchart TB
     G --> J["Vertex AI"]
 ```
 
-1절은 계층과 모델 선택, 2절은 루프와 도구, 3절은 워크플로우와 에이전트의 선택, 4절은 Managed Agents, 5절은 클라우드별 차이, 6절은 RAG다.
+1절은 계층과 모델 선택, 2절은 루프와 도구, 3절은 워크플로우와 에이전트의 선택, 4절은 Managed Agents, 5절은 클라우드별 차이, 6절은 RAG, 7절은 호출 기초와 Claude Code 연동이다.
 
 ---
 
@@ -218,6 +219,33 @@ Anthropic은 임베딩 모델을 제공하지 않는다. API 강좌는 VoyageAI�
 
 ---
 
+## 7. 보완: 호출 기초와 Claude Code 연동
+
+일곱 번째 질문이다.
+
+직접 호출의 기초는 AI 4편에 있고, 여기서는 3개 강좌에 공통으로 나오는 나머지 항목을 모았다.
+
+### 7.1 호출 기초
+
+- 사용자 요청은 서버, API, 모델, 응답 순으로 흐른다. API 키 노출을 막으려면 반드시 서버를 거친다.
+- 모델은 토큰화, 임베딩, 맥락화, 생성 단계를 거치고 최대 토큰, 종료 토큰, 정지 시퀀스에서 멈춘다.
+- 키는 콘솔에서 Create Key로 만들며 한 번만 표시되므로 복사해 보관한다. `.env.local`에 두고 SDK를 설치한 뒤 `model`, `max_tokens`, `messages` 세 값으로 호출한다.
+- 도구 스키마는 `name`, `description`, `input_schema`로 구성하고 Claude에게 작성을 맡길 수 있다. 응답의 `ToolUse` 블록을 처리하고 `tool_use_id`를 맞춘 `tool_result`를 사용자 메시지로 보낸다. 오류는 `is_error`로 전달한다.
+- 세밀한 도구 호출(fine-grained tool calling)은 스트리밍 중 `input_json` 이벤트로 인자 조각을 받는다. API는 기본으로 JSON 유효성을 확인한 뒤 한꺼번에 보내는데, 이 확인을 끄면 지연이 줄지만 잘못된 JSON 처리를 앱이 맡는다.
+- Vertex AI의 확장 사고는 사고 토큰에도 비용이 붙고, thinking 블록의 서명과 암호화된 redacted thinking을 다룬다. `budget_tokens`는 최소 1,024이고 `max_tokens`보다 작아야 한다.
+
+### 7.2 Claude Code와의 연동
+
+- API 코드를 Claude Code에 맡길 때는 스텁 파일을 넘기고 프롬프트에 파일, 패턴, 완료 상태를 명시한 뒤 결과 diff를 확인한다. TypeScript SDK를 쓰면 내장 스킬 `/claude-api`가 자동 호출되고, 보이지 않으면 `/plugin marketplace`로 `anthropics/skills`를 추가한다.
+- MCP 서버는 `claude mcp add`로 등록한다. 강좌 예시는 Sentry, Playwright, Figma, Jira와 Confluence, Slack 서버를 조합한 개발 흐름이다.
+- 병렬 실행은 git worktree로 인스턴스마다 작업 공간을 분리해 파일 충돌을 막고, `.claude/commands`의 `$ARGUMENTS` 커맨드로 생성과 병합을 자동화한다(Bedrock 강좌).
+- 자동 디버깅 사례는 GitHub Action이 매일 CloudWatch 로그 24시간치를 가져와 Claude가 오류를 분석하고 수정한 뒤 PR을 연다. 예제에서는 운영 환경의 잘못된 모델 ID를 고쳤다(Bedrock 강좌).
+- 컴퓨터 사용(computer use)은 Claude가 스크린샷, 클릭, 입력으로 데스크톱을 조작한다. 일반 도구 사용과 같은 구조이고 도구가 마우스와 키보드 동작을 실행하며, 참조 구현은 Docker 컨테이너의 Firefox다. 자동완성 컴포넌트 QA에서 세 번째 케이스 실패를 찾아냈다.
+
+에이전트의 특성은 네 가지다. 관찰한 뒤 행동하는 패턴을 보이고, 소수의 단순 도구를 반복 실행하고, 환경 맥락을 도구로 수집하고, 오류 비용이 낮은 고가치 작업에 적합하며 평가로 계속 개선한다.
+
+---
+
 ## 내 자산에 적용
 
 점검 대상은 API나 SDK로 만든 에이전트, 도구 정의, 알림 연동 스크립트다.
@@ -255,5 +283,7 @@ Anthropic은 임베딩 모델을 제공하지 않는다. API 강좌는 VoyageAI�
 **클라우드별 차이.** 개념은 같고 인증, 모델 식별자, 캐시 키워드, 한도가 다르다.
 
 **RAG.** 청킹, 임베딩, 벡터 저장, 유사도 검색 순이고, 어휘 검색(BM25)과 순위 결합(RRF), 재순위화, 문맥 검색으로 보강한다. 보강할수록 지연과 비용이 늘어난다.
+
+**호출 기초와 Claude Code 연동.** 키는 서버에서만 쓰고 도구 결과는 `tool_use_id`로 맞춘다. Claude Code 쪽은 worktree 병렬 실행, 자동 디버깅 Action, 컴퓨터 사용이 이어진다.
 
 정리하고 나서 가장 크게 바뀐 인식은 **모델 선택이 이름이 아니라 평가 결과로 정해진다**는 점이었다. 그래서 새 모델이 나오면 먼저 대표 예시를 낮은 단계에서 다시 돌린다.

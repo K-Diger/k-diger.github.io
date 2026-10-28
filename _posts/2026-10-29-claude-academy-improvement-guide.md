@@ -26,6 +26,7 @@ series_order: 11
 - [Claude Academy 9편 - 엔지니어링 사용 사례](/posts/claude-academy-use-cases-engineering/)
 - [Claude Academy 10편 - 업무 자동화 사용 사례와 웨비나](/posts/claude-academy-use-cases-workflow/)
 - [Claude Academy 12편 - 웨비나 전체 목록](/posts/claude-academy-webinars/)
+- [Claude Academy 13편 - 원문 전체 색인](/posts/claude-academy-index/)
 - 보완된 기존 글: [AI 4편](/posts/claude-api-stateless-eval-tooluse/), [AI 5편](/posts/mcp-server-client-transport/), [AI 6편](/posts/claude-code-tool-loop-hooks/), [AI 8편](/posts/ai-fluency-4d-claude-code/)
 
 ---

@@ -56,7 +56,7 @@ flowchart TB
     O --> H["사람의 확인<br/>발송, 삭제 전 승인"]
 ```
 
-1절은 일정과 메시지, 2절은 현황과 결정 기록, 3절은 비교와 분석, 4절은 결과물 만들기, 5절은 웨비나다.
+1절은 일정과 메시지, 2절은 현황과 결정 기록, 3절은 비교와 분석, 4절은 결과물 만들기, 5절은 웨비나, 6절은 사례별 예약과 연결 도구다.
 
 ---
 
@@ -115,7 +115,7 @@ Gmail, Slack, Drive, 캘린더에서 프로젝트 정보를 모아 Excel 트래�
 | 시장 규모 | 기존 리서치나 회사 데이터다. | TAM, SAM, SOM을 계산한 PowerPoint, Excel, 출처 문서 세 가지다. |
 | 이사회 덱 | 시작 자료 하나에서 사람, 채널, 문서를 따라간다. | 덱과 부속 문서다. 출처 간 숫자가 다르면 하나를 골라 부록에 차이를 적는다. |
 
-TAM, SAM, SOM은 각각 전체 시장(Total Addressable Market), 접근 가능한 시장(Serviceable Available Market), 실제로 확보할 수 있는 시장(Serviceable Obtainable Market)이다.
+예시 결과는 TAM 124억 달러(2024년, 연 11.2% 성장), SAM 48억 달러(엔터프라이즈 부문), SOM 7.2억 달러이고 결과물은 10~12장 임원용 PowerPoint, 계산 내용을 담은 Excel 워크북, 모든 인용을 담은 Markdown 출처 문서다. 이메일 트래커 예시는 45명 초대 중 38명 확정, 32개 세션, 바이오와 사진 미제출 11명이다. 주간 개요 예시는 예약률 65%와 준비 시간을 포함한 실제 85%, 90분 집중 구간 위치를 보인다. 경쟁 옵션 비교는 손익분기 직원 수와 20명에서 50명까지의 총비용 차트를 요청한다. TAM, SAM, SOM은 각각 전체 시장(Total Addressable Market), 접근 가능한 시장(Serviceable Available Market), 실제로 확보할 수 있는 시장(Serviceable Obtainable Market)이다.
 
 비교 사례의 위험 신호는 24개월 계약에 90일 해지 통지, 제안서 8쪽에 숨은 $500 구현비, 최소 5명 조건이다. 추천은 숫자 기준으로만 제시된다. 유연성이 우선이면 한 업체, 30명 이상 확장이 확실하면 다른 업체로 갈린다. 후속으로 CFO용 추천 메모, 업체 미팅 질문 목록, 손익분기 직원 수 차트를 요청할 수 있다.
 
@@ -165,6 +165,33 @@ TAM, SAM, SOM은 각각 전체 시장(Total Addressable Market), 접근 가능�
 | 9/24 | Modernizing Legacy Code with Claude Code | 모더나이제이션 플러그인으로 COBOL-to-Java 이전, 50만 줄 Java 업그레이드를 시연한다. |
 
 예정 웨비나는 4건이다. 10/21 AWS에서의 Claude 지출 통제(Tokenomics), 10/22 Rearview Roadmap Review, 10/28 Chat과 Cowork가 하나의 Claude로 합쳐질 때 관리자에게 생기는 변화, 10/29 사모펀드의 포트폴리오 전반 Claude 확대다. 관리자와 비용 주제는 [8편](/posts/claude-academy-tag-and-enterprise/), 모델 선택은 [2편](/posts/claude-academy-platform-and-cloud/)과 이어진다.
+
+---
+
+## 6. 보완: 사례별 예약과 연결 도구
+
+| 사례 | 예약과 루틴 | 연결 도구 |
+|---|---|---|
+| 사내 질문에 답하는 에이전트 만들기 | `/schedule`로 매주 금요일 오후 4시에 답하지 못한 질문을 주제별로 묶어 파일에 기록하게 한다. | 연결 도구는 Atlassian Rovo(Jira, Confluence), 코드 저장소, 웨어하우스, 작업 폴더이다. |
+| 여러 도구에 걸친 일일 브리핑 만들기 | 예약 브리핑은 기본적으로 원격 세션(베타)에서 실행된다. | 연결 도구는 Slack, Notion, Claude in Chrome 커넥터이다. |
+| 프로모션 이메일 정리하기 | 잘 되는 프롬프트는 shortcut 버튼으로 저장하고 "/"로 불러내거나 자동 실행을 예약한다. | 연결 도구는 Claude in Chrome 확장 프로그램과 로그인된 Gmail이다. |
+| 경쟁 옵션 비교와 분석 | 해당 없음. | 연결 도구는 없고 채팅의 (+) 버튼으로 제안서 파일을 올리거나 끌어다 놓으며, 문서를 미리 정리할 필요가 없다. 디자인 문구("expert-grade execution", "surgical precision and craft")는 기본 출력보다 완성도 높은 결과를 유도한다. |
+| 사내 뉴스레터 만들기 | 해당 없음. | 연결 도구는 Settings, Connectors에서 켠 Slack, Google Drive, Gmail이다. |
+| 프로세스 플로우차트 만들기 | 해당 없음. | 연결 도구는 없고 채팅의 (+) 버튼이나 끌어다 놓기로 문서를 올린다. 변환 후속 작업에는 Mermaid Chart 커넥터를 사용한다. |
+| 대화형 PDF 양식 만들기 | 해당 없음. | 연결 도구는 없고, 브랜드 자료와 스타일 선호 파일을 올리면 색상과 레이아웃을 맞춘다. 선택 사항으로 Extended Thinking을 켜면 파일 품질이 오른다. |
+| Claude가 할 수 있는 일 탐색하기 | 해당 없음. | 연결 도구는 선택 사항인 Google Drive이며 반드시 연결할 도구는 없다. |
+| 프로젝트 상태 보고서 만들기 | 해당 없음. | 연결 도구는 Google Drive, Gmail, Google Calendar, Slack이며 채팅 입력줄 설정에서 켜 두어야 한다. |
+| 여러 앱의 메시지 훑어보기 | `/schedule`로 평일 오전 8시에 `/start`를 돌려 주제별 정리와 초안을 Slack DM으로 보낸다. | 연결 도구는 Slack, Microsoft Teams, Gmail(Outlook) 커넥터이다. |
+| 아침 브리핑과 저녁 마무리 만들기 | `/schedule`로 `/start`는 평일 오전 8시, `/update`는 평일 오후 6시에 돌려 `Daily/<오늘>.md`에 작성한다. | 연결 도구는 Calendar, Slack, Gmail과 `Daily` 작업 폴더이다. |
+| 내 문체 프로필 만들기 | `/schedule`로 정기적으로 최근 90일의 보낸 메일과 Slack을 다시 읽어 새 내용을 합치되, 직접 더한 규칙은 그대로 유지한다. | 연결 도구는 메일과 Slack 커넥터 또는 글쓰기 샘플 폴더이다. |
+| 캘린더로 준비와 계획하기 | 후속 요청으로 회의실 예약과 링크 추가 승인, 외부 회의 상대와의 최근 이메일 요약을 할 수 있다. 같은 프롬프트를 shortcut으로 저장해 매일 저녁 6시에 "Prep tomorrow"로 실행하도록 예약 가능한다. | 연결 도구는 Claude in Chrome 확장 프로그램, Google Calendar, Gmail이다. |
+| 한 주 일정 빠르게 준비하기 | 결과 예시는 회의 10건 목록, 준비 메모, 예약률 65%와 준비 시간 포함 실제 85%, 90분 집중 구간 위치를 보이다. | 연결 도구는 Microsoft 365(Outlook, SharePoint, OneDrive, Teams)이다. |
+| 보유한 리서치로 시장 규모 산정하기 | 해당 없음. | 연결 도구는 Claude Desktop의 Cowork, 로컬 폴더와 파일이며 별도 커넥터는 쓰지 않는다. |
+| 연결된 도구에서 통찰을 모아 덱 만들기 | 해당 없음. | 연결 도구는 Cowork 로컬 파일, Slack, Google Drive, 이메일 커넥터, Claude in Chrome이다. 선택 자료는 지난 분기 이사회 덱이다. |
+| 긴 스레드를 결정 기록으로 바꾸기 | `/schedule`로 평일 오후 5시에 #product-decisions와 #leadership에서 마지막 실행 이후 :decided: 반응이 붙은 스레드를 찾아 `/task-management`를 돌리고 `decision-log.md`에 추가한다. 스레드가 답글 50개를 넘으면 결정이 묻히므로 예약 실행으로 미리 기록한다. | 연결 도구는 Slack, 이메일, 작업 폴더의 `Decisions/`이다. |
+| 이메일을 행사 트래커로 바꾸기 | 해당 없음. | 연결 도구는 Settings의 Connectors에서 켠 Gmail이며 채팅 입력줄에서도 켜져 있어야 한다. 캘린더 이벤트 생성에는 Google Calendar를 추가로 연결한다. |
+| 다음 주 회의 준비하기 | `/schedule`로 매주 일요일 오후 5시에 `/start`를 돌려 Planning 아래 새 Week-of 폴더를 만들고 주간 문서와 회의별 안건을 작성한다. | 연결 도구는 Calendar, Slack, Gmail, Drive이다. |
+| 팀 채널과 트래커로 주간 현황 게시물 만들기 | routine 설정 메시지는 팀 채널에 새 메시지로 보내야 요약이 팀이 일하는 곳에 올라옴. 변경은 설명 메시지로 하며 다음 실행부터 적용되고, routine 목록 조회와 중단(`@Claude disable the Friday digest.`)도 메시지 한 줄로 가능한다. | 연결 도구는 채널 스레드에 링크된 티켓과 팀 계획을 확인하는 트래커, 연결 시 한 주간 병합된 풀 리퀘스트(PR) 목록이다. |
 
 ---
 
