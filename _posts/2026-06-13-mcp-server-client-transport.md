@@ -19,6 +19,7 @@ series_order: 5
 - [Model Context Protocol - Transports](https://modelcontextprotocol.io/specification/latest/basic/transports)
 - [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
 - [Claude Code Docs - MCP](https://code.claude.com/docs/en/mcp)
+- [Claude Academy - 엔지니어링 과정 목록](https://academy.claude.com/ko/all?department=engineering) (Claude Code 101, Claude Platform 101, 커넥터 튜토리얼 보완분)
 
 ---
 
@@ -222,6 +223,22 @@ StreamableHTTP는 SSE(Server-Sent Events, 서버가 하나의 HTTP 응답으로 
 
 ---
 
+## 6. 보완: 사용하는 쪽에서 본 MCP
+
+이 절은 서버를 구현하는 쪽이 아니라 이미 있는 서버를 연결해 쓰는 쪽의 기준을 더한 것이다. 플랫폼 API와 앱 커넥터는 [Claude Academy 2편](/posts/claude-academy-platform-and-cloud/), [6편](/posts/claude-academy-claude-app/)에 있다.
+
+| 환경 | 연결 방법 | 확인할 점 |
+|---|---|---|
+| Claude Code | `claude mcp add`로 HTTP나 stdio 서버를 등록한다. 범위는 local, user, project 세 가지이고 project는 `.mcp.json`을 버전 관리에 올려 팀이 같은 서버를 받는다. | MCP 도구 정의가 컨텍스트의 10%를 넘으면 도구 검색 모드로 자동 전환되는데 성능이 떨어질 수 있다. `/mcp`로 쓰지 않는 서버를 끈다. `gh`, `aws`처럼 CLI가 있는 도구는 CLI를 우선한다. |
+| Claude API | `mcp_servers`에 type, URL, 이름, 선택적 인증 토큰을 적고 `mcp_toolset`으로 도구를 고른다. 기본 비활성화 설정으로 읽기 전용 도구만 허용할 수 있다. | 베타 기능이라 베타 헤더가 필요하다. Slack은 검색과 채널 목록만 열고 게시와 삭제는 막는 설정이 예로 나온다. |
+| claude.ai 앱 | 검색 및 도구 버튼에서 커넥터를 추가한다. 디렉터리에는 웹 커넥터와 데스크톱 확장이 있다. | 연결한 뒤 Claude에게 그 도구에 접근할 수 있는지 물어 확인한다. 부여된 권한은 항목별로 켜고 끈다. Claude는 사용자가 접근할 수 있는 데이터만 본다. |
+
+역할 구분은 도구가 내부 시스템용, 스킬이 순서용, MCP가 제3자 서비스용이다. 서비스 제공자가 연동 유지보수를 맡는다는 점이 MCP를 쓰는 이유다. 사용자 지정 커넥터는 조직 소유자가 Admin settings의 Connectors에서 URL을 넣어 추가하고, LSEG 시장 데이터가 그 예다. 접속하려면 서비스 쪽의 MCP 서버 접근 권한이 따로 필요하다.
+
+연결한 서버가 많을수록 컨텍스트가 줄고 권한 범위가 넓어진다. 설치하기 전에 서버가 쓰기 권한을 갖는지 읽고, 쓰기는 승인을 거치게 한다. 이는 위 5절의 폐쇄망 구성과 같은 원칙이다.
+
+---
+
 ## 정리하며
 
 처음 던진 질문들에 대한 답이다.
@@ -230,6 +247,7 @@ StreamableHTTP는 SSE(Server-Sent Events, 서버가 하나의 HTTP 응답으로 
 - **프리미티브를 3가지로 나눈 이유는?** 사용 결정 주체가 다르다. 도구는 모델, 리소스는 애플리케이션, 프롬프트는 사용자가 결정한다.
 - **서버가 클라이언트에게 요청하는 경우는?** 샘플링으로 모델 호출을 요청하거나 루트 목록을 조회할 때다. 샘플링을 쓰면 서버에 API 키와 모델 호출 비용이 필요 없다.
 - **HTTP 배포 후 일부 기능이 동작하지 않는 이유는?** HTTP에서는 서버가 먼저 요청을 보내기 어렵고, 확장을 위해 `stateless_http`를 켜면 서버 측 요청 기능을 쓸 수 없다. 개발 단계부터 운영과 같은 전송 방식으로 테스트한다.
+- **(보완) 이미 있는 서버를 연결할 때 확인할 것은?** 범위(local, user, project), 컨텍스트 비용, 쓰기 권한이다. 사용하지 않는 서버는 끈다.
 - **폐쇄망에서는 어떻게 사용하는가?** 로컬 파일 기반 서버를 직접 구현해 stdio로 연결했고, 변경 기능은 사용자가 명시적으로 승인할 때만 실행되게 했다.
 
 다음 주차는 AI Fluency 강의로 모델의 특성과 결과 검증 방법을 다뤘다.

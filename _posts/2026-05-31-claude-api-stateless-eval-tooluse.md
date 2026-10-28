@@ -18,6 +18,7 @@ series_order: 4
 - [Claude Docs - Tool use](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
 - [Claude Docs - Prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
 - [Claude Docs - Define success criteria and build evaluations](https://platform.claude.com/docs/en/test-and-evaluate/develop-tests)
+- [Claude Academy - 엔지니어링 과정 목록](https://academy.claude.com/ko/all?department=engineering) (Building with the Claude API 보완분)
 
 ---
 
@@ -235,6 +236,42 @@ sequenceDiagram
 
 ---
 
+## 8. 보완: 요청 파라미터, 프롬프트 기법, 부가 기능
+
+이 절은 같은 강좌에서 위 절들이 다루지 않은 부분을 더한 것이다. 모델 선택, 에이전트 루프, Managed Agents, Bedrock과 Vertex AI에서의 차이는 [Claude Academy 2편](/posts/claude-academy-platform-and-cloud/)에 있다.
+
+### 8.1 요청 파라미터
+
+| 파라미터 | 내용 |
+|---|---|
+| `system` | 역할과 응답 방식을 지정한다. 값이 있을 때만 포함하고 `None`은 API가 받지 않는다. |
+| `temperature` | 0에서 1 사이 값으로 토큰 선택의 무작위성을 조절한다. 사실 응답과 추출은 낮게, 브레인스토밍과 창작은 높게 둔다. |
+| 스트리밍 | `stream=True`나 `text_stream`으로 생성 중인 텍스트를 조각 단위로 받는다. `get_final_message`로 완성된 메시지를 저장용으로 확보한다. |
+
+### 8.2 프롬프트 기법의 효과
+
+프롬프트 엔지니어링은 평가로 측정하며 반복한다. 강좌는 운동선수 식단 프롬프트를 예로 기준 점수 2.3에서 시작한다.
+
+| 단계 | 점수 |
+|---|---|
+| 첫 줄을 "Generate" 같은 행동 동사로 시작하는 지시문으로 바꾼다. | 2.32에서 3.92로 오른다. |
+| 출력 품질 가이드라인을 추가한다. | 3.92에서 7.86으로 오른다. |
+
+그 밖의 기법은 두 가지다. 대량 데이터와 지시문 사이에 `<sales_records>` 같은 설명적 XML 태그로 경계를 둔다. 입력과 이상적 출력 쌍을 원샷이나 멀티샷 예시로 주되, 평가에서 최고점을 받은 출력을 예시로 쓰고 왜 좋은지도 설명한다. 이 수치는 강좌 예제 하나의 결과라서 다른 프롬프트에 그대로 기대할 수는 없다.
+
+### 8.3 도구와 부가 기능
+
+- 배치 도구(batch tool)는 Claude가 한 응답에 도구 호출을 여러 개 담지 않는 문제를 `invocations` 배열을 받는 도구로 우회한다.
+- 도구로 구조화 데이터를 뽑으면 프리필 방식보다 일관성이 높지만 설정이 복잡하다. `to_json` 같은 임의 객체 도구 하나만 두고 구조는 프롬프트에 쓰면 품질은 전용 스키마의 약 90%에 설정은 약 10%라는 비교가 나온다(Bedrock 강좌 수치).
+- 텍스트 편집 도구는 스키마가 내장이고 `view`, `str_replace`, `create`, `insert` 구현은 직접 쓴다. 모델 세대에 따라 `type`과 `name`이 다르다.
+- 웹 검색 도구는 콘솔에서 허용한 뒤 `type`, `name`, `max_uses`로 켜고 `allowed_domains`로 범위를 제한한다. 인용 블록으로 출처를 표시한다.
+- 이미지는 요청당 100개, 이미지당 5MB 한도로 base64나 URL로 전달한다. PDF는 `type`을 `document`, `media_type`을 `application/pdf`로 바꾼다. 문서 블록에 `citations`를 켜면 응답에 `cited_text`와 페이지 번호가 붙는다.
+- 코드 실행은 Files API로 파일을 올려 ID로 참조하고, 네트워크 없는 컨테이너에서 Python을 실행한다. 생성된 그래프는 `file_id`로 내려받는다.
+- 확장 사고는 `thinking` 파라미터의 `budget_tokens`로 켠다. 비용과 지연이 늘어나므로 프롬프트를 개선한 뒤에도 정확도가 부족할 때 쓴다.
+- 프롬프트 캐싱은 캐시 수명이 기본 5분이고 재사용 때마다 연장된다. 1시간 옵션은 쓰기 비용이 더 높다. 중단점은 최대 4개이고 처리 순서는 도구, 시스템, 메시지다. `usage`의 `cache_creation_input_tokens`와 `cache_read_input_tokens`로 동작을 확인한다.
+
+---
+
 ## 정리하며
 
 처음 던진 질문들에 대한 답이다.
@@ -244,5 +281,6 @@ sequenceDiagram
 - **프롬프트 개선은 어떻게 측정하는가?** 고정된 데이터셋으로 실행해 평균 점수를 비교한다. 형식은 코드로, 품질은 근거를 함께 작성하게 한 모델로 채점한다.
 - **도구 사용은 어떤 형식인가?** `tool_use` 블록을 받아 애플리케이션이 실행하고, 같은 ID로 `tool_result`를 반환하는 과정을 반복한다. 실패도 결과로 반환한다.
 - **캐싱은 어떤 조건에서 비용이 줄어드는가?** 같은 앞부분으로 5분 안에 다시 요청할 때다. 간헐적인 호출에는 효과가 없다.
+- **(보완) 프롬프트 기법은 얼마나 효과가 있는가?** 강좌 예제에서는 행동 동사 지시문과 품질 가이드라인 추가로 평가 점수가 2.32에서 7.86까지 올랐다. 다른 프롬프트에는 평가로 다시 측정해야 한다.
 
 다음 주차는 MCP(Model Context Protocol, AI 앱과 외부 도구를 잇는 표준 프로토콜) 서버와 클라이언트 구현을 다뤘다.

@@ -1333,3 +1333,35 @@
   scope: [AI]
   def: "모델이 다음 토큰을 고를 때 무작위성을 조절하는 값이다. 낮으면 가장 확률 높은 답을, 높으면 다양한 답을 낸다."
   short: "다음 토큰 선택의 무작위성 조절 값"
+- term: 환각
+  aka: [Hallucination, hallucination]
+  cat: AI
+  full: "Hallucination"
+  why: "실제로 없는 것이 보이거나 들리는 증상을 가리키는 말을 빌렸다. 모델이 없는 사실을 있는 것처럼 만들어 내는 현상에 붙였다."
+  scope: [AI]
+  def: "모델이 사실이 아닌 내용을 그럴듯하고 확신 있는 말투로 만들어 내는 현상이다. 이름, 날짜, 통계, 인용, URL 같은 구체적인 값에서 자주 나온다."
+  short: "사실이 아닌 내용을 그럴듯하게 만들어 내는 현상"
+- term: 아첨
+  aka: [Sycophancy, sycophancy]
+  cat: AI
+  full: "Sycophancy"
+  why: "권력자에게 듣기 좋은 말만 하는 사람을 가리키던 말이다. 모델이 사실보다 사용자가 듣고 싶어 하는 말을 하는 경향에 붙였다."
+  scope: [AI]
+  def: "사실이나 실제 도움보다 상대가 듣고 싶어 하는 말을 하는 모델의 경향이다. 사람의 선호로 학습하는 과정에서 의도하지 않은 부산물로 생긴다."
+  short: "사실보다 상대가 듣고 싶은 말을 하는 경향"
+- term: 헤드리스
+  aka: [Headless, headless]
+  cat: AI
+  full: "Headless"
+  why: "화면(머리)이 없다는 뜻이다. 사람이 보는 화면 없이 프로그램만 돌린다는 데서 왔다."
+  scope: [AI]
+  def: "대화형 화면 없이 명령 한 번으로 실행하고 결과만 받는 방식이다. Claude Code에서는 claude -p로 CI나 스크립트에서 돌린다."
+  short: "화면 없이 명령 한 번으로 실행하는 방식"
+- term: 점진적 공개
+  aka: [Progressive Disclosure, progressive disclosure]
+  cat: AI
+  full: "Progressive Disclosure"
+  why: "처음에는 핵심만 보이고 필요할 때 세부를 여는 설계 원칙의 이름이다."
+  scope: [AI]
+  def: "스킬에서 SKILL.md에는 핵심 지침만 두고 참고 문서와 스크립트는 별도 파일로 나눠, 필요할 때만 읽게 하는 설계다. 컨텍스트 사용량을 줄인다."
+  short: "핵심만 먼저 두고 세부는 필요할 때만 읽게 하는 설계"
