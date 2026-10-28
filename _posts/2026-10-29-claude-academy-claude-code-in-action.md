@@ -213,6 +213,27 @@ Enterprise 플랜의 Claude Code 좌석은 Settings, Members, "View tier breakdo
 
 ---
 
+## 내 자산에 적용
+
+점검 대상은 `settings.json`, 훅, `CLAUDE.md`, 권한 설정, 헤드리스 호출 스크립트다.
+
+| 점검 | 개선 |
+|---|---|
+| 반드시 막아야 하는 규칙(main 푸시 금지, 삭제 명령)이 `CLAUDE.md`에만 있는가? | `PreToolUse` 훅으로 옮긴다. 차단은 `exit 2`이고 `exit 1`은 차단하지 않는다. |
+| 차단 훅이 사유를 알리지 않는가? | stderr에 사유를 출력해 Claude가 다른 방법을 찾게 한다. |
+| 무인 작업을 bypass permissions로 돌리는가? | auto 모드로 바꾸고 테스트용 stop 훅을 붙인다. |
+| 완료 조건이 모호한 긴 작업이 있는가? | `/goal`에 테스트와 타입 검사 결과로 완료 조건을 적는다. |
+| 병렬 세션이 같은 작업 트리를 쓰는가? | worktree로 분리하고 `.worktreeinclude`로 필요한 무시 파일을 복사한다. |
+| CI에서 Claude를 호출하는가? | `claude -p`, `--bare`, JSON 출력과 종료 코드로 결과를 확인한다. 최대 턴과 허용 도구를 `claude_args`로 좁힌다. |
+| effort를 항상 최대로 두는가? | 기본값에서 시작해 한 단계씩 조정한다. 세션 한정이 필요하면 `--effort`를 쓴다. |
+| 플러그인을 확인 없이 설치했는가? | 훅, 에이전트, MCP 설정을 읽고, `settings.json`의 `agent` 키가 기본 동작을 바꾸는지 본다. |
+
+연습할 것은 감독하지 않은 만큼 확인을 늘리는 습관이다. 무인 실행 결과는 요약이 아니라 diff와 계획에 없던 파일 변경부터 읽는다.
+
+전수 점검의 순서와 지시문은 [11편](/posts/claude-academy-improvement-guide/)에 있다.
+
+---
+
 ## 정리하며
 
 처음 던진 질문들에 대한 답이다.
