@@ -27,7 +27,7 @@ series_order: 6
 
 앞의 편은 API와 Claude Code 같은 개발 쪽이었다. 이 글은 claude.ai 앱의 기능을 다룬다. 엔지니어링 업무에서도 문서를 쓰고, 자료를 조사하고, 보고서를 만드는 일이 많아서 앱 기능을 알아 두면 코드 밖의 일에서 시간이 줄어든다.
 
-Claude 101은 첫 대화에서 Projects, Artifacts, Skills, 커넥터, Research를 거쳐 데스크톱 앱의 Chat, Cowork, Code 구분까지 이어진다. 튜토리얼 스무 편 가까이가 기능별로 세부를 채운다. 스킬은 [5편](/posts/claude-academy-skills/)에서, Cowork는 [7편](/posts/claude-academy-cowork/)에서 따로 다룬다.
+Claude 101은 첫 대화에서 Projects, Artifacts, Skills(작업 절차를 묶은 Claude Code 폴더), 커넥터, Research를 거쳐 데스크톱 앱의 Chat, Cowork, Code 구분까지 이어진다. 튜토리얼 스무 편 가까이가 기능별로 세부를 채운다. 스킬은 [5편](/posts/claude-academy-skills/)에서, Cowork는 [7편](/posts/claude-academy-cowork/)에서 따로 다룬다.
 
 정리하면서 확인하고 싶었던 것들이다.
 
@@ -79,7 +79,7 @@ flowchart TB
 
 모델은 Sonnet이 기본이다. 모델 선택기에서 바꾸면 새 대화가 시작된다. 확장 사고는 지연을 늘리므로 단순 질문에는 끄고 Sonnet으로 시작한다. 한도 소모량은 Haiku가 가장 적고 Fable이 가장 많다. 계층별 용도는 [2편](/posts/claude-academy-platform-and-cloud/)에 있고, 앱에서의 요금제 차이는 Free가 Haiku와 Sonnet, Pro와 Max가 Opus와 Fable을 더한다.
 
-Effort 설정은 모델 선택과 다르다. 모델 전환은 능력과 비용을 함께 바꾸고, Effort는 판단력은 두고 계획, 탐색, 재확인에 쓰는 시간만 바꾼다. 한도 때문에 작은 모델로 바꾸려면 새 모델의 Effort를 먼저 낮춘다. 중요한 것은 토큰당 비용이 아니라 **작업 완료당 비용**이다. 상위 모델이 한 번에 풀면 후속 질문이 줄어 더 쌀 수 있다.
+Effort 설정은 모델 선택과 다르다. 모델 전환은 능력과 비용을 함께 바꾸고, Effort는 판단력은 두고 계획, 탐색, 재확인에 쓰는 시간만 바꾼다. 한도 때문에 작은 모델로 바꾸려면 새 모델의 Effort를 먼저 낮춘다. 중요한 것은 토큰(Token, 언어 모델이 텍스트를 처리하는 단위)당 비용이 아니라 **작업 완료당 비용**이다. 상위 모델이 한 번에 풀면 후속 질문이 줄어 더 쌀 수 있다.
 
 | 신호 | 조치 |
 |---|---|
@@ -137,7 +137,7 @@ Projects는 자체 대화 기록, 지식 파일, 지침을 가진 작업 공간�
 
 Research는 프롬프트에 보고서 항목, 선호 출처 유형, 배경을 적는다. 정보가 부족하면 조사 전에 후속 질문을 한다. 확장 사고가 자동으로 켜진다. 대가는 시간과 한도다. 수백 개 출처를 보지만 인용이 달려도 원문을 열어 확인해야 한다.
 
-LSEG 같은 외부 데이터는 원격 커넥터로 붙인다. 조직 소유자가 Admin settings의 Connectors에서 사용자 지정 커넥터를 추가한다. 접속하려면 LSEG의 MCP 서버 접근 권한이 필요하다. 해외 채권은 통화 환산을 확인하고 분석 결과는 다른 도구 데이터와 교차 확인하라고 안내한다.
+LSEG 같은 외부 데이터는 원격 커넥터로 붙인다. 조직 소유자가 Admin settings의 Connectors에서 사용자 지정 커넥터를 추가한다. 접속하려면 LSEG의 MCP(Model Context Protocol, AI 앱과 외부 도구를 잇는 표준 프로토콜) 서버 접근 권한이 필요하다. 해외 채권은 통화 환산을 확인하고 분석 결과는 다른 도구 데이터와 교차 확인하라고 안내한다.
 
 ---
 
