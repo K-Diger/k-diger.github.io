@@ -165,7 +165,7 @@ AI 능숙한 조직의 틀은 마인드셋, 스킬, 접근 세 요소다. 접근
 
 ### 5.2 Claude Security
 
-Claude Security는 코드베이스의 취약점을 스캔하고 리뷰용 패치를 제안하는 Enterprise 베타 기능이다. 필요 조건은 Enterprise 플랜, Claude Code on the Web 활성화, Extra Usage 활성화, Claude GitHub App 설치, 스캔 사용자의 프리미엄 좌석이다. 지원 저장소는 GitHub.com과 GitHub Enterprise Server다.
+Claude Security는 코드베이스의 취약점을 스캔하고 리뷰용 패치를 제안하는 Enterprise 베타 기능이다. 필요 조건은 Enterprise 플랜, Claude Code on the Web 활성화, Extra Usage 활성화, Claude GitHub App 설치, 스캔 사용자의 프리미엄 좌석이다. 프리미엄 좌석 사용자는 Claude Mythos 5.1로 스캔한다. 지원 저장소는 GitHub.com과 GitHub Enterprise Server다.
 
 스캔은 `claude.ai/security`에서 저장소를 골라 시작하고 디렉터리나 브랜치로 범위를 좁힌다. 결과는 유형, 심각도, 파일과 줄, 설명, 수정 제안이다. 조치는 수정 세션 열기와 오탐 기각이다. 기각 사유가 감사 기록이 되고 이후 스캔에 다시 나오지 않는다. 사용량 과금이라 지출 한도를 정하고, 저장소나 팀별로 Project를 나눈다. 일정 스캔에 담당자가 없으면 결과가 아무도 보지 않는 백로그가 된다. 모노레포는 모듈 단위로 스캔해야 결정성이 높아진다.
 

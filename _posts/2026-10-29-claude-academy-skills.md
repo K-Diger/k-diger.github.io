@@ -179,6 +179,10 @@ diff를 읽고 아래 순서로 PR 설명을 쓴다.
 | 플러그인 스킬이 안 보인다. | 캐시를 지우고 재시작한 뒤 재설치한다. 그래도 안 되면 플러그인 구조를 검증 도구로 확인한다. |
 | 실행 중에 실패한다. | 외부 패키지 설치, 스크립트 실행 권한(`chmod +x`), 경로 구분자를 본다. Windows에서도 슬래시를 쓴다. 필요한 패키지는 `description`에 적는다. |
 
+### 5.1 도메인 스킬 사례: FHIR
+
+도메인 지식을 스킬로 배포한 사례가 `anthropics/healthcare` 마켓플레이스의 FHIR Developer 스킬이다. HL7 FHIR R4 표준의 리소스 구조, 필수와 선택 필드 규칙(cardinality), 코딩 체계(LOINC, SNOMED CT, RxNorm), RESTful API 패턴, 유효성 확인 구현 패턴을 Claude Code에 더해 의료 시스템 연동의 오류를 줄인다. 설치는 `/plugin marketplace add anthropics/healthcare`로 등록한 뒤 `/plugin install fhir-developer@healthcare`를 실행한다. 표준 문서처럼 양이 많고 변하지 않는 지식을 스킬로 두는 구성이 자기 도메인(Kubernetes 매니페스트 규칙, 사내 명명 규칙 등)에도 적용된다. 이는 이 사례에서 끌어낸 추측이다.
+
 ---
 
 ## 6. claude.ai에서 스킬 쓰기
