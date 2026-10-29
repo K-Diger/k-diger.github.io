@@ -19,6 +19,7 @@ series_order: 1
 - [Anthropic Academy - AI Capabilities and Limitations](https://anthropic.skilljar.com/ai-capabilities-and-limitations)
 - Claude Academy 튜토리얼: What happens when you talk to AI, Tokens and Embeddings, Parametric Memory and Context, The 4 Properties of AI
 - Claude Academy 튜토리얼: Why do AI models hallucinate, What is sycophancy in AI models, Why does bias exist in AI models, Can you trust what AI tells you, What does AI know about me
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ## 대상 과정 정보
 

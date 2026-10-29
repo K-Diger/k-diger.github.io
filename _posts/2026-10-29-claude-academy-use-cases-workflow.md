@@ -20,6 +20,7 @@ series_order: 10
 - Claude Academy 사용 사례: Thread to decision, My voice, Ask the company, Generate project status reports, Weekly status posts from the team's channels and tracker
 - Claude Academy 사용 사례: Compare and analyze competing options, Size a market using your research, Source Insights from Your Tools to Build a Deck, Create a company newsletter, Create a process flowchart, Create interactive PDF forms, Turn emails into an event tracker, Clean up promotional emails, Explore what Claude can do for you
 - Claude Academy 웨비나 목록(2026년 9월에서 10월)
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 

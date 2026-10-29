@@ -19,6 +19,7 @@ series_order: 8
 - Claude Academy 강좌: Introduction to Claude Tag, Deploying Claude Enterprise with Confidence, Building Effective Human-Agent Teams
 - Claude Academy 튜토리얼: Getting started with Claude Tag, Best Practices Using Claude Tag, Tasks to try with Claude Tag, Claude Tag admin guide
 - Claude Academy 튜토리얼: Claude Cowork Enterprise Administrator Guide, Scaling Workflows with Claude Cowork at Your Organization, Building AI-fluent organizations, Getting Started with Claude Security
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 

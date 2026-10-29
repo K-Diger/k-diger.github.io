@@ -18,6 +18,7 @@ series_order: 9
 - [Claude Academy - 엔지니어링 과정 목록](https://academy.claude.com/ko/all?department=engineering)
 - Claude Academy 사용 사례: Triage on-call alerts and diagnose incidents, Draft the incident postmortem, Write the on-call handoff brief
 - Claude Academy 사용 사례: Monthly cloud-cost anomaly report, Fix a reported bug with a draft PR, Write the design doc or RFC, Sprint retro and on-call handoff, Engineering performance reviews, Handle a request while away from your keyboard
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 

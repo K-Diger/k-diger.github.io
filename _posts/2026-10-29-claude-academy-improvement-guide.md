@@ -28,6 +28,7 @@ series_order: 11
 - [Claude Academy 12편 - 웨비나 전체 목록](/posts/claude-academy-webinars/)
 - [Claude Academy 13편 - 원문 전체 색인](/posts/claude-academy-index/)
 - 보완된 기존 글: [AI 4편](/posts/claude-api-stateless-eval-tooluse/), [AI 5편](/posts/mcp-server-client-transport/), [AI 6편](/posts/claude-code-tool-loop-hooks/), [AI 8편](/posts/ai-fluency-4d-claude-code/)
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 
@@ -335,6 +336,29 @@ STG 검증과 롤백 절차 없이 운영에 적용하지 않는다는 것은 �
 다섯 번째 질문이다.
 
 다른 컴퓨터에서 이 시리즈를 읽고 점검을 맡길 때는 한 번에 전수 개선을 시키지 말고 단계를 나눈다. 2절과 3절의 근거 열에는 AI 4편(`stop_reason`, 도구 오류, 캐시), AI 5편(MCP 권한), AI 6편(훅 입력 검증, 서브에이전트 설계 기준), AI 8편(분별 도구, `CLAUDE.md` 예시)에만 있는 사실이 있다. 이 링크를 빼면 근거를 대조할 수 없으므로 함께 붙인다. 아래 지시문은 1단계(읽기 전용 인벤토리와 진단)만 맡긴다. 변경은 진단을 읽고 자산 하나씩 승인한 뒤에 시킨다.
+
+붙여 넣을 링크는 아래 묶음을 그대로 쓴다. 12편(웨비나)은 점검 기준이 아니라 참고 목록이라 선택 사항이고, 13편(색인)은 누락 확인용이다.
+
+```text
+https://k-diger.github.io/posts/claude-academy-how-ai-works/
+https://k-diger.github.io/posts/claude-academy-platform-and-cloud/
+https://k-diger.github.io/posts/claude-academy-claude-code-in-action/
+https://k-diger.github.io/posts/claude-academy-ai-native-sdlc/
+https://k-diger.github.io/posts/claude-academy-skills/
+https://k-diger.github.io/posts/claude-academy-claude-app/
+https://k-diger.github.io/posts/claude-academy-cowork/
+https://k-diger.github.io/posts/claude-academy-tag-and-enterprise/
+https://k-diger.github.io/posts/claude-academy-use-cases-engineering/
+https://k-diger.github.io/posts/claude-academy-use-cases-workflow/
+https://k-diger.github.io/posts/claude-academy-improvement-guide/
+https://k-diger.github.io/posts/claude-academy-webinars/
+https://k-diger.github.io/posts/claude-academy-index/
+https://k-diger.github.io/posts/ai-fluency-4d-claude-code/
+https://k-diger.github.io/posts/claude-api-stateless-eval-tooluse/
+https://k-diger.github.io/posts/mcp-server-client-transport/
+https://k-diger.github.io/posts/claude-code-tool-loop-hooks/
+https://k-diger.github.io/posts/ai-engineering-rag-agent-memory/
+```
 
 ```text
 아래 링크는 Claude Academy 정리 시리즈다. 먼저 전부 읽어라.

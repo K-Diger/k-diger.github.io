@@ -20,6 +20,7 @@ series_order: 5
 - Claude Academy 튜토리얼: What are skills, Creating your first skill, Configuration and multi-file skills, How skills compare to other Claude Code features, Sharing skills, Troubleshooting skills
 - Claude Academy 튜토리얼: Teach Claude your way of working using skills, How to create a skill with Claude through conversation
 - Claude Academy 튜토리얼: How to use the FHIR Developer agent skill with Claude Code
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 

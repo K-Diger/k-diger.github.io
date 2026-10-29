@@ -22,6 +22,7 @@ series_order: 6
 - Claude Academy 튜토리얼: How to choose between voice mode and dictation, Choosing the right Claude model, How to select the right effort setting for Claude Cowork and Chat
 - Claude Academy 튜토리얼: Simplify your browsing experience with Claude for Chrome, Create and edit files with Claude to eliminate hours of busy work, Getting started with Claude in Excel, Claude for Word: Turn a draft into a finished document
 - Claude Academy 튜토리얼: Working smarter with Claude in PowerPoint, Building a PowerPoint with Claude, Refining a PowerPoint with Claude, Imagine with Claude Student Guide
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 

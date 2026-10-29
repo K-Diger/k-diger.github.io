@@ -18,6 +18,7 @@ series_order: 2
 - [Anthropic Academy - Building with the Claude API](https://anthropic.skilljar.com/claude-with-the-anthropic-api)
 - Claude Academy 강좌: Claude Platform 101, Claude with Amazon Bedrock, Claude with Google Cloud's Vertex AI
 - Claude Academy 튜토리얼: Choosing the right Claude model, What is Claude Managed Agents
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 

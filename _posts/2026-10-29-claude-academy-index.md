@@ -18,6 +18,7 @@ series_order: 13
 - [Claude Academy - 엔지니어링 과정 목록](https://academy.claude.com/ko/all?department=engineering) (2026-10-21 수집)
 - [Claude Academy 11편 - 기존 자산 개선 가이드](/posts/claude-academy-improvement-guide/)
 - [Claude Academy 12편 - 웨비나 전체 목록](/posts/claude-academy-webinars/)
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 

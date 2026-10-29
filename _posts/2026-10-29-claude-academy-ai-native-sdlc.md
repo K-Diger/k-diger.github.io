@@ -18,6 +18,7 @@ series_order: 4
 - [Claude Academy - 엔지니어링 과정 목록](https://academy.claude.com/ko/all?department=engineering)
 - Claude Academy 강좌: The AI-Native SDLC Playbook
 - [Claude Code Docs - Hooks](https://code.claude.com/docs/en/hooks)
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 

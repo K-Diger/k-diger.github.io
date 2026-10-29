@@ -20,6 +20,7 @@ series_order: 3
 - Claude Academy 튜토리얼: Choosing the Right Effort Level in Claude Code, Using Claude Code Remote Control, How to enable Claude Code for your enterprise team
 - [Claude Code Docs - Hooks](https://code.claude.com/docs/en/hooks)
 - [Claude Code Docs - Memory (CLAUDE.md)](https://code.claude.com/docs/en/memory)
+- 수집 기준: Claude Academy 엔지니어링 목록의 2026-10-21 수집본이다. 베타와 미리보기 표기, 요금제 조건, 모델 이름은 이후 바뀔 수 있다.
 
 ---
 
