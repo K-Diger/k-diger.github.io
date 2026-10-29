@@ -246,7 +246,9 @@ sequenceDiagram
 |---|---|
 | `system` | 역할과 응답 방식을 지정한다(강좌 예는 답을 바로 주지 않는 수학 튜터). 값이 있을 때만 포함하고 `None`은 API가 받지 않는다. Bedrock은 빈 문자열도 받지 않고, 대화 중간에 system 메시지를 넣는 방식도 지원하지 않는다. |
 | `temperature` | 0에서 1 사이 값으로 토큰 선택의 무작위성을 조절한다. 사실 응답과 추출은 낮게, 브레인스토밍과 창작은 높게 둔다. Bedrock 강좌는 코딩도 낮게 두라고 하고, Vertex 강좌는 값에 따른 결과 차이가 보장되지는 않는다고 덧붙인다. |
-| 스트리밍 | `stream=True`나 `text_stream`으로 생성 중인 텍스트를 조각 단위로 받는다. `get_final_message`로 완성된 메시지를 저장용으로 확보한다. Bedrock은 `converse_stream`이 조각을 반환하고 `contentBlockDelta` 이벤트에서 텍스트를 꺼내 화면에 바로 출력한다. |
+| 스트리밍 | `stream=True`나 `text_stream`으로 생성 중인 텍스트를 조각 단위로 받는다. `get_final_message`로 완성된 메시지를 저장용으로 확보한다. Vertex는 `messages.stream`의 `text_stream`을 쓴다. Bedrock은 `converse_stream`이 조각을 반환하고 `contentBlockDelta` 이벤트에서 텍스트를 꺼내 화면에 바로 출력한다. |
+| 프리필과 정지 시퀀스 | 어시스턴트 메시지로 응답의 시작 문구를 지정하고 정지 시퀀스로 지정한 문자열에서 생성을 멈춘다. API 강좌는 JSON뿐 아니라 코드, 목록, CSV에도 같은 방식을 적용한다. Vertex 강좌는 결과를 `json.loads(text.strip())`로 파싱한다. |
+| 메시지 역할 | Bedrock 강좌는 user와 assistant 역할을 번갈아 배치한다고 설명한다. |
 
 ### 8.2 프롬프트 기법의 효과
 
@@ -256,7 +258,7 @@ sequenceDiagram
 |---|---|
 | 첫 줄을 "Generate" 같은 행동 동사로 시작하는 지시문으로 바꾼다(Bedrock 강좌는 "Write"도 예로 든다). | 2.32에서 3.92로 오른다. |
 | 출력 품질 가이드라인을 추가한다. | 3.92에서 7.86으로 오른다. |
-| 사고 과정 단계(단계별 처리 지침)를 추가한다. | Bedrock 강좌에서 7.3이 나왔다. API와 Vertex 요약에는 이 점수가 없다. |
+| 사고 과정 단계(단계별 처리 지침)를 추가한다. | Bedrock 강좌에서 7.3이 나왔다. 7.86 위에 더한 점수인지 별도로 측정한 점수인지는 요약에 없어 확인이 필요하다. API와 Vertex 요약에는 이 점수가 없다. |
 
 구체적으로 쓰기는 출력 품질 가이드라인과 단계별 처리 지침(사고 과정 단계) 두 종류다.
 
@@ -266,18 +268,26 @@ sequenceDiagram
 
 ### 8.3 도구와 부가 기능
 
+- 도구 함수는 설명적인 이름을 짓고 입력값을 확인하며 의미 있는 오류 메시지를 반환하는 일반 Python 함수다. 오류 메시지를 보고 Claude가 재시도할 수 있기 때문이다. 세 강좌 모두 현재 시각 조회, 기간 더하기, 알림 설정의 세 도구를 예제로 쓴다.
+- 도구 스키마는 `name`, `description`, `input_schema` 세 필드이고 설명은 3~4문장으로 쓴다. 초안은 Claude에게 작성시킬 수 있고, API와 Vertex 강좌는 `ToolParam` 타입으로 타입 오류를 줄인다. Bedrock 강좌는 샘플 인자 딕셔너리를 JSON 스키마 변환기에 넣은 뒤 설명을 보강하고, 파라미터 설명은 구체적으로 쓰라고 한다.
+- 도구 결과를 보낼 때는 도구 스키마를 후속 요청에도 다시 포함한다. Bedrock 강좌는 스키마가 없으면 Claude가 대화 안의 도구 참조를 해석하지 못한다고 설명한다. Bedrock 응답의 `toolUse` 파트에는 `toolUseId`, `name`, `input`이 있다.
+- 도구 실행은 Vertex 강좌 기준으로 `tool_use` 블록의 `input`을 `**`로 펼쳐 함수에 넘긴다. Bedrock 강좌는 `toolUse` 파트를 모아 `**tool_input`으로 함수를 호출하고, `toolUseId`가 일치하는 `toolResult`에 성공 또는 오류 상태를 표시한다.
+- 도구 실행 루프는 `stop_reason`(Bedrock은 `stopReason`)이 `tool_use`가 아닐 때까지 반복한다. `run_tools`가 도구 요청마다 `tool_result`를 만들고(API 강좌는 여러 `ToolUse` 블록을 처리한다고 설명), 예외가 나면 `is_error: True`로 응답하며, `run_tool`이 도구 이름별로 함수를 연결한다. 도구가 필요 없는 질문은 루프 없이 한 번에 끝난다.
+- 루프를 위해 도우미 함수가 블록 목록과 전체 `Message` 객체를 받도록 고친다(API와 Vertex 강좌). Vertex 강좌는 여기에 `text_from_message`를 추가한다.
+- 도구를 늘리는 절차는 API와 Bedrock 강좌에서 스키마를 도구 목록에 넣고 `run_tool`에 분기를 등록하는 두 단계다. Vertex 강좌는 함수 구현까지 세 단계로 센다. 예제는 날짜 계산 뒤 알림 설정으로 이어지는 연쇄 호출이며, Bedrock은 100일 뒤, Vertex는 177일 뒤 알림 요청을 쓴다.
+- Bedrock 강좌는 도구 사용의 구현 순서가 논리적 흐름(요청, 도구 호출 요구, 데이터 조회, 최종 응답)과 다르다고 짚는다. 어떻게 다른지는 요약에 없어 확인이 필요하다.
 - 배치 도구(batch tool)는 Claude가 한 응답에 도구 호출을 여러 개 담지 않는 문제를 `invocations` 배열을 받는 도구로 우회한다. `run_batch`가 호출을 순서대로 실행하고 결과를 합쳐 반환한다. Bedrock 강좌는 `batch_tool`이 병렬 호출 가능성을 높인다고 설명하며, 인자를 JSON 문자열로 받는다.
 - 도구로 구조화 데이터를 뽑으려면 추출할 구조를 입력 스키마로 가진 도구를 만들고 호출할 도구를 지정해 고정한다. Vertex는 `tool_choice={"type": "tool", "name": ...}`, Bedrock은 `toolChoice`를 쓰며 Bedrock의 `toolChoice`는 auto, any, 도구 이름 지정의 세 가지다. 프리필 방식보다 일관성이 높지만 설정이 복잡하다. `to_json` 같은 임의 객체 도구 하나만 두고 구조는 프롬프트에 쓰면 품질은 전용 스키마의 약 90%에 설정은 약 10%라는 비교가 나온다(Bedrock 강좌 수치).
 - 텍스트 편집 도구는 스키마가 내장이고 `view`, `str_replace`, `create`, `insert` 구현은 직접 쓴다. 모델 세대에 따라 `type`과 `name`이 다르다.
 - 웹 검색 도구는 콘솔에서 허용한 뒤 `type`, `name`, `max_uses`로 켜고 `allowed_domains`로 범위를 제한한다. 인용 블록으로 출처를 표시한다. Vertex 강좌는 `web_search_20250305` 스키마를 쓰고, 응답에 검색 쿼리, 결과 목록, 인용 위치 블록이 들어 있어 화면 구성에 쓸 수 있다고 설명한다.
 - 세밀한 도구 호출(fine-grained tool calling)은 스트리밍 중 `input_json` 이벤트로 인자 조각을 받는다. API는 기본으로 JSON 유효성을 확인한 뒤 한꺼번에 보내는데, `fine_grained` 설정은 이 확인을 꺼서 지연을 줄이는 대신 잘못된 JSON 처리를 앱이 맡게 한다.
 - 이미지는 API 강좌 기준 요청당 100개, 이미지당 5MB 한도로 base64나 URL로 전달한다. 단계별 분석 지침과 예시를 주면 개수 세기 같은 작업의 정확도가 오른다. Bedrock과 Vertex의 한도 차이는 [Claude Academy 2편](/posts/claude-academy-platform-and-cloud/)의 5절 표에 있다.
-- PDF는 이미지와 같은 구조에서 `type`을 `document`, `media_type`을 `application/pdf`로 바꾸며 텍스트, 이미지, 표, 구조를 모두 읽는다. Bedrock 강좌는 요약, 질의응답, 구조 분석에 쓰인다고 설명한다.
+- PDF는 이미지와 같은 구조에서 `type`을 `document`, `media_type`을 `application/pdf`로 바꾸며 텍스트, 이미지, 표, 구조를 모두 읽는다. Bedrock은 `document` 객체에 format, name, source 바이트를 지정한다. Bedrock 강좌는 요약, 질의응답, 구조 분석에 쓰인다고 설명한다.
 - 인용은 문서 블록에 `title`과 `citations`를 켜면 응답에 `cited_text`와 페이지 번호가 붙고, 텍스트 문서는 문자 위치를 준다. 사용자가 원문과 대조해 확인하거나 화면에서 출처 문장을 표시하는 데 쓴다.
 - 코드 실행은 Files API로 파일을 미리 올려 ID로 참조하고, 네트워크 없는 도커 컨테이너에서 Claude가 Python 코드를 실행한다. 생성된 그래프는 `file_id`로 내려받는다.
-- 확장 사고는 `thinking` 파라미터의 `budget_tokens`로 켜며 추론 과정이 응답에 포함된다. 사고 토큰에도 비용이 붙고 지연이 늘어나므로 프롬프트를 개선한 뒤에도 정확도가 부족할 때 쓴다. Vertex 강좌는 `budget_tokens`가 최소 1,024이고 `max_tokens`보다 작아야 한다고 설명한다. Bedrock 강좌는 최신 모델이 `adaptive` 사고와 `effort`를 쓰고 4.5 세대 이하가 `budget_tokens`를 지정한다고 설명한다.
+- 확장 사고는 `thinking` 파라미터의 `budget_tokens`로 켜며 추론 과정이 응답에 포함된다. 사고 토큰에도 비용이 붙고 지연이 늘어나므로 프롬프트를 개선한 뒤에도 정확도가 부족할 때 쓴다. Vertex 강좌는 `budget_tokens`가 최소 1,024이고 `max_tokens`보다 작아야 한다고 설명한다. Bedrock 강좌는 응답에 추론 내용 파트와 텍스트 파트가 함께 오고, 최신 모델이 `adaptive` 사고와 `effort`를 쓰며 4.5 세대 이하가 `budget_tokens`를 지정한다고 설명한다. Vertex 강좌는 thinking 블록의 서명과 암호화된 redacted thinking도 다룬다.
 - 프롬프트 캐싱은 캐시 수명이 기본 5분이고 재사용 때마다 연장된다. 1시간 옵션은 쓰기 비용이 더 높다. 중단점은 최대 4개이고 처리 순서는 도구, 시스템, 메시지다. `usage`의 `cache_creation_input_tokens`와 `cache_read_input_tokens`로 동작을 확인한다.
-- 중단점(`cache_control`)은 직접 지정하며 중단점 앞 내용이 완전히 같아야 읽히고, 한 글자만 바뀌어도 무효화된다(Vertex 강좌). 실습에서는 마지막 도구 스키마와 시스템 프롬프트 텍스트 블록에 붙인다.
+- 중단점(`cache_control`)은 직접 지정하며(Bedrock은 `cachePoint`를 시스템 프롬프트와 도구 정의에도 지정할 수 있다) 중단점 앞 내용이 완전히 같아야 읽히고, 한 글자만 바뀌어도 무효화된다(Vertex 강좌). 실습에서는 마지막 도구 스키마와 시스템 프롬프트 텍스트 블록에 붙인다.
 - 최소 길이는 API 강좌에서 Haiku 4.5 기준 4,096 토큰이고, Bedrock(`cachePoint`)과 Vertex는 1,024 토큰이다. 미달하면 오류 없이 캐시되지 않으므로 `usage`로 확인한다. 6절 표의 1,024 토큰은 API 강좌의 4,096과 어긋나므로 모델별 최소 길이는 공식 문서 확인이 필요하다.
 
 ---
